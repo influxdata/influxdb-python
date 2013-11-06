@@ -1,0 +1,4 @@
+influxdb.egg-info/
+*.pyc
+*.py.swp
+.tox
