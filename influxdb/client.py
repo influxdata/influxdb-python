@@ -186,7 +186,7 @@ class InfluxDBClient(object):
             chunked_param))
 
         if response.status_code == 200:
-            return response.content
+            return response.json()
         else:
             raise Exception(
                 "{0}: {1}".format(response.status_code, response.content))
@@ -284,7 +284,7 @@ class InfluxDBClient(object):
                 self._password))
 
         if response.status_code == 200:
-            return json.loads(response.content)
+            return response.json()
         else:
             raise Exception(
                 "{0}: {1}".format(response.status_code, response.content))
@@ -449,7 +449,7 @@ class InfluxDBClient(object):
                 self._password))
 
         if response.status_code == 200:
-            return json.loads(response.content)
+            return response.json()
         else:
             raise Exception(
                 "{0}: {1}".format(response.status_code, response.content))
