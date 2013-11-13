@@ -106,7 +106,7 @@ class TestInfluxDBClient(object):
                 content=expected)
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             result = cli.query('select column_one from foo;')
-            assert len(json.loads(result)[0]['points']) == 4
+            assert len(result[0]['points']) == 4
 
     @raises(Exception)
     def test_query_fail(self):
