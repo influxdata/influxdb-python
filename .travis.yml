@@ -1,9 +1,17 @@
 language: python
 python:
-  - "3.3"
-  - "3.2"
-  - "2.7"
+- '3.3'
+- '3.2'
+- '2.7'
 install:
-  - "pip install -r requirements.txt --use-mirrors"
-  - "pip install -r test-requirements.txt --use-mirrors"
+- pip install -r requirements.txt --use-mirrors
+- pip install -r test-requirements.txt --use-mirrors
 script: nosetests
+deploy:
+  provider: pypi
+  user: errplane
+  password:
+    secure: C20cSqrCtd7Ng2oxSy9YSQS72aeqMjrRaZTYKIIF4eSR4JzCawasFhof6Pq/mUqx6fJCBTZ7yMUqfK22JAQ2iUoUnBF04IHASR3iwqjdCRbXGtzX1J9Bw//6iCHBE5fgGEHQc8Mw5wKDIy5RvbjiR9ADCW/cIlpVSF9QzH/RA24=
+  on:
+    tags: true
+    repo: influxdb/influxdb-python
