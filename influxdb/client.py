@@ -186,7 +186,7 @@ class InfluxDBClient(object):
             chunked_param))
 
         if response.status_code == 200:
-            return response.json()
+            return json.loads(response.content)
         else:
             raise Exception(
                 "{0}: {1}".format(response.status_code, response.content))
