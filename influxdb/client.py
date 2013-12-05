@@ -7,6 +7,7 @@ import json
 from six.moves.urllib.parse import urlencode
 
 import requests
+session = requests.Session()
 
 
 class InfluxDBClient(object):
@@ -63,7 +64,7 @@ class InfluxDBClient(object):
         """
         Write to multiple time series names
         """
-        response = requests.post(
+        response = session.post(
             "{0}/db/{1}/series?u={2}&p={3}".format(
                 self._baseurl,
                 self._database,
@@ -88,7 +89,7 @@ class InfluxDBClient(object):
 
         url_format = "{0}/db/{1}/series?u={2}&p={3}&time_precision={4}"
 
-        response = requests.post(url_format.format(
+        response = session.post(url_format.format(
             self._baseurl,
             self._database,
             self._username,
@@ -176,7 +177,7 @@ class InfluxDBClient(object):
         url_format = "{0}/db/{1}/series?{2}&u={3}&p={4}"
         url_format += "&time_precision={5}&chunked={6}"
 
-        response = requests.get(url_format.format(
+        response = session.get(url_format.format(
             self._baseurl,
             self._database,
             encoded_query,
@@ -208,7 +209,7 @@ class InfluxDBClient(object):
         database: string
             database name
         """
-        response = requests.post("{0}/db?u={1}&p={2}".format(
+        response = session.post("{0}/db?u={1}&p={2}".format(
             self._baseurl,
             self._username,
             self._password),
@@ -230,7 +231,7 @@ class InfluxDBClient(object):
         database: string
             database name
         """
-        response = requests.delete("{0}/db/{1}?u={2}&p={3}".format(
+        response = session.delete("{0}/db/{1}?u={2}&p={3}".format(
             self._baseurl,
             database,
             self._username,
@@ -277,7 +278,7 @@ class InfluxDBClient(object):
         """
         Get list of cluster admins
         """
-        response = requests.get(
+        response = session.get(
             "{0}/cluster_admins?u={1}&p={2}".format(
                 self._baseurl,
                 self._username,
@@ -293,7 +294,7 @@ class InfluxDBClient(object):
         """
         Add cluster admin
         """
-        response = requests.post(
+        response = session.post(
             "{0}/cluster_admins?u={1}&p={2}".format(
                 self._baseurl,
                 self._username,
@@ -313,7 +314,7 @@ class InfluxDBClient(object):
         """
         Update cluster admin password
         """
-        response = requests.post(
+        response = session.post(
             "{0}/cluster_admins/{1}?u={2}&p={3}".format(
                 self._baseurl,
                 username,
@@ -333,7 +334,7 @@ class InfluxDBClient(object):
         """
         Delete cluster admin
         """
-        response = requests.delete("{0}/cluster_admins/{1}?u={2}&p={3}".format(
+        response = session.delete("{0}/cluster_admins/{1}?u={2}&p={3}".format(
             self._baseurl,
             username,
             self._username,
@@ -349,7 +350,7 @@ class InfluxDBClient(object):
         """
         Set user as database admin
         """
-        response = requests.post(
+        response = session.post(
             "{0}/db/{1}/admins/{2}?u={3}&p={4}".format(
                 self._baseurl,
                 self._database,
@@ -366,7 +367,7 @@ class InfluxDBClient(object):
         """
         Unset user as database admin
         """
-        response = requests.delete(
+        response = session.delete(
             "{0}/db/{1}/admins/{2}?u={3}&p={4}".format(
                 self._baseurl,
                 self._database,
@@ -441,7 +442,7 @@ class InfluxDBClient(object):
         """
         Get list of database users
         """
-        response = requests.get(
+        response = session.get(
             "{0}/db/{1}/users?u={2}&p={3}".format(
                 self._baseurl,
                 self._database,
@@ -458,7 +459,7 @@ class InfluxDBClient(object):
         """
         Add database user
         """
-        response = requests.post(
+        response = session.post(
             "{0}/db/{1}/users?u={2}&p={3}".format(
                 self._baseurl,
                 self._database,
@@ -479,7 +480,7 @@ class InfluxDBClient(object):
         """
         Update password
         """
-        response = requests.post(
+        response = session.post(
             "{0}/db/{1}/users/{2}?u={3}&p={4}".format(
                 self._baseurl,
                 self._database,
@@ -502,7 +503,7 @@ class InfluxDBClient(object):
         """
         Delete database user
         """
-        response = requests.delete(
+        response = session.delete(
             "{0}/db/{1}/users/{2}?u={3}&p={4}".format(
                 self._baseurl,
                 self._database,
