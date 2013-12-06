@@ -33,6 +33,12 @@ def main(host=None, port=None):
     print("Add database user: " + dbuser)
     client.add_database_user(dbuser, dbuser_password)
 
+    print("Make user a database admin")
+    client.set_database_admin(dbuser)
+
+    print("Remove admin privilege from user")
+    client.unset_database_admin(dbuser)
+
     dbusers = client.get_database_users()
     print("Get list of database users again: {0}".format(dbusers))
 

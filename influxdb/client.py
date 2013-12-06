@@ -349,30 +349,24 @@ class InfluxDBClient(object):
         """
         Set user as database admin
         """
-        response = requests.post(
-            "{0}/db/{1}/admins/{2}?u={3}&p={4}".format(
-                self._baseurl,
-                self._database,
-                username,
-                self._username,
-                self._password))
-        if response.status_code == 200:
-            return True
-        else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+        return self.alter_database_admin(username, True)
 
     def unset_database_admin(self, username):
         """
         Unset user as database admin
         """
-        response = requests.delete(
-            "{0}/db/{1}/admins/{2}?u={3}&p={4}".format(
+        return self.alter_database_admin(username, False)
+
+    def alter_database_admin(self, username, is_admin):
+        response = requests.post(
+            "{0}/db/{1}/users/{2}?u={3}&p={4}".format(
                 self._baseurl,
                 self._database,
                 username,
                 self._username,
-                self._password))
+                self._password),
+            data=json.dumps({'admin': is_admin}),
+            headers=self._headers)
         if response.status_code == 200:
             return True
         else:
