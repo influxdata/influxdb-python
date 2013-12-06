@@ -248,7 +248,7 @@ class InfluxDBClient(object):
 
     # add cluster admin
     # curl -X POST http://localhost:8086/cluster_admins?u=root&p=root \
-    #      -d '{"username": "paul", "password": "i write teh docz"}'
+    #      -d '{"name": "paul", "password": "i write teh docz"}'
 
     # update cluster admin password
     # curl -X POST http://localhost:8086/cluster_admins/paul?u=root&p=root \
@@ -263,7 +263,7 @@ class InfluxDBClient(object):
 
     # add database admin
     # curl -X POST http://localhost:8086/db/site_dev/admins?u=root&p=root \
-    #      -d '{"username": "paul", "password": "i write teh docz"}'
+    #      -d '{"name": "paul", "password": "i write teh docz"}'
 
     # update database admin password
     # curl -X POST http://localhost:8086/db/site_dev/admins/paul?u=root&p=root\
@@ -299,7 +299,7 @@ class InfluxDBClient(object):
                 self._username,
                 self._password),
             data=json.dumps({
-                'username': new_username,
+                'name': new_username,
                 'password': new_password}),
             headers=self._headers)
 
@@ -428,7 +428,7 @@ class InfluxDBClient(object):
 
     # add database user
     # curl -X POST http://localhost:8086/db/site_dev/users?u=root&p=root \
-    #       -d '{"username": "paul", "password": "i write teh docz"}'
+    #       -d '{"name": "paul", "password": "i write teh docz"}'
 
     # update database user password
     # curl -X POST http://localhost:8086/db/site_dev/users/paul?u=root&p=root \
@@ -465,7 +465,7 @@ class InfluxDBClient(object):
                 self._username,
                 self._password),
             data=json.dumps({
-                'username': new_username,
+                'name': new_username,
                 'password': new_password}),
             headers=self._headers)
 
