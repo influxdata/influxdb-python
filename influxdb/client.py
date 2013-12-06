@@ -60,24 +60,11 @@ class InfluxDBClient(object):
     # by doing a POST to /db/foo_production/series?u=some_user&p=some_password
     # with a JSON body of points.
 
-    def write_points(self, data):
+    def write_points(self, *args, **kwargs):
         """
         Write to multiple time series names
         """
-        response = session.post(
-            "{0}/db/{1}/series?u={2}&p={3}".format(
-                self._baseurl,
-                self._database,
-                self._username,
-                self._password),
-            data=json.dumps(data),
-            headers=self._headers)
-
-        if response.status_code == 200:
-            return True
-        else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+        return self.write_points_with_precision(*args, **kwargs)
 
     def write_points_with_precision(self, data, time_precision='s'):
         """
