@@ -10,17 +10,14 @@ def main(host=None, port=None):
     dbuser = 'smly'
     dbuser_password = 'my_secret_password'
     query = 'select column_one from foo;'
-    json_body = [
-  {
-    "points": [
-        ["1", 1, 1.0],
-        ["2", 2, 2.0]
-    ],
-    "name": "foo",
-    "columns": ["column_one", "column_two", "column_three"]
-  }
-]
-
+    json_body = [{
+        "points": [
+            ["1", 1, 1.0],
+            ["2", 2, 2.0]
+        ],
+        "name": "foo",
+        "columns": ["column_one", "column_two", "column_three"]
+    }]
 
     client = InfluxDBClient(host, port, user, password, dbname)
 
