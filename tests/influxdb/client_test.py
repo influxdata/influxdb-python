@@ -2,8 +2,6 @@
 """
 unit tests
 """
-import json
-
 import requests
 from nose.tools import raises
 from mock import patch
