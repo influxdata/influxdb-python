@@ -17,8 +17,9 @@ import re
 
 
 with open(os.path.join(os.path.dirname(__file__),
-    'influxdb', '__init__.py')) as f:
-    version = re.search("__version__ = '([^']+)'", f.read()).group(1)
+                       'influxdb',
+                       '__init__.py')) as f:
+        version = re.search("__version__ = '([^']+)'", f.read()).group(1)
 
 with open('requirements.txt', 'r') as f:
     requires = [x.strip() for x in f if x.strip()]

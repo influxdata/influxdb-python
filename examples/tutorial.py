@@ -10,17 +10,14 @@ def main(host=None, port=None):
     dbuser = 'smly'
     dbuser_password = 'my_secret_password'
     query = 'select column_one from foo;'
-    json_body = [
-  {
-    "points": [
-        ["1", 1, 1.0],
-        ["2", 2, 2.0]
-    ],
-    "name": "foo",
-    "columns": ["column_one", "column_two", "column_three"]
-  }
-]
-
+    json_body = [{
+        "points": [
+            ["1", 1, 1.0],
+            ["2", 2, 2.0]
+        ],
+        "name": "foo",
+        "columns": ["column_one", "column_two", "column_three"]
+    }]
 
     client = InfluxDBClient(host, port, user, password, dbname)
 
@@ -42,7 +39,7 @@ def main(host=None, port=None):
     dbusers = client.get_database_users()
     print("Get list of database users again: {0}".format(dbusers))
 
-    print("Swtich user: " + dbuser)
+    print("Switch user: " + dbuser)
     client.switch_user(dbuser, dbuser_password)
 
     print("Write points: {0}".format(json_body))
@@ -53,7 +50,7 @@ def main(host=None, port=None):
 
     print("Result: {0}".format(result))
 
-    print("Swtich user: " + user)
+    print("Switch user: " + user)
     client.switch_user(user, password)
 
     print("Delete database: " + dbname)
