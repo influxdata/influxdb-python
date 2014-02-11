@@ -42,7 +42,7 @@ def main(host=None, port=None):
     dbusers = client.get_database_users()
     print("Get list of database users again: {0}".format(dbusers))
 
-    print("Swtich user: " + dbuser)
+    print("Switch user: " + dbuser)
     client.switch_user(dbuser, dbuser_password)
 
     print("Write points: {0}".format(json_body))
@@ -53,7 +53,7 @@ def main(host=None, port=None):
 
     print("Result: {0}".format(result))
 
-    print("Swtich user: " + user)
+    print("Switch user: " + user)
     client.switch_user(user, password)
 
     print("Delete database: " + dbname)
