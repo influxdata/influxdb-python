@@ -243,6 +243,28 @@ class InfluxDBClient(object):
             raise Exception(
                 "{0}: {1}".format(response.status_code, response.content))
 
+    def delete_series(self, series):
+        """
+        Drop a series
+
+        Parameters
+        ----------
+        series: string
+            series name
+        """
+        response = session.delete("{0}/db/{1}/series/{2}?u={3}&p={4}".format(
+            self._baseurl,
+            self._database,
+            series,
+            self._username,
+            self._password))
+
+        if response.status_code == 204:
+            return True
+        else:
+            raise Exception(
+                "{0}: {1}".format(response.status_code, response.content))
+
     # Security
     # get list of cluster admins
     # curl http://localhost:8086/cluster_admins?u=root&p=root
