@@ -15,7 +15,8 @@ class InfluxDBClient(object):
     InfluxDB Client
     """
 
-    def __init__(self, host, port, username, password, database):
+    def __init__(self, host='localhost', port=8086, username='root',
+                 password='root', database=None):
         """
         Initialize client
         """
