@@ -244,6 +244,24 @@ class InfluxDBClient(object):
             raise Exception(
                 "{0}: {1}".format(response.status_code, response.content))
 
+    # ### get list of databases
+    # curl -X GET http://localhost:8086/db
+
+    def get_database_list(self):
+        """
+        Get the list of databases
+        """
+        response = session.get("{0}/db?u={1}&p={2}".format(
+            self._baseurl,
+            self._username,
+            self._password))
+
+        if response.status_code == 200:
+            return json.loads(response.content)
+        else:
+            raise Exception(
+                "{0}: {1}".format(response.status_code, response.content))
+
     # Security
     # get list of cluster admins
     # curl http://localhost:8086/cluster_admins?u=root&p=root
