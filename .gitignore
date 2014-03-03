@@ -3,3 +3,6 @@ influxdb.egg-info/
 *.py.swp
 .tox
 dist/
+build/
+mock*/
+nose*/
