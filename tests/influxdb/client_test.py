@@ -143,6 +143,21 @@ class TestInfluxDBClient(object):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.delete_database('old_db')
 
+    def test_get_database_list(self):
+        with patch.object(session, 'get') as mocked_get:
+            mocked_get.return_value = _build_response_object(
+                status_code=200, content='[{"name": "a_db"}]')
+            cli = InfluxDBClient('host', 8086, 'username', 'password')
+            assert len(cli.get_database_list()) == 1
+            assert cli.get_database_list()[0]['name'] == 'a_db'
+
+    @raises(Exception)
+    def test_get_database_list_fails(self):
+        with patch.object(session, 'get') as mocked_get:
+            mocked_get.return_value = _build_response_object(status_code=401)
+            cli = InfluxDBClient('host', 8086, 'username', 'password')
+            cli.get_database_list()
+
     def test_get_list_cluster_admins(self):
         pass
 
