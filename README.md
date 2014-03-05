@@ -1,6 +1,8 @@
 influxdb-python
 ===============
 
+[![Build Status](https://travis-ci.org/influxdb/influxdb-python.png?branch=master)](https://travis-ci.org/influxdb/influxdb-python)
+
 Python client for InfluxDB
 
 For developers
