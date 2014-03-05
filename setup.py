@@ -31,6 +31,7 @@ setup(
     name='influxdb',
     version=version,
     description="influxdb client",
+    license='MIT',
     packages=find_packages(exclude=['tests']),
     test_suite='tests',
     tests_require=test_requires,
