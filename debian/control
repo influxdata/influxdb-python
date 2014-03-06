@@ -23,7 +23,7 @@ Standards-Version: 3.9.5
 
 Package: python-influxdb
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, python-six, python-requests
+Depends: ${misc:Depends}, ${python:Depends}, python-six, python-requests (>= 1.0.3)
 Description: Python client for InfluxDB
  .
  This is the Python 2 compatible package.
