@@ -1,2 +1,1 @@
-six
 requests>=1.0.3
