@@ -4,8 +4,6 @@ python client for influxdb
 """
 import json
 
-from six.moves.urllib.parse import urlencode
-
 import requests
 session = requests.Session()
 
@@ -159,20 +157,22 @@ class InfluxDBClient(object):
         else:
             chunked_param = 'false'
 
-        encoded_query = urlencode({
-            'q': query})
+        url = "{0}/db/{1}/series"
 
-        url_format = "{0}/db/{1}/series?{2}&u={3}&p={4}"
-        url_format += "&time_precision={5}&chunked={6}"
-
-        response = session.get(url_format.format(
+        url.format(
             self._baseurl,
-            self._database,
-            encoded_query,
-            self._username,
-            self._password,
-            time_precision,
-            chunked_param))
+            self._database
+        )
+
+        params = {
+            'u': self._username,
+            'p': self._password,
+            'q': query,
+            'time_precision': time_precision,
+            'chunked': chunked_param
+        }
+
+        response = session.get(url, params=params)
 
         if response.status_code == 200:
             return json.loads(response.content)
