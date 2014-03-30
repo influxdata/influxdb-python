@@ -160,14 +160,16 @@ class TestInfluxDBClient(object):
 
     def test_delete_series(self):
         with patch.object(session, 'delete') as mocked_delete:
-            mocked_delete.return_value = _build_response_object(status_code=204)
+            mocked_delete.return_value = _build_response_object(
+                status_code=204)
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.delete_series('old_series')
 
     @raises(Exception)
     def test_delete_series_fails(self):
         with patch.object(session, 'delete') as mocked_delete:
-            mocked_delete.return_value = _build_response_object(status_code=401)
+            mocked_delete.return_value = _build_response_object(
+                status_code=401)
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.delete_series('old_series')
 
