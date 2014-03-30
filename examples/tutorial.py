@@ -3,7 +3,7 @@ import argparse
 from influxdb import InfluxDBClient
 
 
-def main(host=None, port=None):
+def main(host='localhost', port=8086):
     user = 'root'
     password = 'root'
     dbname = 'example'
