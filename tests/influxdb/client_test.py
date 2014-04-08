@@ -79,7 +79,7 @@ class TestInfluxDBClient(object):
 
     def test_delete_points(self):
         with patch.object(session, 'delete') as mocked_post:
-            mocked_post.return_value = _build_response_object(status_code=200)
+            mocked_post.return_value = _build_response_object(status_code=204)
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             assert cli.delete_points("foo") is True
 
@@ -90,7 +90,7 @@ class TestInfluxDBClient(object):
     @raises(Exception)
     def test_delete_points_with_wrong_name(self):
         with patch.object(session, 'delete') as mocked_post:
-            mocked_post.return_value = _build_response_object(status_code=500)
+            mocked_post.return_value = _build_response_object(status_code=400)
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.delete_points("nonexist")
 
