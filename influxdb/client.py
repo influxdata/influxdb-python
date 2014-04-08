@@ -92,16 +92,25 @@ class InfluxDBClient(object):
 
     # One Time Deletes
 
-    def delete_points(self, name,
-                      regex=None, start_epoch=None, end_epoch=None):
+    def delete_points(self, name):
         """
-        TODO: Delete a range of data
+        Delete an entire series
+        """
+        url_format = "{0}/db/{1}/series/{2}?u={3}&p={4}"
 
-        2013-11-08: This endpoint has not been implemented yet in ver0.0.8,
-        but it is documented in http://influxdb.org/docs/api/http.html.
-        See also: src/api/http/api.go:l57
-        """
-        raise NotImplementedError()
+        response = session.delete(url_format.format(
+            self._baseurl,
+            self._database,
+            name,
+            self._username,
+            self._password),
+            headers=self._headers)
+
+        if response.status_code == 204:
+            return True
+        else:
+            raise Exception(
+                "{0}: {1}".format(response.status_code, response.content))
 
     # Regularly Scheduled Deletes
 

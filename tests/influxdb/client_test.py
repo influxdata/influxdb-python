@@ -77,10 +77,22 @@ class TestInfluxDBClient(object):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.write_points_with_precision([])
 
-    @raises(NotImplementedError)
     def test_delete_points(self):
-        cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-        cli.delete_points([])
+        with patch.object(session, 'delete') as mocked_post:
+            mocked_post.return_value = _build_response_object(status_code=204)
+            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
+            assert cli.delete_points("foo") is True
+
+            assert len(mocked_post.call_args_list) == 1
+            args, kwds = mocked_post.call_args_list[0]
+            assert args[0].endswith('/db/db/series/foo?u=username&p=password')
+
+    @raises(Exception)
+    def test_delete_points_with_wrong_name(self):
+        with patch.object(session, 'delete') as mocked_post:
+            mocked_post.return_value = _build_response_object(status_code=400)
+            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
+            cli.delete_points("nonexist")
 
     @raises(NotImplementedError)
     def test_create_scheduled_delete(self):
