@@ -6,3 +6,13 @@ dist/
 build/
 mock*/
 nose*/
+.pybuild/
+debian/files
+debian/python-influxdb.debhelper.log
+debian/python-influxdb.postinst.debhelper
+debian/python-influxdb.prerm.debhelper
+debian/python-influxdb.substvars
+debian/python-influxdb/
+debian/python3-influxdb.debhelper.log
+debian/python3-influxdb.substvars
+debian/python3-influxdb/
