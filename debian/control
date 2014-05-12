@@ -10,27 +10,25 @@ Build-Depends: debhelper (>= 8),
                python-all,
                python-setuptools,
                python-requests,
-               python-six,
                python-mock,
                python-nose,
                python3-all,
                python3-setuptools,
                python3-requests,
-               python3-six,
                python3-mock,
                python3-nose
 Standards-Version: 3.9.5
 
 Package: python-influxdb
 Architecture: all
-Depends: ${misc:Depends}, ${python:Depends}, python-six, python-requests (>= 1.0.3)
+Depends: ${misc:Depends}, ${python:Depends}, python-requests (>= 1.0.3)
 Description: Python client for InfluxDB
  .
  This is the Python 2 compatible package.
 
 Package: python3-influxdb
 Architecture: all
-Depends: ${misc:Depends}, ${python3:Depends}, python3-six, python3-requests
+Depends: ${misc:Depends}, ${python3:Depends}, python3-requests
 Description: Python client for InfluxDB
  .
  This is the Python 3 compatible package.
