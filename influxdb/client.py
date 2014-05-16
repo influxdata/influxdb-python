@@ -62,7 +62,7 @@ class InfluxDBClient(object):
     def write_points(self, *args, **kwargs):
         """
         Write to multiple time series names
-        
+
         Parameters
         ----------
         batch_size : Optional. Int value to write the points in batches instead
@@ -83,14 +83,18 @@ class InfluxDBClient(object):
                 name = data.get('name')
                 columns = data.get('columns')
                 point_list = data.get('points')
-                total_batches = len(point_list) * 1.0/batch_size
+
                 for batch in list_chunks(point_list, batch_size):
-                    data = [{"points": batch,
-                         "name": name,
-                         "columns": columns}]
+                    data = [{
+                        "points": batch,
+                        "name": name,
+                        "columns": columns
+                    }]
                     time_precision = kwargs.get('time_precision', 's')
-                    self.write_points_with_precision(data=data,
+                    self.write_points_with_precision(
+                        data=data,
                         time_precision=time_precision)
+
                 return True
 
         return self.write_points_with_precision(*args, **kwargs)
