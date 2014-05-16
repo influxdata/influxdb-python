@@ -14,7 +14,7 @@ class InfluxDBClient(object):
     """
 
     def __init__(self, host='localhost', port=8086, username='root',
-                 password='root', database=None):
+                 password='root', database=None, ssl=False):
         """
         Initialize client
         """
@@ -23,7 +23,15 @@ class InfluxDBClient(object):
         self._username = username
         self._password = password
         self._database = database
-        self._baseurl = "http://{0}:{1}".format(self._host, self._port)
+        self._scheme = "http"
+
+        if ssl is True:
+            self._scheme = "https"
+
+        self._baseurl = "{0}://{1}:{2}".format(
+            self._scheme,
+            self._host,
+            self._port)
 
         self._headers = {
             'Content-type': 'application/json',
