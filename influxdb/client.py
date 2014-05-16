@@ -13,17 +13,26 @@ class InfluxDBClient(object):
     InfluxDB Client
     """
 
-    def __init__(self, host='localhost', port=8086, username='root',
+    def __init__(self, host='localhost', port='8086',
+                 url=False, verify=False, username='root',
                  password='root', database=None):
         """
         Initialize client
+        
+        to use SSL, define url='https://localhost:8084'
+        to validate the SSL cert, set verify=True
         """
-        self._host = host
-        self._port = port
         self._username = username
         self._password = password
         self._database = database
-        self._baseurl = "http://{0}:{1}".format(self._host, self._port)
+        self._verify = verify
+        # keep backward compatibility
+        if url:
+            self._baseurl = url
+        else:
+            self._host = host
+            self._port = port
+            self._baseurl = "http://{0}:{1}".format(self._host, self._port)
 
         self._headers = {
             'Content-type': 'application/json',
@@ -112,7 +121,8 @@ class InfluxDBClient(object):
             self._password,
             time_precision),
             data=json.dumps(data),
-            headers=self._headers)
+            headers=self._headers,
+            verify=self._verify)
 
         if response.status_code == 200:
             return True
@@ -134,7 +144,8 @@ class InfluxDBClient(object):
             name,
             self._username,
             self._password),
-            headers=self._headers)
+            headers=self._headers,
+            verify=self._verify)
 
         if response.status_code == 204:
             return True
@@ -207,7 +218,8 @@ class InfluxDBClient(object):
             'chunked': chunked_param
         }
 
-        response = session.get(url, params=params)
+        response = session.get(url, params=params,
+                   verify=self._verify)
 
         if response.status_code == 200:
             return json.loads(response.content)
@@ -237,7 +249,8 @@ class InfluxDBClient(object):
             self._username,
             self._password),
             data=json.dumps({'name': database}),
-            headers=self._headers)
+            headers=self._headers,
+            verify=self._verify)
 
         if response.status_code == 201:
             return True
@@ -258,7 +271,8 @@ class InfluxDBClient(object):
             self._baseurl,
             database,
             self._username,
-            self._password))
+            self._password),
+            verify=self._verify)
 
         if response.status_code == 204:
             return True
@@ -276,7 +290,8 @@ class InfluxDBClient(object):
         response = session.get("{0}/db?u={1}&p={2}".format(
             self._baseurl,
             self._username,
-            self._password))
+            self._password),
+            verify=self._verify)
 
         if response.status_code == 200:
             return json.loads(response.content)
@@ -298,7 +313,8 @@ class InfluxDBClient(object):
             self._database,
             series,
             self._username,
-            self._password))
+            self._password),
+            verify=self._verify)
 
         if response.status_code == 204:
             return True
@@ -345,7 +361,8 @@ class InfluxDBClient(object):
             "{0}/cluster_admins?u={1}&p={2}".format(
                 self._baseurl,
                 self._username,
-                self._password))
+                self._password),
+                verify=self._verify)
 
         if response.status_code == 200:
             return response.json()
@@ -365,7 +382,8 @@ class InfluxDBClient(object):
             data=json.dumps({
                 'name': new_username,
                 'password': new_password}),
-            headers=self._headers)
+            headers=self._headers,
+            verify=self._verify)
 
         if response.status_code == 200:
             return True
@@ -385,7 +403,8 @@ class InfluxDBClient(object):
                 self._password),
             data=json.dumps({
                 'password': new_password}),
-            headers=self._headers)
+            headers=self._headers,
+            verify=self._verify)
 
         if response.status_code == 200:
             return True
@@ -401,7 +420,8 @@ class InfluxDBClient(object):
             self._baseurl,
             username,
             self._username,
-            self._password))
+            self._password),
+            verify=self._verify)
 
         if response.status_code == 204:
             return True
@@ -430,7 +450,8 @@ class InfluxDBClient(object):
                 self._username,
                 self._password),
             data=json.dumps({'admin': is_admin}),
-            headers=self._headers)
+            headers=self._headers,
+            verify=self._verify)
         if response.status_code == 200:
             return True
         else:
@@ -504,7 +525,8 @@ class InfluxDBClient(object):
                 self._baseurl,
                 self._database,
                 self._username,
-                self._password))
+                self._password),
+                verify=self._verify)
 
         if response.status_code == 200:
             return response.json()
@@ -525,7 +547,8 @@ class InfluxDBClient(object):
             data=json.dumps({
                 'name': new_username,
                 'password': new_password}),
-            headers=self._headers)
+            headers=self._headers,
+            verify=self._verify)
 
         if response.status_code == 200:
             return True
@@ -546,7 +569,8 @@ class InfluxDBClient(object):
                 self._password),
             data=json.dumps({
                 'password': new_password}),
-            headers=self._headers)
+            headers=self._headers,
+            verify=self._verify)
 
         if response.status_code == 200:
             if username == self._username:
@@ -566,7 +590,8 @@ class InfluxDBClient(object):
                 self._database,
                 username,
                 self._username,
-                self._password))
+                self._password),
+                verify=self._verify)
 
         if response.status_code == 200:
             return True
