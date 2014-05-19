@@ -36,6 +36,14 @@ def _mocked_session( method="GET", status_code=200, content=""):
 
 
 class TestInfluxDBClient(object):
+
+    def test_scheme(self):
+        cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
+        assert cli._baseurl == 'http://host:8086'
+
+        cli = InfluxDBClient('host', 8086, 'username', 'password', 'database', ssl=True)
+        assert cli._baseurl == 'https://host:8086'
+
     def test_switch_db(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
         cli.switch_db('another_database')
