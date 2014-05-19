@@ -17,6 +17,24 @@ def _build_response_object(status_code=200, content=""):
     return resp
 
 
+def _mocked_session( method="GET", status_code=200, content=""):
+
+    method = method.upper()
+
+    def check_method(*args, **kwargs):
+        # Check method
+        assert method == kwargs.get('method', 'GET')
+        return _build_response_object(status_code=status_code, content=content)
+
+    mocked = patch.object(
+        session,
+        'request',
+        side_effect = check_method
+        )
+
+    return mocked
+
+
 class TestInfluxDBClient(object):
     def test_switch_db(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
@@ -41,15 +59,13 @@ class TestInfluxDBClient(object):
             }
         ]
 
-        with patch.object(session, 'post') as mocked_post:
-            mocked_post.return_value = _build_response_object(status_code=200)
+        with _mocked_session('post', 200) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             assert cli.write_points(data) is True
 
     @raises(Exception)
     def test_write_points_fails(self):
-        with patch.object(session, 'post') as mocked_post:
-            mocked_post.return_value = _build_response_object(status_code=500)
+        with _mocked_session('post', 500) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.write_points([])
 
@@ -65,32 +81,30 @@ class TestInfluxDBClient(object):
             }
         ]
 
-        with patch.object(session, 'post') as mocked_post:
-            mocked_post.return_value = _build_response_object(status_code=200)
+        with _mocked_session('post', 200) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             assert cli.write_points_with_precision(data) is True
 
     @raises(Exception)
     def test_write_points_with_precision_fails(self):
-        with patch.object(session, 'post') as mocked_post:
-            mocked_post.return_value = _build_response_object(status_code=500)
+        with _mocked_session('post', 500) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.write_points_with_precision([])
 
     def test_delete_points(self):
-        with patch.object(session, 'delete') as mocked_post:
-            mocked_post.return_value = _build_response_object(status_code=204)
+        with _mocked_session('delete', 204) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             assert cli.delete_points("foo") is True
 
-            assert len(mocked_post.call_args_list) == 1
-            args, kwds = mocked_post.call_args_list[0]
-            assert args[0].endswith('/db/db/series/foo?u=username&p=password')
+            assert len(mocked.call_args_list) == 1
+            args, kwds = mocked.call_args_list[0]
+
+            assert kwds['params'] == {'u': 'username', 'p': 'password'}
+            assert kwds['url'] == 'http://host:8086/db/db/series/foo'
 
     @raises(Exception)
     def test_delete_points_with_wrong_name(self):
-        with patch.object(session, 'delete') as mocked_post:
-            mocked_post.return_value = _build_response_object(status_code=400)
+        with _mocked_session('delete', 400) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.delete_points("nonexist")
 
@@ -114,74 +128,60 @@ class TestInfluxDBClient(object):
                     '"columns":["time","sequence_number","column_one"],'
                     '"points":[[1383876043,16,"2"],[1383876043,15,"1"],'
                     '[1383876035,14,"2"],[1383876035,13,"1"]]}]')
-        with patch.object(session, 'get') as mocked_get:
-            mocked_get.return_value = _build_response_object(
-                status_code=200,
-                content=expected)
+        with _mocked_session('get', 200, expected) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             result = cli.query('select column_one from foo;')
             assert len(result[0]['points']) == 4
 
     @raises(Exception)
     def test_query_fail(self):
-        with patch.object(session, 'get') as mocked_get:
-            mocked_get.return_value = _build_response_object(status_code=401)
+        with _mocked_session('get', 401) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.query('select column_one from foo;')
 
     def test_create_database(self):
-        with patch.object(session, 'post') as mocked_post:
-            mocked_post.return_value = _build_response_object(status_code=201)
+        with _mocked_session('post', 201) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             assert cli.create_database('new_db') is True
 
     @raises(Exception)
     def test_creata_database_fails(self):
-        with patch.object(session, 'post') as mocked_post:
-            mocked_post.return_value = _build_response_object(status_code=401)
+        with _mocked_session('post', 401) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.create_database('new_db')
 
     def test_delete_database(self):
-        with patch.object(session, 'delete') as mocked_post:
-            mocked_post.return_value = _build_response_object(status_code=204)
+        with _mocked_session('delete', 204) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             assert cli.delete_database('old_db') is True
 
     @raises(Exception)
     def test_delete_database_fails(self):
-        with patch.object(session, 'delete') as mocked_post:
-            mocked_post.return_value = _build_response_object(status_code=401)
+        with _mocked_session('delete', 401) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.delete_database('old_db')
 
     def test_get_database_list(self):
-        with patch.object(session, 'get') as mocked_get:
-            mocked_get.return_value = _build_response_object(
-                status_code=200, content='[{"name": "a_db"}]')
+        expected = ('[{"name": "a_db"}]')
+        with _mocked_session('get', 200, expected) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password')
             assert len(cli.get_database_list()) == 1
             assert cli.get_database_list()[0]['name'] == 'a_db'
 
     @raises(Exception)
     def test_get_database_list_fails(self):
-        with patch.object(session, 'get') as mocked_get:
-            mocked_get.return_value = _build_response_object(status_code=401)
+        with _mocked_session('get', 401) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password')
             cli.get_database_list()
 
     def test_delete_series(self):
-        with patch.object(session, 'delete') as mocked_delete:
-            mocked_delete.return_value = _build_response_object(
-                status_code=204)
+        with _mocked_session('delete', 204) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.delete_series('old_series')
 
     @raises(Exception)
     def test_delete_series_fails(self):
-        with patch.object(session, 'delete') as mocked_delete:
-            mocked_delete.return_value = _build_response_object(
-                status_code=401)
+        with _mocked_session('delete', 401) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.delete_series('old_series')
 
