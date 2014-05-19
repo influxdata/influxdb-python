@@ -14,7 +14,7 @@ class InfluxDBClient(object):
     """
 
     def __init__(self, host='localhost', port=8086, username='root',
-                 password='root', database=None):
+                 password='root', database=None, ssl=False, verify_ssl=False):
         """
         Initialize client
         """
@@ -23,7 +23,18 @@ class InfluxDBClient(object):
         self._username = username
         self._password = password
         self._database = database
-        self._baseurl = "http://{0}:{1}".format(self._host, self._port)
+
+        self._verify_ssl = verify_ssl
+
+        self._scheme = "http"
+
+        if ssl is True:
+            self._scheme = "https"
+
+        self._baseurl = "{0}://{1}:{2}".format(
+            self._scheme,
+            self._host,
+            self._port)
 
         self._headers = {
             'Content-type': 'application/json',
@@ -52,6 +63,41 @@ class InfluxDBClient(object):
         """
         self._username = username
         self._password = password
+
+    def request(self, url, method='GET', params=None, data=None,
+                status_code=200):
+        """
+        Make a http request to API
+        """
+        url = "{0}/{1}".format(self._baseurl, url)
+
+        if isinstance(data, dict):
+            data = json.dumps(data)
+
+        if params is None:
+            params = {}
+
+        auth = {
+            'u': self._username,
+            'p': self._password
+        }
+
+        params.update(auth)
+
+        response = session.request(
+            method=method,
+            url=url,
+            params=params,
+            data=data,
+            headers=self._headers,
+            verify=self._verify_ssl
+            )
+
+        if response.status_code == status_code:
+            return response
+        else:
+            raise Exception(
+                "{0}: {1}".format(response.status_code, response.content))
 
     # Writing Data
     #
@@ -107,22 +153,20 @@ class InfluxDBClient(object):
             raise Exception(
                 "Invalid time precision is given. (use 's','m' or 'u')")
 
-        url_format = "{0}/db/{1}/series?u={2}&p={3}&time_precision={4}"
+        url = "db/{0}/series".format(self._database)
 
-        response = session.post(url_format.format(
-            self._baseurl,
-            self._database,
-            self._username,
-            self._password,
-            time_precision),
-            data=json.dumps(data),
-            headers=self._headers)
+        params = {
+            'time_precision': time_precision
+        }
 
-        if response.status_code == 200:
-            return True
-        else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+        self.request(
+            url=url,
+            method='POST',
+            params=params,
+            status_code=200
+            )
+
+        return True
 
     # One Time Deletes
 
@@ -130,21 +174,15 @@ class InfluxDBClient(object):
         """
         Delete an entire series
         """
-        url_format = "{0}/db/{1}/series/{2}?u={3}&p={4}"
+        url = "db/{0}/series/{1}".format(self._database, name)
 
-        response = session.delete(url_format.format(
-            self._baseurl,
-            self._database,
-            name,
-            self._username,
-            self._password),
-            headers=self._headers)
+        self.request(
+            url=url,
+            method='DELETE',
+            status_code=204
+            )
 
-        if response.status_code == 204:
-            return True
-        else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+        return True
 
     # Regularly Scheduled Deletes
 
@@ -201,23 +239,22 @@ class InfluxDBClient(object):
             chunked_param = 'false'
 
         # Build the URL of the serie to query
-        url = "{0}/db/{1}/series".format(self._baseurl, self._database)
+        url = "db/{0}/series".format(self._database)
 
         params = {
-            'u': self._username,
-            'p': self._password,
             'q': query,
             'time_precision': time_precision,
             'chunked': chunked_param
         }
 
-        response = session.get(url, params=params)
+        response = self.request(
+            url=url,
+            method='GET',
+            params=params,
+            status_code=200
+            )
 
-        if response.status_code == 200:
-            return json.loads(response.content)
-        else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+        return json.loads(response.content)
 
     # Creating and Dropping Databases
     #
@@ -236,18 +273,18 @@ class InfluxDBClient(object):
         database: string
             database name
         """
-        response = session.post("{0}/db?u={1}&p={2}".format(
-            self._baseurl,
-            self._username,
-            self._password),
-            data=json.dumps({'name': database}),
-            headers=self._headers)
+        url = "db"
 
-        if response.status_code == 201:
-            return True
-        else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+        data = {'name': database}
+
+        self.request(
+            url=url,
+            method='POST',
+            data=data,
+            status_code=201
+            )
+
+        return True
 
     def delete_database(self, database):
         """
@@ -258,17 +295,15 @@ class InfluxDBClient(object):
         database: string
             database name
         """
-        response = session.delete("{0}/db/{1}?u={2}&p={3}".format(
-            self._baseurl,
-            database,
-            self._username,
-            self._password))
+        url = "db/{0}".format(database)
 
-        if response.status_code == 204:
-            return True
-        else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+        self.request(
+            url=url,
+            method='DELETE',
+            status_code=204
+            )
+
+        return True
 
     # ### get list of databases
     # curl -X GET http://localhost:8086/db
@@ -277,16 +312,15 @@ class InfluxDBClient(object):
         """
         Get the list of databases
         """
-        response = session.get("{0}/db?u={1}&p={2}".format(
-            self._baseurl,
-            self._username,
-            self._password))
+        url = "db"
 
-        if response.status_code == 200:
-            return json.loads(response.content)
-        else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+        response = self.request(
+            url=url,
+            method='GET',
+            status_code=200
+            )
+
+        return json.loads(response.content)
 
     def delete_series(self, series):
         """
@@ -297,18 +331,18 @@ class InfluxDBClient(object):
         series: string
             series name
         """
-        response = session.delete("{0}/db/{1}/series/{2}?u={3}&p={4}".format(
-            self._baseurl,
+        url = "db/{0}/series/{1}".format(
             self._database,
-            series,
-            self._username,
-            self._password))
+            series
+            )
 
-        if response.status_code == 204:
-            return True
-        else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+        self.request(
+            url=url,
+            method='DELETE',
+            status_code=204
+            )
+
+        return True
 
     # Security
     # get list of cluster admins
@@ -345,73 +379,64 @@ class InfluxDBClient(object):
         """
         Get list of cluster admins
         """
-        response = session.get(
-            "{0}/cluster_admins?u={1}&p={2}".format(
-                self._baseurl,
-                self._username,
-                self._password))
+        response = self.request(
+            url="cluster_admins",
+            method='GET',
+            status_code=200
+            )
 
-        if response.status_code == 200:
-            return response.json()
-        else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+        return response.json()
 
     def add_cluster_admin(self, new_username, new_password):
         """
         Add cluster admin
         """
-        response = session.post(
-            "{0}/cluster_admins?u={1}&p={2}".format(
-                self._baseurl,
-                self._username,
-                self._password),
-            data=json.dumps({
-                'name': new_username,
-                'password': new_password}),
-            headers=self._headers)
+        data = {
+            'name': new_username,
+            'password': new_password
+        }
 
-        if response.status_code == 200:
-            return True
-        else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+        self.request(
+            url="cluster_admins",
+            method='POST',
+            data=data,
+            status_code=200
+            )
+
+        return True
 
     def update_cluster_admin_password(self, username, new_password):
         """
         Update cluster admin password
         """
-        response = session.post(
-            "{0}/cluster_admins/{1}?u={2}&p={3}".format(
-                self._baseurl,
-                username,
-                self._username,
-                self._password),
-            data=json.dumps({
-                'password': new_password}),
-            headers=self._headers)
+        url = "cluster_admins/{0}".format(username)
 
-        if response.status_code == 200:
-            return True
-        else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+        data = {
+            'password': new_password
+        }
+
+        self.request(
+            url=url,
+            method='POST',
+            data=data,
+            status_code=200
+            )
+
+        return True
 
     def delete_cluster_admin(self, username):
         """
         Delete cluster admin
         """
-        response = session.delete("{0}/cluster_admins/{1}?u={2}&p={3}".format(
-            self._baseurl,
-            username,
-            self._username,
-            self._password))
+        url = "cluster_admins/{0}".format(username)
 
-        if response.status_code == 204:
-            return True
-        else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+        self.request(
+            url=url,
+            method='DELETE',
+            status_code=204
+            )
+
+        return True
 
     def set_database_admin(self, username):
         """
@@ -426,20 +451,18 @@ class InfluxDBClient(object):
         return self.alter_database_admin(username, False)
 
     def alter_database_admin(self, username, is_admin):
-        response = session.post(
-            "{0}/db/{1}/users/{2}?u={3}&p={4}".format(
-                self._baseurl,
-                self._database,
-                username,
-                self._username,
-                self._password),
-            data=json.dumps({'admin': is_admin}),
-            headers=self._headers)
-        if response.status_code == 200:
-            return True
-        else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+        url = "db/{0}/users/{1}".format(self._database, username)
+
+        data = {'admin': is_admin}
+
+        self.request(
+            url=url,
+            method='POST',
+            data=data,
+            status_code=200
+            )
+
+        return True
 
     def get_list_database_admins(self):
         """
@@ -503,80 +526,71 @@ class InfluxDBClient(object):
         """
         Get list of database users
         """
-        response = session.get(
-            "{0}/db/{1}/users?u={2}&p={3}".format(
-                self._baseurl,
-                self._database,
-                self._username,
-                self._password))
+        url = "db/{0}/users".format(self._database)
 
-        if response.status_code == 200:
-            return response.json()
-        else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+        response = self.request(
+            url=url,
+            method='GET',
+            status_code=200
+            )
+
+        return response.json()
 
     def add_database_user(self, new_username, new_password):
         """
         Add database user
         """
-        response = session.post(
-            "{0}/db/{1}/users?u={2}&p={3}".format(
-                self._baseurl,
-                self._database,
-                self._username,
-                self._password),
-            data=json.dumps({
-                'name': new_username,
-                'password': new_password}),
-            headers=self._headers)
+        url = "db/{0}/users".format(self._database)
 
-        if response.status_code == 200:
-            return True
-        else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+        data = {
+            'name': new_username,
+            'password': new_password
+        }
+
+        self.request(
+            url=url,
+            method='POST',
+            data=data,
+            status_code=200
+            )
+
+        return True
 
     def update_database_user_password(self, username, new_password):
         """
         Update password
         """
-        response = session.post(
-            "{0}/db/{1}/users/{2}?u={3}&p={4}".format(
-                self._baseurl,
-                self._database,
-                username,
-                self._username,
-                self._password),
-            data=json.dumps({
-                'password': new_password}),
-            headers=self._headers)
+        url = "db/{0}/users/{1}".format(self._database, username)
 
-        if response.status_code == 200:
-            if username == self._username:
-                self._password = new_password
-            return True
-        else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+        data = {
+            'password': new_password
+        }
+
+        self.request(
+            url=url,
+            method='POST',
+            data=data,
+            status_code=200
+            )
+
+        if username == self._username:
+            self._password = new_password
+
+        return True
 
     def delete_database_user(self, username):
         """
         Delete database user
         """
-        response = session.delete(
-            "{0}/db/{1}/users/{2}?u={3}&p={4}".format(
-                self._baseurl,
-                self._database,
-                username,
-                self._username,
-                self._password))
+        url = "db/{0}/users/{1}".format(self._database, username)
 
-        if response.status_code == 200:
-            return True
-        else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+        self.request(
+            url=url,
+            method='DELETE',
+            status_code=200
+            )
+
+        return True
 
     # update the user by POSTing to db/site_dev/users/paul
 
