@@ -71,9 +71,6 @@ class InfluxDBClient(object):
         """
         url = "{0}/{1}".format(self._baseurl, url)
 
-        if isinstance(data, dict):
-            data = json.dumps(data)
-
         if params is None:
             params = {}
 
@@ -83,6 +80,9 @@ class InfluxDBClient(object):
         }
 
         params.update(auth)
+
+        if not isinstance(data, dict):
+            data = json.dumps(data)
 
         response = session.request(
             method=method,
@@ -163,7 +163,7 @@ class InfluxDBClient(object):
             url=url,
             method='POST',
             params=params,
-            data=json.dumps(data),
+            data=data,
             status_code=200
             )
 

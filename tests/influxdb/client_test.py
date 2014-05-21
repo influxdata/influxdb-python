@@ -2,6 +2,7 @@
 """
 unit tests
 """
+import json
 import requests
 from nose.tools import raises
 from mock import patch
@@ -24,7 +25,14 @@ def _mocked_session( method="GET", status_code=200, content=""):
     def check_method(*args, **kwargs):
         # Check method
         assert method == kwargs.get('method', 'GET')
-        return _build_response_object(status_code=status_code, content=content)
+        c = content
+        if method == 'POST':
+            if not isinstance(c, dict):
+                c = json.dumps(c)
+            assert c == kwargs.get('data')
+            c = ''
+
+        return _build_response_object(status_code=status_code, content=c)
 
     mocked = patch.object(
         session,
@@ -67,7 +75,7 @@ class TestInfluxDBClient(object):
             }
         ]
 
-        with _mocked_session('post', 200) as mocked:
+        with _mocked_session('post', 200, data) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             assert cli.write_points(data) is True
 
@@ -89,7 +97,7 @@ class TestInfluxDBClient(object):
             }
         ]
 
-        with _mocked_session('post', 200) as mocked:
+        with _mocked_session('post', 200, data) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             assert cli.write_points_with_precision(data) is True
 
@@ -148,7 +156,7 @@ class TestInfluxDBClient(object):
             cli.query('select column_one from foo;')
 
     def test_create_database(self):
-        with _mocked_session('post', 201) as mocked:
+        with _mocked_session('post', 201, {"name": "new_db"}) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             assert cli.create_database('new_db') is True
 
