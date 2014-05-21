@@ -163,6 +163,7 @@ class InfluxDBClient(object):
             url=url,
             method='POST',
             params=params,
+            data=json.dumps(data),
             status_code=200
             )
 
