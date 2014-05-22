@@ -18,26 +18,38 @@ def _build_response_object(status_code=200, content=""):
     return resp
 
 
-def _mocked_session( method="GET", status_code=200, content=""):
+def _mocked_session(method="GET", status_code=200, content=""):
 
     method = method.upper()
 
-    def check_method(*args, **kwargs):
+    def request(*args, **kwargs):
+        c = content
+
         # Check method
         assert method == kwargs.get('method', 'GET')
-        c = content
+
         if method == 'POST':
-            if not isinstance(c, dict):
-                c = json.dumps(c)
-            assert c == kwargs.get('data')
-            c = ''
+            data = kwargs.get('data', None)
+
+            if data is not None:
+                # Data must be a string
+                assert isinstance(data, str)
+
+                # Data must be a JSON string
+                assert c == json.loads(data)
+
+                c = data
+
+        # Anyway, Content must be a JSON string (or empty string)
+        if not isinstance(c, str):
+            c =  json.dumps(c)
 
         return _build_response_object(status_code=status_code, content=c)
 
     mocked = patch.object(
         session,
         'request',
-        side_effect = check_method
+        side_effect = request
         )
 
     return mocked
@@ -140,11 +152,16 @@ class TestInfluxDBClient(object):
         cli.remove_scheduled_delete(1)
 
     def test_query(self):
-        expected = ('[{"name":"foo",'
-                    '"columns":["time","sequence_number","column_one"],'
-                    '"points":[[1383876043,16,"2"],[1383876043,15,"1"],'
-                    '[1383876035,14,"2"],[1383876035,13,"1"]]}]')
-        with _mocked_session('get', 200, expected) as mocked:
+        data = [
+            {   "name":"foo",
+                "columns": ["time", "sequence_number", "column_one"],
+                "points": [
+                    [1383876043, 16, "2"], [1383876043, 15, "1"],
+                    [1383876035, 14, "2"], [1383876035, 13, "1"]
+                ]
+            }
+        ]
+        with _mocked_session('get', 200, data) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             result = cli.query('select column_one from foo;')
             assert len(result[0]['points']) == 4
@@ -161,7 +178,7 @@ class TestInfluxDBClient(object):
             assert cli.create_database('new_db') is True
 
     @raises(Exception)
-    def test_creata_database_fails(self):
+    def test_create_database_fails(self):
         with _mocked_session('post', 401) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.create_database('new_db')
@@ -178,8 +195,10 @@ class TestInfluxDBClient(object):
             cli.delete_database('old_db')
 
     def test_get_database_list(self):
-        expected = ('[{"name": "a_db"}]')
-        with _mocked_session('get', 200, expected) as mocked:
+        data = [
+            {"name": "a_db"}
+        ]
+        with _mocked_session('get', 200, data) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password')
             assert len(cli.get_database_list()) == 1
             assert cli.get_database_list()[0]['name'] == 'a_db'
