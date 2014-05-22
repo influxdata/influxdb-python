@@ -81,7 +81,7 @@ class InfluxDBClient(object):
 
         params.update(auth)
 
-        if not isinstance(data, dict):
+        if data is not None and not isinstance(data, str):
             data = json.dumps(data)
 
         response = session.request(
