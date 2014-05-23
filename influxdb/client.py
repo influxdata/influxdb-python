@@ -96,8 +96,8 @@ class InfluxDBClient(object):
         if response.status_code == status_code:
             return response
         else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+            raise Exception({"code": response.status_code,
+                "message": "{0}: {1}".format(response.status_code, response.content)})
 
     # Writing Data
     #
