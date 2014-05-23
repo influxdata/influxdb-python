@@ -7,6 +7,9 @@ import json
 import requests
 session = requests.Session()
 
+class InfluxDBClientError(Exception):
+    "Raised when an error occures in Influxdb Client"
+    pass
 
 class InfluxDBClient(object):
     """
@@ -95,9 +98,12 @@ class InfluxDBClient(object):
 
         if response.status_code == status_code:
             return response
+            
         else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+            error = InfluxDBClientError()
+            error.message = "{0}: {1}".format(response.status_code, response.content)
+            error.code = response.status_code
+            raise error
 
     # Writing Data
     #
