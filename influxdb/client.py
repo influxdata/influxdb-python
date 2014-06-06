@@ -7,11 +7,13 @@ import socket
 import requests
 session = requests.Session()
 
+
 class InfluxDBClientError(Exception):
     "Raised when an error occures in the Request"
     def __init__(self, message, code):
-      self.message = message
-      self.code = code
+        self.message = message
+        self.code = code
+
 
 class InfluxDBClient(object):
     """
@@ -118,7 +120,10 @@ class InfluxDBClient(object):
             return response
 
         else:
-            error = InfluxDBClientError("{0}: {1}".format(response.status_code, response.content), response.status_code)
+            error = InfluxDBClientError(
+                "{0}: {1}".format(response.status_code, response.content),
+                response.status_code
+            )
             raise error
 
     # Writing Data
