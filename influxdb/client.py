@@ -3,7 +3,7 @@
 python client for influxdb
 """
 import json
-
+import socket
 import requests
 session = requests.Session()
 
@@ -13,8 +13,18 @@ class InfluxDBClient(object):
     InfluxDB Client
     """
 
-    def __init__(self, host='localhost', port=8086, username='root',
-                 password='root', database=None, ssl=False, verify_ssl=False):
+    def __init__(
+            self,
+            host='localhost',
+            port=8086,
+            username='root',
+            password='root',
+            database=None,
+            ssl=False,
+            verify_ssl=False,
+            use_udp=False,
+            udp_port=4444):
+
         """
         Initialize client
         """
@@ -25,6 +35,11 @@ class InfluxDBClient(object):
         self._database = database
 
         self._verify_ssl = verify_ssl
+
+        self.use_udp = use_udp
+        self.udp_port = udp_port
+        if use_udp:
+            self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         self._scheme = "http"
 
@@ -159,13 +174,16 @@ class InfluxDBClient(object):
             'time_precision': time_precision
         }
 
-        self.request(
-            url=url,
-            method='POST',
-            params=params,
-            data=data,
-            status_code=200
-            )
+        if self.use_udp:
+            self.send_packet(data)
+        else:
+            self.request(
+                url=url,
+                method='POST',
+                params=params,
+                data=data,
+                status_code=200
+                )
 
         return True
 
@@ -604,3 +622,8 @@ class InfluxDBClient(object):
         See also: src/api/http/api.go:l57
         """
         raise NotImplementedError()
+
+    def send_packet(self, packet):
+        data = json.dumps(packet)
+        byte = data.encode('utf-8')
+        self.udp_socket.sendto(byte, (self._host, self.udp_port))
