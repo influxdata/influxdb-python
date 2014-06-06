@@ -7,24 +7,28 @@ import socket
 import requests
 session = requests.Session()
 
+class InfluxDBClientError(Exception):
+    "Raised when an error occures in the Request"
+    def __init__(self, message, code):
+      self.message = message
+      self.code = code
 
 class InfluxDBClient(object):
     """
     InfluxDB Client
     """
 
-    def __init__(
-            self,
-            host='localhost',
-            port=8086,
-            username='root',
-            password='root',
-            database=None,
-            ssl=False,
-            verify_ssl=False,
-            use_udp=False,
-            udp_port=4444):
-
+    def __init__(self,
+                 host='localhost',
+                 port=8086,
+                 username='root',
+                 password='root',
+                 database=None,
+                 ssl=False,
+                 verify_ssl=False,
+                 timeout=0,
+                 use_udp=False,
+                 udp_port=4444):
         """
         Initialize client
         """
@@ -33,6 +37,7 @@ class InfluxDBClient(object):
         self._username = username
         self._password = password
         self._database = database
+        self._timeout = timeout
 
         self._verify_ssl = verify_ssl
 
@@ -105,14 +110,16 @@ class InfluxDBClient(object):
             params=params,
             data=data,
             headers=self._headers,
-            verify=self._verify_ssl
+            verify=self._verify_ssl,
+            timeout=self._timeout
             )
 
         if response.status_code == status_code:
             return response
+
         else:
-            raise Exception(
-                "{0}: {1}".format(response.status_code, response.content))
+            error = InfluxDBClientError("{0}: {1}".format(response.status_code, response.content), response.status_code)
+            raise error
 
     # Writing Data
     #
@@ -273,7 +280,13 @@ class InfluxDBClient(object):
             status_code=200
             )
 
-        return json.loads(response.content)
+        try:
+            res = json.loads(response.content)
+        except TypeError:
+            # must decode in python 3
+            res = json.loads(response.content.decode('utf8'))
+
+        return res
 
     # Creating and Dropping Databases
     #
