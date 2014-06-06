@@ -4,6 +4,7 @@ unit tests
 """
 import json
 import requests
+import socket
 from nose.tools import raises
 from mock import patch
 
@@ -36,7 +37,7 @@ def _mocked_session(method="GET", status_code=200, content=""):
                 assert isinstance(data, str)
 
                 # Data must be a JSON string
-                assert c == json.loads(data)
+                assert c == json.loads(data, strict=True)
 
                 c = data
 
@@ -90,6 +91,27 @@ class TestInfluxDBClient(object):
         with _mocked_session('post', 200, data) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             assert cli.write_points(data) is True
+
+    def test_write_points_udp(self):
+        data = [
+            {
+                "points": [
+                    ["1", 1, 1.0],
+                    ["2", 2, 2.0]
+                ],
+                "name": "foo",
+                "columns": ["column_one", "column_two", "column_three"]
+            }
+        ]
+
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.bind(('0.0.0.0', 4444))
+
+        cli = InfluxDBClient('localhost', 8086, 'root', 'root', 'test', use_udp=True, udp_port=4444)
+        cli.write_points(data)
+
+        received_data, addr = s.recvfrom(1024)
+        assert data == json.loads(received_data.decode(), strict=True)
 
     @raises(Exception)
     def test_write_points_fails(self):

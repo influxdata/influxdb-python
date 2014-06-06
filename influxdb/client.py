@@ -3,7 +3,7 @@
 python client for influxdb
 """
 import json
-
+import socket
 import requests
 session = requests.Session()
 
@@ -12,14 +12,23 @@ class InfluxDBClientError(Exception):
     def __init__(self, message, code):
       self.message = message
       self.code = code
-      
+
 class InfluxDBClient(object):
     """
     InfluxDB Client
     """
 
-    def __init__(self, host='localhost', port=8086, username='root',
-                 password='root', database=None, ssl=False, verify_ssl=False, timeout=0):
+    def __init__(self,
+                 host='localhost',
+                 port=8086,
+                 username='root',
+                 password='root',
+                 database=None,
+                 ssl=False,
+                 verify_ssl=False,
+                 timeout=0,
+                 use_udp=False,
+                 udp_port=4444):
         """
         Initialize client
         """
@@ -31,6 +40,11 @@ class InfluxDBClient(object):
         self._timeout = timeout
 
         self._verify_ssl = verify_ssl
+
+        self.use_udp = use_udp
+        self.udp_port = udp_port
+        if use_udp:
+            self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         self._scheme = "http"
 
@@ -102,7 +116,7 @@ class InfluxDBClient(object):
 
         if response.status_code == status_code:
             return response
-            
+
         else:
             error = InfluxDBClientError("{0}: {1}".format(response.status_code, response.content), response.status_code)
             raise error
@@ -167,13 +181,16 @@ class InfluxDBClient(object):
             'time_precision': time_precision
         }
 
-        self.request(
-            url=url,
-            method='POST',
-            params=params,
-            data=data,
-            status_code=200
-            )
+        if self.use_udp:
+            self.send_packet(data)
+        else:
+            self.request(
+                url=url,
+                method='POST',
+                params=params,
+                data=data,
+                status_code=200
+                )
 
         return True
 
@@ -266,7 +283,7 @@ class InfluxDBClient(object):
         try:
             res = json.loads(response.content)
         except TypeError:
-            # must decode in python 3 
+            # must decode in python 3
             res = json.loads(response.content.decode('utf8'))
 
         return res
@@ -618,3 +635,8 @@ class InfluxDBClient(object):
         See also: src/api/http/api.go:l57
         """
         raise NotImplementedError()
+
+    def send_packet(self, packet):
+        data = json.dumps(packet)
+        byte = data.encode('utf-8')
+        self.udp_socket.sendto(byte, (self._host, self.udp_port))
