@@ -255,7 +255,13 @@ class InfluxDBClient(object):
             status_code=200
             )
 
-        return json.loads(response.content)
+        try:
+            res = json.loads(response.content)
+        except TypeError:
+            # must decode in python 3 
+            res = json.loads(response.content.decode('utf8'))
+
+        return res
 
     # Creating and Dropping Databases
     #
