@@ -14,7 +14,7 @@ class InfluxDBClient(object):
     """
 
     def __init__(self, host='localhost', port=8086, username='root',
-                 password='root', database=None, ssl=False, verify_ssl=False):
+                 password='root', database=None, ssl=False, verify_ssl=False, timeout=0):
         """
         Initialize client
         """
@@ -23,6 +23,7 @@ class InfluxDBClient(object):
         self._username = username
         self._password = password
         self._database = database
+        self._timeout = timeout
 
         self._verify_ssl = verify_ssl
 
@@ -90,7 +91,8 @@ class InfluxDBClient(object):
             params=params,
             data=data,
             headers=self._headers,
-            verify=self._verify_ssl
+            verify=self._verify_ssl,
+            timeout=self._timeout
             )
 
         if response.status_code == status_code:
