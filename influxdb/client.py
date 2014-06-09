@@ -28,7 +28,7 @@ class InfluxDBClient(object):
                  database=None,
                  ssl=False,
                  verify_ssl=False,
-                 timeout=0,
+                 timeout=None,
                  use_udp=False,
                  udp_port=4444):
         """
