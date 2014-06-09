@@ -16,3 +16,4 @@ debian/python-influxdb/
 debian/python3-influxdb.debhelper.log
 debian/python3-influxdb.substvars
 debian/python3-influxdb/
+*~
