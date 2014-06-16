@@ -645,3 +645,149 @@ class InfluxDBClient(object):
         data = json.dumps(packet)
         byte = data.encode('utf-8')
         self.udp_socket.sendto(byte, (self._host, self.udp_port))
+
+    def ping(self, database):
+        """
+        List interfaces
+        """
+        url = "ping"
+
+        response = self.request(
+            url=url,
+            method='GET',
+            status_code=200
+            )
+
+        return response.json()
+
+    def force_compaction(self, database):
+        """
+        List interfaces
+        """
+        url = "raft/force_compaction"
+
+        response = self.request(
+            url=url,
+            method='POST',
+            status_code=200
+            )
+
+        return response.json()
+
+    def list_interfaces(self, database):
+        """
+        List interfaces
+        """
+        url = "interfaces"
+
+        response = self.request(
+            url=url,
+            method='GET',
+            status_code=200
+            )
+
+        return response.json()
+
+    # Cluster config endpoints
+    # get list of cluster servers
+    # curl http://localhost:8086/cluster_admins?u=root&p=root
+
+    # remove cluster servers
+    # curl -X POST http://localhost:8086/cluster_admins?u=root&p=root \
+    #      -d '{"name": "paul", "password": "i write teh docz"}'
+
+    # create shard
+    # curl -X POST http://localhost:8086/cluster_admins/paul?u=root&p=root \
+    #      -d '{"password": "new pass"}'
+
+    # get shards
+    # curl -X POST http://localhost:8086/cluster_admins?u=root&p=root \
+    #      -d '{"name": "paul", "password": "i write teh docz"}'
+
+    # drop shard
+    # curl -X POST http://localhost:8086/cluster_admins/paul?u=root&p=root \
+    #      -d '{"password": "new pass"}'
+
+    def cluster_servers(self, database):
+        """
+        List cluster servers
+        """
+        url = "cluster/servers"
+
+        response = self.request(
+            url=url,
+            method='GET',
+            status_code=200
+            )
+
+        return response.json()
+
+    def remove_cluster_servers(self, database):
+        """
+        Remove cluster servers
+        """
+        url = "cluster/servers/{0}".format(self._id)
+
+        response = self.request(
+            url=url,
+            method='GET',
+            status_code=200
+            )
+
+        return response.json()
+
+    def create_shard(self, database):
+        """
+        Make a shard
+        """
+        url = "cluster/shards"
+
+        self.request(
+            url=url,
+            method='POST',
+            status_code=200
+            )
+
+        return True
+
+    def get_shards(self, database):
+        """
+        Get shards
+        """
+        url = "cluster/shards"
+
+        response = self.request(
+            url=url,
+            method='GET',
+            status_code=200
+            )
+
+        return response.json()
+
+    def drop_shard(self, database):
+        """
+        Drop a shard
+        """
+        url = "cluster/shards/{0}".format(self._id)
+
+        self.request(
+            url=url,
+            method='DELETE',
+            status_code=204
+            )
+
+        return True
+
+    def is_in_sync(self, database):
+        """
+        Return whether cluster is in sync or not
+        """
+        url = "sync"
+
+        response = self.request(
+            url=url,
+            method='GET',
+            status_code=200
+            )
+
+        return json.loads(response.text)
