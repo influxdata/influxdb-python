@@ -648,7 +648,7 @@ class InfluxDBClient(object):
 
     def ping(self, database):
         """
-        List interfaces
+        Healthcheck
         """
         url = "ping"
 
@@ -662,27 +662,13 @@ class InfluxDBClient(object):
 
     def force_compaction(self, database):
         """
-        List interfaces
+        Force raft compaction
         """
         url = "raft/force_compaction"
 
         response = self.request(
             url=url,
             method='POST',
-            status_code=200
-            )
-
-        return response.json()
-
-    def list_interfaces(self, database):
-        """
-        List interfaces
-        """
-        url = "interfaces"
-
-        response = self.request(
-            url=url,
-            method='GET',
             status_code=200
             )
 
@@ -777,17 +763,3 @@ class InfluxDBClient(object):
             )
 
         return True
-
-    def is_in_sync(self, database):
-        """
-        Return whether cluster is in sync or not
-        """
-        url = "sync"
-
-        response = self.request(
-            url=url,
-            method='GET',
-            status_code=200
-            )
-
-        return json.loads(response.text)
