@@ -9,9 +9,11 @@ session = requests.Session()
 
 
 class InfluxDBClientError(Exception):
-    "Raised when an error occures in the Request"
-    def __init__(self, message, code):
-        self.message = message
+    "Raised when an error occurs in the request"
+    def __init__(self, content, code):
+        super(InfluxDBClientError, self).__init__(
+            "{0}: {1}".format(code, content))
+        self.content = content
         self.code = code
 
 
@@ -118,13 +120,8 @@ class InfluxDBClient(object):
 
         if response.status_code == status_code:
             return response
-
         else:
-            error = InfluxDBClientError(
-                "{0}: {1}".format(response.status_code, response.content),
-                response.status_code
-            )
-            raise error
+            raise InfluxDBClientError(response.content, response.status_code)
 
     # Writing Data
     #
