@@ -760,3 +760,102 @@ class InfluxDBClient(object):
             )
 
         return True
+
+    def get_subscriptions(self, database):
+        """
+        Get list of subscriptions
+        """
+        url = "db/{0}/subscriptions".format(database)
+
+        response = self.request(
+            url=url,
+            method='GET',
+            status_code=200
+            )
+
+        return response.json()
+
+    def subscribe_ts(self, database, keyword_list, duration, start, end):
+        """
+        Subscribe to a time series
+        """
+        url = "db/{0}/subscriptions".format(database)
+
+        data = {
+            'kws': keyword_list,
+            'duration': duration,
+            'startTm': start,
+            'endTm': end
+        }
+
+        self.request(
+            url=url,
+            method='POST',
+            data=data,
+            status_code=200
+            )
+
+        return True
+
+    def delete_subscription(self, database, keyword):
+        """
+        Delete a subscription
+        """
+        url = "db/{0}/subscriptions/{1}".format(database, keyword)
+
+        self.request(
+            url=url,
+            method='DELETE',
+            status_code=204
+            )
+
+        return True
+
+    def query_subscriptions(self, database):
+        """
+        Return the data from querying the subscriptions
+        """
+        url = "db/{0}/query_subscriptions".format(database)
+
+        request = self.request(
+            url=url,
+            method='POST',
+            status_code=200
+            )
+
+        return request.json()
+
+    def query_current(self, database):
+        """
+        Query the current value
+        """
+        url = "db/{0}/query_current".format(database)
+
+        request = self.request(
+            url=url,
+            method='POST',
+            status_code=200
+            )
+
+        return request.json()
+
+    def query_follow(self, database, keyword, start, end):
+        """
+        Make a query which follows the values
+        """
+        url = "db/{0}/query_follow".format(database)
+
+        data = {
+            'kw': keyword,
+            'startTime': start,
+            'endTime': end
+        }
+
+        request = self.request(
+            url=url,
+            method='POST',
+            data=data,
+            status_code=200
+            )
+
+        return request.json()
