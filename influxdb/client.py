@@ -282,11 +282,14 @@ class InfluxDBClient(object):
             status_code=200
             )
 
-        try:
-            res = json.loads(response.content)
-        except TypeError:
-            # must decode in python 3
-            res = json.loads(response.content.decode('utf8'))
+        if chunked:
+            res = json.loads("[" + response.content.decode('utf8').replace("}{", "},\n{") + "]")
+        else:
+            try:
+                res = json.loads(response.content)
+            except TypeError:
+                # must decode in python 3
+                res = json.loads(response.content.decode('utf8'))
 
         return res
 
