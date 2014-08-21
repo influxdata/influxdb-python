@@ -162,7 +162,7 @@ class InfluxDBClient(object):
         """
         Quering data
         """
-        if time_precision not in ['s', 'm', 'u']:
+        if time_precision not in ['s', 'm', 'ms', 'u']:
             raise Exception(
                 "Invalid time precision is given. (use 's','m' or 'u')")
 
