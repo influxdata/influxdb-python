@@ -83,9 +83,9 @@ class InfluxDBClient(object):
         """
         Write to multiple time series names
         """
-        if time_precision not in ['s', 'm', 'u']:
+        if time_precision not in ['s', 'm', 'ms', 'u']:
             raise Exception(
-                "Invalid time precision is given. (use 's','m' or 'u')")
+                "Invalid time precision is given. (use 's', 'm', 'ms' or 'u')")
 
         url_format = "{0}/db/{1}/series?u={2}&p={3}&time_precision={4}"
 
@@ -164,7 +164,7 @@ class InfluxDBClient(object):
         """
         if time_precision not in ['s', 'm', 'ms', 'u']:
             raise Exception(
-                "Invalid time precision is given. (use 's','m' or 'u')")
+                "Invalid time precision is given. (use 's', 'm', 'ms' or 'u')")
 
         if chunked is True:
             chunked_param = 'true'
