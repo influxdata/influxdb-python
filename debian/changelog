@@ -1,5 +1,6 @@
-influxdb-python (0.1.4-1) unstable; urgency=low
+influxdb-python (0.1.10-1) unstable; urgency=low
 
-  * debianize influxdb-python.
+  * New upstream version.
 
- -- unknown <unknown@unknown>  Wed, 05 Mar 2014 14:57:11 +0100
+ -- Thibault Cohen <thibault.cohen@savoirfairelinux.com>  Wed, 20 Aug 2014 22:53:24 -0400
+
