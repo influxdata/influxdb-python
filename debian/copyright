@@ -4,14 +4,27 @@ Source: shinken-mod-logstore-null
 
 
 Files: *
-Copyright: 2013-2014 Please add names
-           2013-2014 Please add names
+Copyright: 2013-2014 Alexandre Viau <alexandre@alexandreviau.net>
+           2013-2014 Bruno Binet <bruno.binet@gmail.com>
+           2013-2014 Flier Lu <flier.lu@gmail.com>
+           2013-2014 Jeremiah Malina <jmalina327@gmail.com>
+           2013-2014 jhermann <jh@web.de>
+           2013-2014 John Shahid <jvshahid@gmail.com>
+           2013-2014 Kohei Ozaki <eowner@gmail.com>
+           2013-2014 Kurt Bendl <kurt@tool.net>
+           2013-2014 Laurent Raufaste <analogue@glop.org>
+           2013-2014 manugarri <manuel.garrido.pena@gmail.com>
+           2013-2014 Paul Dix <paul@pauldix.net>
+           2013-2014 Peter Salanki <peter@salanki.st>
+           2013-2014 Prune <prune@lecentre.net>
+           2013-2014 smly <eowner@gmail.com>
+           2013-2014 Todd Persen <todd.persen@gmail.com>
+           2013-2014 William Pain <pain.william@gmail.com>
 License: MIT 
 
 
 Files:debian/
-Copyright: 2013-2014 Thibault Cohen
-           2013-2014 Please add names
+Copyright: 2013-2014 Thibault Cohen <thibault.cohen@savoirfairelinux.com>
 License: MIT
 
 
