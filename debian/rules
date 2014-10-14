@@ -1,7 +1,8 @@
 #!/usr/bin/make -f
 
 export PYBUILD_NAME=influxdb
-#export PYBUILD_TEST_TOX=1
+export PYBUILD_TEST_NOSE=1
+export PYBUILD_TEST_ARGS={dir}
 
 %:
 	dh $@ --with python2,python3 --buildsystem=pybuild

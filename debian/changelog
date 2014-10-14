@@ -1,6 +1,6 @@
 influxdb-python (0.1.10-1) unstable; urgency=low
 
-  * New upstream version.
+  * Initial release (Closes: #764643)
 
- -- Thibault Cohen <thibault.cohen@savoirfairelinux.com>  Wed, 20 Aug 2014 22:53:24 -0400
+ -- Alexandre Viau <alexandre@alexandreviau.net>  Fri, 10 Oct 2014 12:56:09 -0400
 

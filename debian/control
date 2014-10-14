@@ -1,5 +1,5 @@
 Source: influxdb-python
-Maintainer: Thibault Cohen <thibault.cohen@savoirfairelinux.com>
+Maintainer: Alexandre Viau <alexandre@alexandreviau.net>
 Homepage: https://pypi.python.org/pypi/influxdb
 Section: python
 X-Python-Version: >= 2.7
