@@ -32,12 +32,17 @@ Dependencies
 ============
 
 The InfluxDB-Python distribution is supported and tested on Python 2.7 and Python 3.3.
-Requests
+
+Main dependencie is:
+
+- Requests: HTTP library for human beings (http://docs.python-requests.org/)
+
 
 Additional dependencies are:
 
-- Sphinx: to generate documentation
-- Nose & Mock: to auto-discover & mock tests
+- Sphinx: Tool to create and manage the documentation (http://sphinx-doc.org/)
+- Nose: to auto-discover tests (http://nose.readthedocs.org/en/latest/)
+- Mock: to mock tests (https://pypi.python.org/pypi/mock)
 
 
 Documentation
