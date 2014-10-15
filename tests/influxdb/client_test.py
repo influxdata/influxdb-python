@@ -43,15 +43,15 @@ def _mocked_session(method="GET", status_code=200, content=""):
 
         # Anyway, Content must be a JSON string (or empty string)
         if not isinstance(c, str):
-            c =  json.dumps(c)
+            c = json.dumps(c)
 
         return _build_response_object(status_code=status_code, content=c)
 
     mocked = patch.object(
         session,
         'request',
-        side_effect = request
-        )
+        side_effect=request
+    )
 
     return mocked
 
@@ -88,7 +88,7 @@ class TestInfluxDBClient(object):
             }
         ]
 
-        with _mocked_session('post', 200, data) as mocked:
+        with _mocked_session('post', 200, data):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             assert cli.write_points(data) is True
 
@@ -115,7 +115,7 @@ class TestInfluxDBClient(object):
 
     @raises(Exception)
     def test_write_points_fails(self):
-        with _mocked_session('post', 500) as mocked:
+        with _mocked_session('post', 500):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.write_points([])
 
@@ -131,13 +131,13 @@ class TestInfluxDBClient(object):
             }
         ]
 
-        with _mocked_session('post', 200, data) as mocked:
+        with _mocked_session('post', 200, data):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             assert cli.write_points_with_precision(data) is True
 
     @raises(Exception)
     def test_write_points_with_precision_fails(self):
-        with _mocked_session('post', 500) as mocked:
+        with _mocked_session('post', 500):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.write_points_with_precision([])
 
@@ -154,7 +154,7 @@ class TestInfluxDBClient(object):
 
     @raises(Exception)
     def test_delete_points_with_wrong_name(self):
-        with _mocked_session('delete', 400) as mocked:
+        with _mocked_session('delete', 400):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.delete_points("nonexist")
 
@@ -175,7 +175,8 @@ class TestInfluxDBClient(object):
 
     def test_query(self):
         data = [
-            {   "name":"foo",
+            {
+                "name": "foo",
                 "columns": ["time", "sequence_number", "column_one"],
                 "points": [
                     [1383876043, 16, "2"], [1383876043, 15, "1"],
@@ -183,36 +184,36 @@ class TestInfluxDBClient(object):
                 ]
             }
         ]
-        with _mocked_session('get', 200, data) as mocked:
+        with _mocked_session('get', 200, data):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             result = cli.query('select column_one from foo;')
             assert len(result[0]['points']) == 4
 
     @raises(Exception)
     def test_query_fail(self):
-        with _mocked_session('get', 401) as mocked:
+        with _mocked_session('get', 401):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.query('select column_one from foo;')
 
     def test_create_database(self):
-        with _mocked_session('post', 201, {"name": "new_db"}) as mocked:
+        with _mocked_session('post', 201, {"name": "new_db"}):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             assert cli.create_database('new_db') is True
 
     @raises(Exception)
     def test_create_database_fails(self):
-        with _mocked_session('post', 401) as mocked:
+        with _mocked_session('post', 401):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.create_database('new_db')
 
     def test_delete_database(self):
-        with _mocked_session('delete', 204) as mocked:
+        with _mocked_session('delete', 204):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             assert cli.delete_database('old_db') is True
 
     @raises(Exception)
     def test_delete_database_fails(self):
-        with _mocked_session('delete', 401) as mocked:
+        with _mocked_session('delete', 401):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.delete_database('old_db')
 
@@ -220,25 +221,25 @@ class TestInfluxDBClient(object):
         data = [
             {"name": "a_db"}
         ]
-        with _mocked_session('get', 200, data) as mocked:
+        with _mocked_session('get', 200, data):
             cli = InfluxDBClient('host', 8086, 'username', 'password')
             assert len(cli.get_database_list()) == 1
             assert cli.get_database_list()[0]['name'] == 'a_db'
 
     @raises(Exception)
     def test_get_database_list_fails(self):
-        with _mocked_session('get', 401) as mocked:
+        with _mocked_session('get', 401):
             cli = InfluxDBClient('host', 8086, 'username', 'password')
             cli.get_database_list()
 
     def test_delete_series(self):
-        with _mocked_session('delete', 204) as mocked:
+        with _mocked_session('delete', 204):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.delete_series('old_series')
 
     @raises(Exception)
     def test_delete_series_fails(self):
-        with _mocked_session('delete', 401) as mocked:
+        with _mocked_session('delete', 401):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.delete_series('old_series')
 
