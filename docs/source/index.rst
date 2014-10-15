@@ -6,11 +6,19 @@
 Welcome to InfluxDB's documentation!
 ====================================
 
+:Release: |version|
+:Date: |today|
+:Keywords: python, time series, database
+
+.. include:: ../../README.md
+
+
 Contents:
 
 .. toctree::
    :maxdepth: 2
 
+   api
 
 
 Indices and tables
