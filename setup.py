@@ -16,10 +16,8 @@ import os
 import re
 
 
-with open(os.path.join(os.path.dirname(__file__),
-                       'influxdb',
-                       '__init__.py')) as f:
-        version = re.search("__version__ = '([^']+)'", f.read()).group(1)
+with open(os.path.join(os.path.dirname(__file__), 'influxdb', '__init__.py')) as f:
+    version = re.search("__version__ = '([^']+)'", f.read()).group(1)
 
 with open('requirements.txt', 'r') as f:
     requires = [x.strip() for x in f if x.strip()]
@@ -27,11 +25,17 @@ with open('requirements.txt', 'r') as f:
 with open('test-requirements.txt', 'r') as f:
     test_requires = [x.strip() for x in f if x.strip()]
 
+with open('README.md', 'r') as f:
+    readme = f.read()
+
+
 setup(
     name='influxdb',
     version=version,
-    description="influxdb client",
-    license='MIT',
+    description="InfluxDB client",
+    long_description=readme,
+    url='https://github.com/influxdb/influxdb-python',
+    license='MIT License',
     packages=find_packages(exclude=['tests']),
     test_suite='tests',
     tests_require=test_requires,
