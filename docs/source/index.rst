@@ -10,7 +10,7 @@ Welcome to InfluxDB's documentation!
 :Date: |today|
 :Keywords: python, time series, database
 
-.. include:: ../../README.md
+.. include:: ../../README.rst
 
 
 Contents:
