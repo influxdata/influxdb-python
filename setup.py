@@ -25,7 +25,7 @@ with open('requirements.txt', 'r') as f:
 with open('test-requirements.txt', 'r') as f:
     test_requires = [x.strip() for x in f if x.strip()]
 
-with open('README.md', 'r') as f:
+with open('README.rst', 'r') as f:
     readme = f.read()
 
 
