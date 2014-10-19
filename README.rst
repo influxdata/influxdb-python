@@ -1,5 +1,7 @@
-influxdb-python
+InfluxDB-Python
 ===============
+
+InfluxDB-Python is a client for interacting with InfluxDB_.
 
 .. image:: https://travis-ci.org/influxdb/influxdb-python.svg?branch=master
     :target: https://travis-ci.org/influxdb/influxdb-python
@@ -19,12 +21,6 @@ influxdb-python
 .. image:: https://pypip.in/license/influxdb/badge.svg
     :target: https://pypi.python.org/pypi/influxdb/
     :alt: License
-
-
-About
-=====
-
-InfluxDB-Python is a client for interacting with InfluxDB_.
 
 InfluxDB is an open-source distributed time series database, find more about InfluxDB_ at http://influxdb.com/
 
@@ -108,13 +104,9 @@ Make sure you have tox by running the following::
 
     $ pip install tox
 
-To test influxdb-python with multiple version of Python, you can use tox::
+To test influxdb-python with multiple version of Python, you can use Tox_::
 
     $ tox
-
-If you don't have all Python version listed in tox.ini, then::
-
-    $ tox -e py27
 
 
 Support
@@ -132,3 +124,4 @@ The source code is currently available on Github: https://github.com/influxdb/in
 
 .. _InfluxDB: http://influxdb.com/
 .. _Sphinx: http://sphinx.pocoo.org/
+.. _Tox: https://tox.readthedocs.org
