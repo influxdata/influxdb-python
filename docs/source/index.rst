@@ -10,7 +10,10 @@ Welcome to InfluxDB's documentation!
 :Date: |today|
 :Keywords: python, time series, database
 
-.. include:: ../../README.rst
+.. toctree::
+    :maxdepth: 2
+
+    include-readme
 
 
 Contents:
