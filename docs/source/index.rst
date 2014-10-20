@@ -10,24 +10,21 @@ Welcome to InfluxDB's documentation!
 :Date: |today|
 :Keywords: python, time series, database
 
+
+Contents
+--------
+
 .. toctree::
-    :maxdepth: 2
+    :maxdepth: 3
 
     include-readme
+    api-documentation
+    examples
 
-
-Contents:
-
-.. toctree::
-   :maxdepth: 2
-
-   api
 
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`
-

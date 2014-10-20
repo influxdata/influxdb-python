@@ -119,6 +119,16 @@ For issues with, questions about, or feedback for InfluxDB_, please look into
 our community page: http://influxdb.com/community/.
 
 
+Development
+===========
+
+All development is done on Github_. Use Issues_ to report
+problems or submit contributions.
+
+.. _Github: https://github.com/influxdb/influxdb-python/
+.. _Issues: https://github.com/influxdb/influxdb-python/issues
+
+
 Source code
 ===========
 
