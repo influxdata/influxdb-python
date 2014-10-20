@@ -24,8 +24,6 @@ ports. The below instantiation statements are all equivalent::
 .. note:: Only when using UDP (use_udp=True) the connections is established.
 
 
-.. module:: influxdb.InfluxDBClient
-
 
 .. _InfluxDBClient-api:
 
@@ -33,8 +31,8 @@ ports. The below instantiation statements are all equivalent::
 :class:`InfluxDBClient`
 -----------------------
 
+
+.. currentmodule:: influxdb.InfluxDBClient
 .. autoclass:: influxdb.InfluxDBClient
     :members:
     :undoc-members:
-
-    ..  automethod:: __init__
