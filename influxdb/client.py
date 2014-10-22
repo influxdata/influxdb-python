@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-python client for influxdb
+Python client for InfluxDB
 """
 import json
 import socket
@@ -18,8 +18,31 @@ class InfluxDBClientError(Exception):
 
 
 class InfluxDBClient(object):
+
     """
-    InfluxDB Client
+    The ``InfluxDBClient`` object holds information necessary to connect
+    to InfluxDB. Requests can be made to InfluxDB directly through the client.
+
+    :param host: hostname to connect to InfluxDB, defaults to 'localhost'
+    :type host: string
+    :param port: port to connect to InfluxDB, defaults to 'localhost'
+    :type port: int
+    :param username: user to connect, defaults to 'root'
+    :type username: string
+    :param password: password of the user, defaults to 'root'
+    :type password: string
+    :param database: database name to connect to, defaults is None
+    :type database: string
+    :param ssl: use https instead of http to connect to InfluxDB, defaults is False
+    :type ssl: boolean
+    :param verify_ssl: verify SSL certificates for HTTPS requests, defaults is False
+    :type verify_ssl: boolean
+    :param timeout: number of seconds Requests will wait for your client to establish a connection, defaults to None
+    :type timeout: int
+    :param use_udp: use UDP to connect to InfluxDB, defaults is False
+    :type use_udp: int
+    :param udp_port: UDP port to connect to InfluxDB, defaults is 4444
+    :type udp_port: int
     """
 
     def __init__(self,
@@ -34,7 +57,7 @@ class InfluxDBClient(object):
                  use_udp=False,
                  udp_port=4444):
         """
-        Initialize client
+        Construct a new InfluxDBClient object.
         """
         self._host = host
         self._port = port
@@ -68,22 +91,25 @@ class InfluxDBClient(object):
 
     def switch_db(self, database):
         """
-        Change client database
+        switch_db()
 
-        Parameters
-        ----------
-        database : string
+        Change client database.
+
+        :param database: the new database name to switch to
+        :type database: string
         """
         self._database = database
 
     def switch_user(self, username, password):
         """
-        Change client username
+        switch_user()
 
-        Parameters
-        ----------
-        username : string
-        password : string
+        Change client username.
+
+        :param username: the new username to switch to
+        :type username: string
+        :param password: the new password to switch to
+        :type password: string
         """
         self._username = username
         self._password = password
@@ -131,14 +157,13 @@ class InfluxDBClient(object):
 
     def write_points(self, *args, **kwargs):
         """
-        Write to multiple time series names
+        write_points()
 
-        Parameters
-        ----------
-        batch_size : Optional. Int value to write the points in batches instead
-            of all at one time.
-            Useful for when doing data dumps from one database to another or
-            when doing a massive write operation
+        Write to multiple time series names.
+
+        :param batch_size: [Optional] Value to write the points in batches instead of all at one time.
+            Useful for when doing data dumps from one database to another or when doing a massive write operation
+        :type batch_size: int
         """
 
         def list_chunks(l, n):
@@ -300,12 +325,13 @@ class InfluxDBClient(object):
 
     def create_database(self, database):
         """
-        Create a database
+        create_database()
 
-        Parameters
-        ----------
-        database: string
-            database name
+        Create a database on the InfluxDB server.
+
+        :param database: the name of the database to create
+        :type database: string
+        :rtype: boolean
         """
         url = "db"
 
@@ -322,12 +348,13 @@ class InfluxDBClient(object):
 
     def delete_database(self, database):
         """
-        Drop a database
+        delete_database()
 
-        Parameters
-        ----------
-        database: string
-            database name
+        Drop a database on the InfluxDB server.
+
+        :param database: the name of the database to delete
+        :type database: string
+        :rtype: boolean
         """
         url = "db/{0}".format(database)
 
@@ -358,12 +385,13 @@ class InfluxDBClient(object):
 
     def delete_series(self, series):
         """
-        Drop a series
+        delete_series()
 
-        Parameters
-        ----------
-        series: string
-            series name
+        Drop a series on the InfluxDB server.
+
+        :param series: the name of the series to delete
+        :type series: string
+        :rtype: boolean
         """
         url = "db/{0}/series/{1}".format(
             self._database,

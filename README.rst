@@ -1,5 +1,4 @@
-InfluxDB-Python
-===============
+
 
 InfluxDB-Python is a client for interacting with InfluxDB_.
 
@@ -22,9 +21,12 @@ InfluxDB-Python is a client for interacting with InfluxDB_.
     :target: https://pypi.python.org/pypi/influxdb/
     :alt: License
 
+.. _readme-about:
 
 InfluxDB is an open-source distributed time series database, find more about InfluxDB_ at http://influxdb.com/
 
+
+.. _installation:
 
 Installation
 ============
@@ -115,6 +117,16 @@ Support
 
 For issues with, questions about, or feedback for InfluxDB_, please look into
 our community page: http://influxdb.com/community/.
+
+
+Development
+===========
+
+All development is done on Github_. Use Issues_ to report
+problems or submit contributions.
+
+.. _Github: https://github.com/influxdb/influxdb-python/
+.. _Issues: https://github.com/influxdb/influxdb-python/issues
 
 
 Source code

@@ -10,21 +10,21 @@ Welcome to InfluxDB's documentation!
 :Date: |today|
 :Keywords: python, time series, database
 
-.. include:: ../../README.rst
 
-
-Contents:
+Contents
+--------
 
 .. toctree::
-   :maxdepth: 2
+    :maxdepth: 3
 
-   api
+    include-readme
+    api-documentation
+    examples
+
 
 
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
-* :ref:`modindex`
 * :ref:`search`
-
