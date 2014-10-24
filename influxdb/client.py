@@ -202,7 +202,7 @@ class InfluxDBClient(object):
             raise Exception(
                 "Invalid time precision is given. (use 's', 'm', 'ms' or 'u')")
 
-        if self.use_udp and time_precision is not 's':
+        if self.use_udp and time_precision != 's':
             raise Exception(
                 "InfluxDB only supports seconds precision for udp writes"
             )
