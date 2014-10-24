@@ -132,7 +132,7 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.write_points_with_precision(data, time_precision='ms')
 
         self.assertEqual(
-            ex.exception.message,
+            str(ex.exception),
             'InfluxDB only supports seconds precision for udp writes'
         )
 
