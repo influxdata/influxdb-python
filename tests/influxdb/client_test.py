@@ -5,6 +5,7 @@ unit tests
 import json
 import requests
 import socket
+import unittest
 from nose.tools import raises
 from mock import patch
 
@@ -56,7 +57,7 @@ def _mocked_session(method="GET", status_code=200, content=""):
     return mocked
 
 
-class TestInfluxDBClient(object):
+class TestInfluxDBClient(unittest.TestCase):
 
     def test_scheme(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
@@ -112,6 +113,28 @@ class TestInfluxDBClient(object):
 
         received_data, addr = s.recvfrom(1024)
         assert data == json.loads(received_data.decode(), strict=True)
+
+    def test_write_bad_precision_udp(self):
+        data = [
+            {
+                "points": [
+                    ["1", 1, 1.0],
+                    ["2", 2, 2.0]
+                ],
+                "name": "foo",
+                "columns": ["column_one", "column_two", "column_three"]
+            }
+        ]
+
+        cli = InfluxDBClient('localhost', 8086, 'root', 'root', 'test', use_udp=True, udp_port=4444)
+
+        with self.assertRaises(Exception) as ex:
+            cli.write_points_with_precision(data, time_precision='ms')
+
+        self.assertEqual(
+            ex.exception.message,
+            'InfluxDB only supports seconds precision for udp writes'
+        )
 
     @raises(Exception)
     def test_write_points_fails(self):
