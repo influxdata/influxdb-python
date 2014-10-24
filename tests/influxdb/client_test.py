@@ -38,7 +38,6 @@ def _mocked_session(method="GET", status_code=200, content=""):
                 assert isinstance(data, str)
 
                 # Data must be a JSON string
-
                 assert c == json.loads(data, strict=True)
 
                 c = data
