@@ -202,6 +202,11 @@ class InfluxDBClient(object):
             raise Exception(
                 "Invalid time precision is given. (use 's', 'm', 'ms' or 'u')")
 
+        if self.use_udp and time_precision != 's':
+            raise Exception(
+                "InfluxDB only supports seconds precision for udp writes"
+            )
+
         url = "db/{0}/series".format(self._database)
 
         params = {
