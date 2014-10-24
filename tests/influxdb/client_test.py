@@ -38,6 +38,7 @@ def _mocked_session(method="GET", status_code=200, content=""):
                 assert isinstance(data, str)
 
                 # Data must be a JSON string
+
                 assert c == json.loads(data, strict=True)
 
                 c = data
@@ -92,6 +93,22 @@ class TestInfluxDBClient(unittest.TestCase):
         with _mocked_session('post', 200, data):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             assert cli.write_points(data) is True
+
+    def test_write_points_batch(self):
+        data = [
+            {
+                "points": [
+                    ["1", 1, 1.0],
+                    ["2", 2, 2.0]
+                ],
+                "name": "foo",
+                "columns": ["column_one", "column_two", "column_three"]
+            }
+        ]
+
+        with _mocked_session('post', 200, data):
+            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
+            assert cli.write_points(data=data, batch_size=2) is True
 
     def test_write_points_udp(self):
         data = [
