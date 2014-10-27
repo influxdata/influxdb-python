@@ -5,6 +5,12 @@ Python client for InfluxDB
 import json
 import socket
 import requests
+
+try:
+    xrange
+except NameError:
+    xrange = range
+
 session = requests.Session()
 
 
