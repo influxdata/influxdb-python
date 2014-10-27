@@ -37,6 +37,9 @@ Install, upgrade and uninstall InfluxDB-Python with these commands::
     $ pip install --upgrade influxdb
     $ pip uninstall influxdb
 
+On Debian/Ubuntu, you can install it with this command::
+
+    $ sudo apt-get install python-influxdb
 
 Dependencies
 ============
