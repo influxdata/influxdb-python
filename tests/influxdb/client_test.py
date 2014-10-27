@@ -106,7 +106,7 @@ class TestInfluxDBClient(unittest.TestCase):
         ]
 
         with _mocked_session('post', 200, data):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')            
+            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             assert cli.write_points(data=data, batch_size=2) is True
 
     def test_write_points_udp(self):
