@@ -1,15 +1,16 @@
 language: python
-python:
-- 'pypy3'
-- 'pypy'
-- '3.4'
-- '3.3'
-- '3.2'
-- '2.7'
+python: 2.7
+env:
+    - TOX_ENV=py27
+    - TOX_ENV=py32
+    - TOX_ENV=py33
+    - TOX_ENV=py34
+    - TOX_ENV=pypy
+    - TOX_ENV=pypy3
 install:
-- travis_retry pip install -r requirements.txt
-- travis_retry pip install -r test-requirements.txt
-script: nosetests
+    - sudo pip install tox
+script:
+    - tox -e $TOX_ENV
 deploy:
   provider: pypi
   user: errplane
