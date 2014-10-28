@@ -18,3 +18,5 @@ debian/python3-influxdb.substvars
 debian/python3-influxdb/
 *~
 docs/build/
+.coverage
+cover

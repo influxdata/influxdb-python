@@ -7,10 +7,14 @@ env:
     - TOX_ENV=pypy
     - TOX_ENV=pypy3
     - TOX_ENV=flake8
+    - TOX_ENV=coverage
 install:
     - sudo pip install tox
+    - sudo pip install coveralls
 script:
     - tox -e $TOX_ENV
+after_success:
+    - if [ "$TOX_ENV" == "coverage" ] ; then coveralls; fi
 deploy:
   provider: pypi
   user: errplane
