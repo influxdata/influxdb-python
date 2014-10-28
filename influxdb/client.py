@@ -39,11 +39,14 @@ class InfluxDBClient(object):
     :type password: string
     :param database: database name to connect to, defaults is None
     :type database: string
-    :param ssl: use https instead of http to connect to InfluxDB, defaults is False
+    :param ssl: use https instead of http to connect to InfluxDB, defaults is
+        False
     :type ssl: boolean
-    :param verify_ssl: verify SSL certificates for HTTPS requests, defaults is False
+    :param verify_ssl: verify SSL certificates for HTTPS requests, defaults is
+        False
     :type verify_ssl: boolean
-    :param timeout: number of seconds Requests will wait for your client to establish a connection, defaults to None
+    :param timeout: number of seconds Requests will wait for your client to
+        establish a connection, defaults to None
     :type timeout: int
     :param use_udp: use UDP to connect to InfluxDB, defaults is False
     :type use_udp: int
@@ -167,8 +170,9 @@ class InfluxDBClient(object):
 
         Write to multiple time series names.
 
-        :param batch_size: [Optional] Value to write the points in batches instead of all at one time.
-            Useful for when doing data dumps from one database to another or when doing a massive write operation
+        :param batch_size: [Optional] Value to write the points in batches
+            instead of all at one time. Useful for when doing data dumps from
+            one database to another or when doing a massive write operation
         :type batch_size: int
         """
 
