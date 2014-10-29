@@ -613,9 +613,11 @@ class InfluxDBClient(object):
 
         return response.json()
 
-    def add_database_user(self, new_username, new_password):
+    def add_database_user(self, new_username, new_password, permissions=None):
         """
         Add database user
+
+        :param permissions: A ``(readFrom, writeTo)`` tuple
         """
         url = "db/{0}/users".format(self._database)
 
@@ -623,6 +625,12 @@ class InfluxDBClient(object):
             'name': new_username,
             'password': new_password
         }
+
+        if permissions:
+            try:
+                data['readFrom'], data['writeTo'] = permissions
+            except (ValueError, TypeError):
+                raise TypeError("'permissions' must be (readFrom, writeTo) tuple")
 
         self.request(
             url=url,
