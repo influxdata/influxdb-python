@@ -322,13 +322,7 @@ class InfluxDBClient(object):
             status_code=200
             )
 
-        try:
-            res = json.loads(response.content)
-        except TypeError:
-            # must decode in python 3
-            res = json.loads(response.content.decode('utf8'))
-
-        return res
+        return response.json()
 
     # Creating and Dropping Databases
     #
@@ -396,7 +390,7 @@ class InfluxDBClient(object):
             status_code=200
             )
 
-        return json.loads(response.content)
+        return response.json()
 
     def delete_series(self, series):
         """
