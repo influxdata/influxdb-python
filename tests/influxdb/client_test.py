@@ -326,6 +326,21 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_add_database_user(self):
         pass
 
+    def test_add_database_user_bad_permissions(self):
+        cli = InfluxDBClient()
+
+        with self.assertRaises(Exception) as ex:
+            cli.add_database_user(
+                new_password='paul',
+                new_username='paul',
+                permissions=('hello', 'hello', 'hello')
+            )
+
+        self.assertEqual(
+            str(ex.exception),
+            "'permissions' must be (readFrom, writeTo) tuple"
+        )
+
     def test_update_database_user_password(self):
         pass
 

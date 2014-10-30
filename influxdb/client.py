@@ -624,7 +624,9 @@ class InfluxDBClient(object):
             try:
                 data['readFrom'], data['writeTo'] = permissions
             except (ValueError, TypeError):
-                raise TypeError("'permissions' must be (readFrom, writeTo) tuple")
+                raise TypeError(
+                    "'permissions' must be (readFrom, writeTo) tuple"
+                )
 
         self.request(
             url=url,
