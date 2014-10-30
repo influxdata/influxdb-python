@@ -23,3 +23,5 @@ deploy:
   on:
     tags: true
     repo: influxdb/influxdb-python
+notifications:
+    email: false
