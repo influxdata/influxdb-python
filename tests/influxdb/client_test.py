@@ -6,7 +6,7 @@ import json
 import requests
 import socket
 import unittest
-import httpretty
+import requests_mock
 from nose.tools import raises
 from mock import patch
 
@@ -332,29 +332,28 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_get_database_user(self):
         pass
 
-    @httpretty.activate
     def test_add_database_user(self):
-        httpretty.register_uri(
-            httpretty.POST,
-            "http://localhost:8086/db/db/users"
-        )
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/db/db/users"
+            )
+            cli = InfluxDBClient(database='db')
+            cli.add_database_user(
+                new_username='paul',
+                new_password='laup',
+                permissions=('.*', '.*')
+            )
 
-        cli = InfluxDBClient(database='db')
-        cli.add_database_user(
-            new_username='paul',
-            new_password='laup',
-            permissions=('.*', '.*')
-        )
-
-        self.assertEqual(
-            httpretty.last_request().parsed_body,
-            {
-                u'writeTo': u'.*',
-                u'password': u'laup',
-                u'readFrom': u'.*',
-                u'name': u'paul'
-            }
-        )
+            self.assertDictEqual(
+                json.loads(m.last_request.body),
+                {
+                    'writeTo': '.*',
+                    'password': 'laup',
+                    'readFrom': '.*',
+                    'name': 'paul'
+                }
+            )
 
     def test_add_database_user_bad_permissions(self):
         cli = InfluxDBClient()
