@@ -16,7 +16,7 @@ from influxdb.client import session
 def _build_response_object(status_code=200, content=""):
     resp = requests.Response()
     resp.status_code = status_code
-    resp._content = content
+    resp._content = content.encode("utf8")
     return resp
 
 
