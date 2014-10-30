@@ -63,7 +63,9 @@ class TestInfluxDBClient(unittest.TestCase):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
         assert cli._baseurl == 'http://host:8086'
 
-        cli = InfluxDBClient('host', 8086, 'username', 'password', 'database', ssl=True)
+        cli = InfluxDBClient(
+            'host', 8086, 'username', 'password', 'database', ssl=True
+        )
         assert cli._baseurl == 'https://host:8086'
 
     def test_switch_db(self):
@@ -124,7 +126,10 @@ class TestInfluxDBClient(unittest.TestCase):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.bind(('0.0.0.0', 4444))
 
-        cli = InfluxDBClient('localhost', 8086, 'root', 'root', 'test', use_udp=True, udp_port=4444)
+        cli = InfluxDBClient(
+            'localhost', 8086, 'root', 'root',
+            'test', use_udp=True, udp_port=4444
+        )
         cli.write_points(data)
 
         received_data, addr = s.recvfrom(1024)
@@ -142,7 +147,10 @@ class TestInfluxDBClient(unittest.TestCase):
             }
         ]
 
-        cli = InfluxDBClient('localhost', 8086, 'root', 'root', 'test', use_udp=True, udp_port=4444)
+        cli = InfluxDBClient(
+            'localhost', 8086, 'root', 'root',
+            'test', use_udp=True, udp_port=4444
+        )
 
         with self.assertRaises(Exception) as ex:
             cli.write_points_with_precision(data, time_precision='ms')
