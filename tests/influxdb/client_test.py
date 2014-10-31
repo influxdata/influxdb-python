@@ -336,7 +336,7 @@ class TestInfluxDBClient(unittest.TestCase):
             m.register_uri(
                 requests_mock.DELETE,
                 "http://localhost:8086/cluster_admins/paul",
-                status_code=204,
+                status_code=200,
             )
 
             cli = InfluxDBClient(database='db')

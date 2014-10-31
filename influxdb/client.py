@@ -504,7 +504,7 @@ class InfluxDBClient(object):
         self.request(
             url=url,
             method='DELETE',
-            status_code=204
+            status_code=200
             )
 
         return True
