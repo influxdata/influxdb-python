@@ -296,7 +296,22 @@ class TestInfluxDBClient(unittest.TestCase):
         pass
 
     def test_update_cluster_admin_password(self):
-        pass
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/cluster_admins/paul"
+            )
+
+            cli = InfluxDBClient(database='db')
+            cli.update_cluster_admin_password(
+                username='paul',
+                new_password='laup'
+            )
+
+            self.assertDictEqual(
+                json.loads(m.last_request.body),
+                {'password': 'laup'}
+            )
 
     def test_delete_cluster_admin(self):
         pass
