@@ -151,7 +151,7 @@ class InfluxDBClient(object):
             headers=self._headers,
             verify=self._verify_ssl,
             timeout=self._timeout
-            )
+        )
 
         if response.status_code == status_code:
             return response
@@ -180,7 +180,7 @@ class InfluxDBClient(object):
             """ Yield successive n-sized chunks from l.
             """
             for i in xrange(0, len(l), n):
-                yield l[i:i+n]
+                yield l[i:i + n]
 
         batch_size = kwargs.get('batch_size')
         if batch_size:
@@ -232,7 +232,7 @@ class InfluxDBClient(object):
                 params=params,
                 data=data,
                 status_code=200
-                )
+            )
 
         return True
 
@@ -248,7 +248,7 @@ class InfluxDBClient(object):
             url=url,
             method='DELETE',
             status_code=204
-            )
+        )
 
         return True
 
@@ -320,7 +320,7 @@ class InfluxDBClient(object):
             method='GET',
             params=params,
             status_code=200
-            )
+        )
 
         return response.json()
 
@@ -351,7 +351,7 @@ class InfluxDBClient(object):
             method='POST',
             data=data,
             status_code=201
-            )
+        )
 
         return True
 
@@ -371,7 +371,7 @@ class InfluxDBClient(object):
             url=url,
             method='DELETE',
             status_code=204
-            )
+        )
 
         return True
 
@@ -388,7 +388,7 @@ class InfluxDBClient(object):
             url=url,
             method='GET',
             status_code=200
-            )
+        )
 
         return response.json()
 
@@ -405,13 +405,13 @@ class InfluxDBClient(object):
         url = "db/{0}/series/{1}".format(
             self._database,
             series
-            )
+        )
 
         self.request(
             url=url,
             method='DELETE',
             status_code=204
-            )
+        )
 
         return True
 
@@ -454,7 +454,7 @@ class InfluxDBClient(object):
             url="cluster_admins",
             method='GET',
             status_code=200
-            )
+        )
 
         return response.json()
 
@@ -472,7 +472,7 @@ class InfluxDBClient(object):
             method='POST',
             data=data,
             status_code=200
-            )
+        )
 
         return True
 
@@ -491,7 +491,7 @@ class InfluxDBClient(object):
             method='POST',
             data=data,
             status_code=200
-            )
+        )
 
         return True
 
@@ -505,7 +505,7 @@ class InfluxDBClient(object):
             url=url,
             method='DELETE',
             status_code=200
-            )
+        )
 
         return True
 
@@ -531,7 +531,7 @@ class InfluxDBClient(object):
             method='POST',
             data=data,
             status_code=200
-            )
+        )
 
         return True
 
@@ -603,7 +603,7 @@ class InfluxDBClient(object):
             url=url,
             method='GET',
             status_code=200
-            )
+        )
 
         return response.json()
 
@@ -633,7 +633,7 @@ class InfluxDBClient(object):
             method='POST',
             data=data,
             status_code=200
-            )
+        )
 
         return True
 
@@ -652,7 +652,7 @@ class InfluxDBClient(object):
             method='POST',
             data=data,
             status_code=200
-            )
+        )
 
         if username == self._username:
             self._password = new_password
@@ -669,7 +669,7 @@ class InfluxDBClient(object):
             url=url,
             method='DELETE',
             status_code=200
-            )
+        )
 
         return True
 

@@ -60,6 +60,18 @@ def _mocked_session(method="GET", status_code=200, content=""):
 
 class TestInfluxDBClient(unittest.TestCase):
 
+    def setUp(self):
+        self.dummy_points = [
+            {
+                "points": [
+                    ["1", 1, 1.0],
+                    ["2", 2, 2.0]
+                ],
+                "name": "foo",
+                "columns": ["column_one", "column_two", "column_three"]
+            }
+        ]
+
     def test_scheme(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
         assert cli._baseurl == 'http://host:8086'
@@ -81,49 +93,19 @@ class TestInfluxDBClient(unittest.TestCase):
         assert cli._password == 'another_password'
 
     def test_write_points(self):
-        data = [
-            {
-                "points": [
-                    ["1", 1, 1.0],
-                    ["2", 2, 2.0]
-                ],
-                "name": "foo",
-                "columns": ["column_one", "column_two", "column_three"]
-            }
-        ]
-
-        with _mocked_session('post', 200, data):
+        with _mocked_session('post', 200, self.dummy_points):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            assert cli.write_points(data) is True
+            assert cli.write_points(self.dummy_points) is True
 
     def test_write_points_batch(self):
-        data = [
-            {
-                "points": [
-                    ["1", 1, 1.0],
-                    ["2", 2, 2.0]
-                ],
-                "name": "foo",
-                "columns": ["column_one", "column_two", "column_three"]
-            }
-        ]
-
-        with _mocked_session('post', 200, data):
+        with _mocked_session('post', 200, self.dummy_points):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            assert cli.write_points(data=data, batch_size=2) is True
+            assert cli.write_points(
+                data=self.dummy_points,
+                batch_size=2
+            ) is True
 
     def test_write_points_udp(self):
-        data = [
-            {
-                "points": [
-                    ["1", 1, 1.0],
-                    ["2", 2, 2.0]
-                ],
-                "name": "foo",
-                "columns": ["column_one", "column_two", "column_three"]
-            }
-        ]
-
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.bind(('0.0.0.0', 4444))
 
@@ -131,23 +113,14 @@ class TestInfluxDBClient(unittest.TestCase):
             'localhost', 8086, 'root', 'root',
             'test', use_udp=True, udp_port=4444
         )
-        cli.write_points(data)
+        cli.write_points(self.dummy_points)
 
         received_data, addr = s.recvfrom(1024)
-        assert data == json.loads(received_data.decode(), strict=True)
+
+        assert self.dummy_points == \
+            json.loads(received_data.decode(), strict=True)
 
     def test_write_bad_precision_udp(self):
-        data = [
-            {
-                "points": [
-                    ["1", 1, 1.0],
-                    ["2", 2, 2.0]
-                ],
-                "name": "foo",
-                "columns": ["column_one", "column_two", "column_three"]
-            }
-        ]
-
         cli = InfluxDBClient(
             'localhost', 8086, 'root', 'root',
             'test', use_udp=True, udp_port=4444
@@ -157,7 +130,10 @@ class TestInfluxDBClient(unittest.TestCase):
                 Exception,
                 "InfluxDB only supports seconds precision for udp writes"
         ):
-            cli.write_points_with_precision(data, time_precision='ms')
+            cli.write_points_with_precision(
+                self.dummy_points,
+                time_precision='ms'
+            )
 
     @raises(Exception)
     def test_write_points_fails(self):
@@ -166,39 +142,20 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.write_points([])
 
     def test_write_points_with_precision(self):
-        data = [
-            {
-                "points": [
-                    ["1", 1, 1.0],
-                    ["2", 2, 2.0]
-                ],
-                "name": "foo",
-                "columns": ["column_one", "column_two", "column_three"]
-            }
-        ]
-
-        with _mocked_session('post', 200, data):
+        with _mocked_session('post', 200, self.dummy_points):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            assert cli.write_points_with_precision(data) is True
+            assert cli.write_points_with_precision(self.dummy_points) is True
 
     def test_write_points_bad_precision(self):
-        data = [
-            {
-                "points": [
-                    ["1", 1, 1.0],
-                    ["2", 2, 2.0]
-                ],
-                "name": "foo",
-                "columns": ["column_one", "column_two", "column_three"]
-            }
-        ]
-
         cli = InfluxDBClient()
         with self.assertRaisesRegexp(
             Exception,
             "Invalid time precision is given. \(use 's', 'm', 'ms' or 'u'\)"
         ):
-            cli.write_points_with_precision(data, time_precision='g')
+            cli.write_points_with_precision(
+                self.dummy_points,
+                time_precision='g'
+            )
 
     @raises(Exception)
     def test_write_points_with_precision_fails(self):
