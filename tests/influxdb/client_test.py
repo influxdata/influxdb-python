@@ -405,7 +405,16 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
     def test_delete_database_user(self):
-        pass
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.DELETE,
+                "http://localhost:8086/db/db/users/paul"
+            )
+
+            cli = InfluxDBClient(database='db')
+            cli.delete_database_user(username='paul')
+
+            self.assertIsNone(m.last_request.body)
 
     @raises(NotImplementedError)
     def test_update_permission(self):
