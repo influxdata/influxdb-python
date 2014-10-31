@@ -153,13 +153,11 @@ class TestInfluxDBClient(unittest.TestCase):
             'test', use_udp=True, udp_port=4444
         )
 
-        with self.assertRaises(Exception) as ex:
+        with self.assertRaisesRegexp(
+                Exception,
+                "InfluxDB only supports seconds precision for udp writes"
+        ):
             cli.write_points_with_precision(data, time_precision='ms')
-
-        self.assertEqual(
-            str(ex.exception),
-            'InfluxDB only supports seconds precision for udp writes'
-        )
 
     @raises(Exception)
     def test_write_points_fails(self):
@@ -358,17 +356,15 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_add_database_user_bad_permissions(self):
         cli = InfluxDBClient()
 
-        with self.assertRaises(Exception) as ex:
+        with self.assertRaisesRegexp(
+                Exception,
+                "'permissions' must be \(readFrom, writeTo\) tuple"
+        ):
             cli.add_database_user(
                 new_password='paul',
                 new_username='paul',
                 permissions=('hello', 'hello', 'hello')
             )
-
-        self.assertEqual(
-            str(ex.exception),
-            "'permissions' must be (readFrom, writeTo) tuple"
-        )
 
     def test_update_database_user_password(self):
         pass
