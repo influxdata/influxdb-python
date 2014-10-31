@@ -387,7 +387,22 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
     def test_update_database_user_password(self):
-        pass
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/db/db/users/paul"
+            )
+
+            cli = InfluxDBClient(database='db')
+            cli.update_database_user_password(
+                username='paul',
+                new_password='laup'
+            )
+
+            self.assertDictEqual(
+                json.loads(m.last_request.body),
+                {'password': 'laup'}
+            )
 
     def test_delete_database_user(self):
         pass
