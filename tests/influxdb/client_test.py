@@ -307,6 +307,26 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_unset_database_admin(self):
         pass
 
+    def test_alter_database_admin(self):
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/db/db/users/paul"
+            )
+
+            cli = InfluxDBClient(database='db')
+            cli.alter_database_admin(
+                username='paul',
+                is_admin=False
+            )
+
+            self.assertDictEqual(
+                json.loads(m.last_request.body),
+                {
+                    'admin': False
+                }
+            )
+
     @raises(NotImplementedError)
     def test_get_list_database_admins(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
