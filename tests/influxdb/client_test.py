@@ -217,6 +217,14 @@ class TestInfluxDBClient(unittest.TestCase):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.query('select column_one from foo;')
 
+    def test_query_bad_precision(self):
+        cli = InfluxDBClient()
+        with self.assertRaisesRegexp(
+            Exception,
+            "Invalid time precision is given. \(use 's', 'm', 'ms' or 'u'\)"
+        ):
+            cli.query('select column_one from foo', time_precision='g')
+
     def test_create_database(self):
         with _mocked_session('post', 201, {"name": "new_db"}):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
