@@ -93,9 +93,21 @@ class TestInfluxDBClient(unittest.TestCase):
         assert cli._password == 'another_password'
 
     def test_write_points(self):
-        with _mocked_session('post', 200, self.dummy_points):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            assert cli.write_points(self.dummy_points) is True
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/db/db/series"
+            )
+
+            cli = InfluxDBClient(database='db')
+            cli.write_points(
+                self.dummy_points
+            )
+
+            self.assertListEqual(
+                json.loads(m.last_request.body),
+                self.dummy_points
+            )
 
     def test_write_points_batch(self):
         with _mocked_session('post', 200, self.dummy_points):
