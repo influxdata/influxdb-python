@@ -181,6 +181,25 @@ class TestInfluxDBClient(unittest.TestCase):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             assert cli.write_points_with_precision(data) is True
 
+    def test_write_points_bad_precision(self):
+        data = [
+            {
+                "points": [
+                    ["1", 1, 1.0],
+                    ["2", 2, 2.0]
+                ],
+                "name": "foo",
+                "columns": ["column_one", "column_two", "column_three"]
+            }
+        ]
+
+        cli = InfluxDBClient()
+        with self.assertRaisesRegexp(
+            Exception,
+            "Invalid time precision is given. \(use 's', 'm', 'ms' or 'u'\)"
+        ):
+            cli.write_points_with_precision(data, time_precision='g')
+
     @raises(Exception)
     def test_write_points_with_precision_fails(self):
         with _mocked_session('post', 500):
