@@ -386,8 +386,22 @@ class TestInfluxDBClient(unittest.TestCase):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
         cli.delete_database_admin('admin')
 
-    def test_get_database_user(self):
-        pass
+    def test_get_database_users(self):
+        cli = InfluxDBClient('localhost', 8086, 'username', 'password', 'db')
+
+        example_response = \
+            '[{"name":"paul","isAdmin":false,"writeTo":".*","readFrom":".*"},' \
+            '{"name":"bobby","isAdmin":false,"writeTo":".*","readFrom":".*"}]'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/db/db/users",
+                text=example_response
+            )
+            users = cli.get_database_users()
+
+        self.assertEqual(json.loads(example_response), users)
 
     def test_add_database_user(self):
         with requests_mock.Mocker() as m:
