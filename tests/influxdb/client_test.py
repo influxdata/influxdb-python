@@ -443,6 +443,25 @@ class TestInfluxDBClient(unittest.TestCase):
                 {'password': 'laup'}
             )
 
+    def test_update_database_user_password_current_user(self):
+        cli = InfluxDBClient(
+            username='root',
+            password='hello',
+            database='database'
+        )
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/db/database/users/root"
+            )
+
+            cli.update_database_user_password(
+                username='root',
+                new_password='bye'
+            )
+
+            self.assertEqual(cli._password, 'bye')
+
     def test_delete_database_user(self):
         with requests_mock.Mocker() as m:
             m.register_uri(
