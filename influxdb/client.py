@@ -324,6 +324,8 @@ class InfluxDBClient(object):
 
         return response.json()
 
+
+
     # Creating and Dropping Databases
     #
     # ### create a database
@@ -414,6 +416,56 @@ class InfluxDBClient(object):
         )
 
         return True
+
+    def get_series_list(self):
+        """
+        Querying all time series in a database
+        """
+
+        url = "db/{0}/series".format(self._database)
+
+        params = {
+            'q': 'list series'
+            'time_precision': 's',
+            'chunked': 'false'
+        }
+
+        response = self.request(
+            url=url,
+            method='GET',
+            params=params,
+            status_code=200
+        )
+        series_list = []
+        for series in response.json()[0]['points']:
+            series_list.append(series[1])
+
+        return series_list
+
+    def get_continuous_list(self):
+        """
+        Querying all time series in a database
+        """
+
+        url = "db/{0}/series".format(self._database)
+
+        params = {
+            'q': 'list continuous queries'
+            'time_precision': 's',
+            'chunked': 'false'
+        }
+
+        response = self.request(
+            url=url,
+            method='GET',
+            params=params,
+            status_code=200
+        )
+        series_list = []
+        for series in response.json()[0]['points']:
+            series_list.append(series[1])
+
+        return series_list
 
     # Security
     # get list of cluster admins
