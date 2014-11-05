@@ -124,7 +124,7 @@ class InfluxDBClient(object):
         self._password = password
 
     def request(self, url, method='GET', params=None, data=None,
-                status_code=200):
+                expected_response_code=200):
         """
         Make a http request to API
         """
@@ -153,7 +153,7 @@ class InfluxDBClient(object):
             timeout=self._timeout
         )
 
-        if response.status_code == status_code:
+        if response.status_code == expected_response_code:
             return response
         else:
             raise InfluxDBClientError(response.content, response.status_code)
@@ -231,7 +231,7 @@ class InfluxDBClient(object):
                 method='POST',
                 params=params,
                 data=data,
-                status_code=200
+                expected_response_code=200
             )
 
         return True
@@ -247,7 +247,7 @@ class InfluxDBClient(object):
         self.request(
             url=url,
             method='DELETE',
-            status_code=204
+            expected_response_code=204
         )
 
         return True
@@ -319,7 +319,7 @@ class InfluxDBClient(object):
             url=url,
             method='GET',
             params=params,
-            status_code=200
+            expected_response_code=200
         )
 
         return response.json()
@@ -350,7 +350,7 @@ class InfluxDBClient(object):
             url=url,
             method='POST',
             data=data,
-            status_code=201
+            expected_response_code=201
         )
 
         return True
@@ -370,7 +370,7 @@ class InfluxDBClient(object):
         self.request(
             url=url,
             method='DELETE',
-            status_code=204
+            expected_response_code=204
         )
 
         return True
@@ -387,7 +387,7 @@ class InfluxDBClient(object):
         response = self.request(
             url=url,
             method='GET',
-            status_code=200
+            expected_response_code=200
         )
 
         return response.json()
@@ -410,7 +410,7 @@ class InfluxDBClient(object):
         self.request(
             url=url,
             method='DELETE',
-            status_code=204
+            expected_response_code=204
         )
 
         return True
@@ -478,7 +478,7 @@ class InfluxDBClient(object):
         response = self.request(
             url="cluster_admins",
             method='GET',
-            status_code=200
+            expected_response_code=200
         )
 
         return response.json()
@@ -496,7 +496,7 @@ class InfluxDBClient(object):
             url="cluster_admins",
             method='POST',
             data=data,
-            status_code=200
+            expected_response_code=200
         )
 
         return True
@@ -515,7 +515,7 @@ class InfluxDBClient(object):
             url=url,
             method='POST',
             data=data,
-            status_code=200
+            expected_response_code=200
         )
 
         return True
@@ -529,7 +529,7 @@ class InfluxDBClient(object):
         self.request(
             url=url,
             method='DELETE',
-            status_code=200
+            expected_response_code=200
         )
 
         return True
@@ -555,7 +555,7 @@ class InfluxDBClient(object):
             url=url,
             method='POST',
             data=data,
-            status_code=200
+            expected_response_code=200
         )
 
         return True
@@ -627,7 +627,7 @@ class InfluxDBClient(object):
         response = self.request(
             url=url,
             method='GET',
-            status_code=200
+            expected_response_code=200
         )
 
         return response.json()
@@ -657,7 +657,7 @@ class InfluxDBClient(object):
             url=url,
             method='POST',
             data=data,
-            status_code=200
+            expected_response_code=200
         )
 
         return True
@@ -676,7 +676,7 @@ class InfluxDBClient(object):
             url=url,
             method='POST',
             data=data,
-            status_code=200
+            expected_response_code=200
         )
 
         if username == self._username:
@@ -693,7 +693,7 @@ class InfluxDBClient(object):
         self.request(
             url=url,
             method='DELETE',
-            status_code=200
+            expected_response_code=200
         )
 
         return True
