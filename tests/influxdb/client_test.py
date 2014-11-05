@@ -223,6 +223,36 @@ class TestInfluxDBClient(unittest.TestCase):
             result = cli.query('select column_one from foo;')
             assert len(result[0]['points']) == 4
 
+    def test_query_chunked(self):
+        cli = InfluxDBClient(database='db')
+        example_response = {
+            'points': [
+                [1415206250119, 40001, 667],
+                [1415206244555, 30001, 7],
+                [1415206228241, 20001, 788],
+                [1415206212980, 10001, 555],
+                [1415197271586, 10001, 23]
+            ],
+            'name': 'foo',
+            'columns': [
+                'time',
+                'sequence_number',
+                'val'
+            ]
+        }
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/db/db/series",
+                text=json.dumps(example_response)
+            )
+
+            self.assertDictEqual(
+                cli.query('select * from foo', chunked=True),
+                example_response
+            )
+
     @raises(Exception)
     def test_query_fail(self):
         with _mocked_session('get', 401):
