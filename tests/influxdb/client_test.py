@@ -285,6 +285,57 @@ class TestInfluxDBClient(unittest.TestCase):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.delete_series('old_series')
 
+    def test_get_series_list(self):
+        cli = InfluxDBClient(database='db')
+
+        with requests_mock.Mocker() as m:
+            example_response = \
+                '[{"name":"list_series_result","columns":' \
+                '["time","name"],"points":[[0,"foo"],[0,"bar"]]}]'
+
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/db/db/series",
+                text=example_response
+            )
+
+            self.assertListEqual(
+                cli.get_list_series(),
+                ['foo', 'bar']
+            )
+
+    def test_get_continuous_queries(self):
+        cli = InfluxDBClient(database='db')
+
+        with requests_mock.Mocker() as m:
+
+            # Tip: put this in a json linter!
+            example_response = '[ { "name": "continuous queries", "columns"' \
+                               ': [ "time", "id", "query" ], "points": [ [ ' \
+                               '0, 1, "select foo(bar,95) from \\"foo_bar' \
+                               's\\" group by time(5m) into response_times.' \
+                               'percentiles.5m.95" ], [ 0, 2, "select perce' \
+                               'ntile(value,95) from \\"response_times\\" g' \
+                               'roup by time(5m) into response_times.percen' \
+                               'tiles.5m.95" ] ] } ]'
+
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/db/db/series",
+                text=example_response
+            )
+
+            self.assertListEqual(
+                cli.get_list_continuous_queries(),
+                [
+                    'select foo(bar,95) from "foo_bars" group '
+                    'by time(5m) into response_times.percentiles.5m.95',
+
+                    'select percentile(value,95) from "response_times" group '
+                    'by time(5m) into response_times.percentiles.5m.95'
+                ]
+            )
+
     def test_get_list_cluster_admins(self):
         pass
 
