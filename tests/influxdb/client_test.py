@@ -83,14 +83,14 @@ class TestInfluxDBClient(unittest.TestCase):
 
     def test_switch_db(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
-        cli.switch_db('another_database')
-        assert cli._database == 'another_database'
+        cli2 = cli.switch_db('another_database')
+        assert cli2.database == 'another_database'
 
     def test_switch_user(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
-        cli.switch_user('another_username', 'another_password')
-        assert cli._username == 'another_username'
-        assert cli._password == 'another_password'
+        cli2 = cli.switch_user('another_username', 'another_password')
+        assert cli2.username == 'another_username'
+        assert cli2.password == 'another_password'
 
     def test_write_points(self):
         with requests_mock.Mocker() as m:
@@ -474,7 +474,7 @@ class TestInfluxDBClient(unittest.TestCase):
                 new_password='bye'
             )
 
-            self.assertEqual(cli._password, 'bye')
+            self.assertEqual(cli.password, 'bye')
 
     def test_delete_database_user(self):
         with requests_mock.Mocker() as m:

@@ -5,6 +5,7 @@ Python client for InfluxDB
 import json
 import socket
 import requests
+import copy
 
 try:
     xrange
@@ -68,60 +69,64 @@ class InfluxDBClient(object):
         """
         Construct a new InfluxDBClient object.
         """
-        self._host = host
-        self._port = port
-        self._username = username
-        self._password = password
-        self._database = database
-        self._timeout = timeout
-
-        self._verify_ssl = verify_ssl
-
+        self.host = host
+        self.port = port
+        self.username = username
+        self.password = password
+        self.database = database
+        self.ssl = ssl
+        self.verify_ssl = verify_ssl
+        self.timeout = timeout
         self.use_udp = use_udp
         self.udp_port = udp_port
+
         if use_udp:
-            self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self._init_udp()
 
-        self._scheme = "http"
+    def _init_udp(self):
+        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-        if ssl is True:
-            self._scheme = "https"
+    @property
+    def _baseurl(self):
+        scheme = "https" if self.ssl else "http"
+        return "{scheme}://{host}:{port}".format(
+            scheme=scheme,
+            host=self.host,
+            port=self.port
+        )
 
-        self._baseurl = "{0}://{1}:{2}".format(
-            self._scheme,
-            self._host,
-            self._port)
-
-        self._headers = {
+    @property
+    def _baseheaders(self):
+        return {
             'Content-type': 'application/json',
-            'Accept': 'text/plain'}
+            'Accept': 'text/plain'
+        }
 
-    # Change member variables
-
-    def switch_db(self, database):
-        """
-        switch_db()
-
-        Change client database.
-
-        :param database: the new database name to switch to
-        :type database: string
-        """
-        self._database = database
 
     def switch_user(self, username, password):
-        """
-        switch_user()
+        return self._copy(overrides={'username': username, 'password': password})
 
-        Change client username.
+    def switch_db(self, database):
+        return self._copy(overrides={'database': database})
 
-        :param username: the new username to switch to
-        :type username: string
-        :param password: the new password to switch to
-        :type password: string
-        """
-        self._username = username
-        self._password = password
+    def switch_db_and_user(self, database, username, password):
+        return self._copy(overrides={'database': database,
+                                     'username': username,
+                                     'password': password})
+
+    def _copy(self, overrides=None):
+        # First, copy ourselves.
+        new_self = copy.copy(self)
+
+        # Then, apply attribute overrides to copy (like new username, host, ...)
+        for k, v in (overrides or {}).items():
+            setattr(new_self, k, v)
+
+        if new_self.use_udp:
+            # Must create new UDP socket
+            new_self._init_udp()
+
+        return new_self
 
     def request(self, url, method='GET', params=None, data=None,
                 status_code=200):
@@ -134,8 +139,8 @@ class InfluxDBClient(object):
             params = {}
 
         auth = {
-            'u': self._username,
-            'p': self._password
+            'u': self.username,
+            'p': self.password
         }
 
         params.update(auth)
@@ -148,9 +153,9 @@ class InfluxDBClient(object):
             url=url,
             params=params,
             data=data,
-            headers=self._headers,
-            verify=self._verify_ssl,
-            timeout=self._timeout
+            headers=self._baseheaders,
+            verify=self.verify_ssl,
+            timeout=self.timeout
         )
 
         if response.status_code == status_code:
@@ -217,7 +222,7 @@ class InfluxDBClient(object):
                 "InfluxDB only supports seconds precision for udp writes"
             )
 
-        url = "db/{0}/series".format(self._database)
+        url = "db/{0}/series".format(self.database)
 
         params = {
             'time_precision': time_precision
@@ -242,7 +247,7 @@ class InfluxDBClient(object):
         """
         Delete an entire series
         """
-        url = "db/{0}/series/{1}".format(self._database, name)
+        url = "db/{0}/series/{1}".format(self.database, name)
 
         self.request(
             url=url,
@@ -307,7 +312,7 @@ class InfluxDBClient(object):
             chunked_param = 'false'
 
         # Build the URL of the serie to query
-        url = "db/{0}/series".format(self._database)
+        url = "db/{0}/series".format(self.database)
 
         params = {
             'q': query,
@@ -403,7 +408,7 @@ class InfluxDBClient(object):
         :rtype: boolean
         """
         url = "db/{0}/series/{1}".format(
-            self._database,
+            self.database,
             series
         )
 
@@ -522,7 +527,7 @@ class InfluxDBClient(object):
         return self.alter_database_admin(username, False)
 
     def alter_database_admin(self, username, is_admin):
-        url = "db/{0}/users/{1}".format(self._database, username)
+        url = "db/{0}/users/{1}".format(self.database, username)
 
         data = {'admin': is_admin}
 
@@ -597,7 +602,7 @@ class InfluxDBClient(object):
         """
         Get list of database users
         """
-        url = "db/{0}/users".format(self._database)
+        url = "db/{0}/users".format(self.database)
 
         response = self.request(
             url=url,
@@ -613,7 +618,7 @@ class InfluxDBClient(object):
 
         :param permissions: A ``(readFrom, writeTo)`` tuple
         """
-        url = "db/{0}/users".format(self._database)
+        url = "db/{0}/users".format(self.database)
 
         data = {
             'name': new_username,
@@ -641,7 +646,7 @@ class InfluxDBClient(object):
         """
         Update password
         """
-        url = "db/{0}/users/{1}".format(self._database, username)
+        url = "db/{0}/users/{1}".format(self.database, username)
 
         data = {
             'password': new_password
@@ -654,8 +659,8 @@ class InfluxDBClient(object):
             status_code=200
         )
 
-        if username == self._username:
-            self._password = new_password
+        if username == self.username:
+            self.password = new_password
 
         return True
 
@@ -663,7 +668,7 @@ class InfluxDBClient(object):
         """
         Delete database user
         """
-        url = "db/{0}/users/{1}".format(self._database, username)
+        url = "db/{0}/users/{1}".format(self.database, username)
 
         self.request(
             url=url,
@@ -688,4 +693,4 @@ class InfluxDBClient(object):
     def send_packet(self, packet):
         data = json.dumps(packet)
         byte = data.encode('utf-8')
-        self.udp_socket.sendto(byte, (self._host, self.udp_port))
+        self.udp_socket.sendto(byte, (self.host, self.udp_port))
