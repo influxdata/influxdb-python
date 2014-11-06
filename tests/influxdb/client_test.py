@@ -257,7 +257,8 @@ class TestInfluxDBClient(unittest.TestCase):
                 'val'
             ]
         }
-        example_response = json.dumps(example_object) + json.dumps(example_object)
+        example_response = \
+            json.dumps(example_object) + json.dumps(example_object)
 
         with requests_mock.Mocker() as m:
             m.register_uri(

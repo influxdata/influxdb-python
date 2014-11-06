@@ -325,10 +325,9 @@ class InfluxDBClient(object):
         )
 
         if chunked:
-            return list(chunked_json.loads(response.content))
+            return list(chunked_json.loads(response.content.decode()))
         else:
             return response.json()
-
 
     # Creating and Dropping Databases
     #
