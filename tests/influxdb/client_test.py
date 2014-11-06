@@ -242,7 +242,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
     def test_query_chunked(self):
         cli = InfluxDBClient(database='db')
-        example_response = {
+        example_object = {
             'points': [
                 [1415206250119, 40001, 667],
                 [1415206244555, 30001, 7],
@@ -257,17 +257,18 @@ class TestInfluxDBClient(unittest.TestCase):
                 'val'
             ]
         }
+        example_response = json.dumps(example_object) + json.dumps(example_object)
 
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.GET,
                 "http://localhost:8086/db/db/series",
-                text=json.dumps(example_response)
+                text=example_response
             )
 
-            self.assertDictEqual(
+            self.assertListEqual(
                 cli.query('select * from foo', chunked=True),
-                example_response
+                [example_object, example_object]
             )
 
     @raises(Exception)
