@@ -6,6 +6,8 @@ import json
 import socket
 import requests
 
+from influxdb import chunked_json
+
 try:
     xrange
 except NameError:
@@ -322,7 +324,10 @@ class InfluxDBClient(object):
             expected_response_code=200
         )
 
-        return response.json()
+        if chunked:
+            return list(chunked_json.loads(response.content.decode()))
+        else:
+            return response.json()
 
     # Creating and Dropping Databases
     #
