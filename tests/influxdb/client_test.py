@@ -9,6 +9,9 @@ import unittest
 import requests_mock
 from nose.tools import raises
 from mock import patch
+from datetime import datetime, timedelta
+import time
+import pandas as pd
 
 from influxdb import InfluxDBClient
 from influxdb.client import session
@@ -592,3 +595,35 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_update_permission(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
         cli.update_permission('admin', [])
+
+    def test_write_points_from_dataframe(self):
+        now = datetime(2014, 11, 15, 15, 42, 44, 543)
+        self.dummy_points = [
+            {
+                "points": [
+                    ["1", 1, 1.0, time.mktime(now.timetuple())],
+                    ["2", 2, 2.0, time.mktime((now + timedelta(hours=1)).timetuple())]
+                ],
+                "name": "foo",
+                "columns": ["column_one", "column_two", "column_three", "time"]
+            }
+        ]
+        self.dummy_dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
+                                            index = [now, now + timedelta(hours=1)],
+                                            columns=["column_one", "column_two", "column_three"])
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/db/db/series"
+            )
+
+            cli = InfluxDBClient(database='db')
+            cli.write_points_from_dataframe(
+                self.dummy_dataframe, name="foo"
+            )
+
+            self.assertListEqual(
+                json.loads(m.last_request.body),
+                self.dummy_points
+            )

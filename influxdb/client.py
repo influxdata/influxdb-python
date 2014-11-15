@@ -5,6 +5,7 @@ Python client for InfluxDB
 import json
 import socket
 import requests
+import time
 
 from influxdb import chunked_json
 
@@ -719,3 +720,13 @@ class InfluxDBClient(object):
         data = json.dumps(packet)
         byte = data.encode('utf-8')
         self.udp_socket.sendto(byte, (self._host, self.udp_port))
+
+    def write_points_from_dataframe(self, dataframe, name):
+        dataframe = dataframe.copy()
+        dataframe['time'] = [time.mktime(dt.timetuple()) for dt in dataframe.index]
+        data = dict()
+        data['name'] = name
+        data['columns'] = list(dataframe.columns)
+        data['points'] = list([list(x) for x in dataframe.values])
+        print(data)
+        self.write_points(data=[data], time_precision='s')
