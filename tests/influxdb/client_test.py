@@ -12,6 +12,7 @@ from mock import patch
 from datetime import datetime, timedelta
 import time
 import pandas as pd
+from pandas.util.testing import assert_frame_equal
 
 from influxdb import InfluxDBClient
 from influxdb.client import session
@@ -627,3 +628,23 @@ class TestInfluxDBClient(unittest.TestCase):
                 json.loads(m.last_request.body),
                 self.dummy_points
             )
+
+    def test_query_into_dataframe(self):
+        data = [
+            {
+                "name": "foo",
+                "columns": ["time", "sequence_number", "column_one"],
+                "points": [
+                    [1383876043, 16, 2], [1383876043, 15, 1],
+                    [1383876035, 14, 2], [1383876035, 13, 1]
+                ]
+            }
+        ]
+        dataframe = pd.DataFrame(data=[[16, 2], [15, 1], [14, 2], [13, 1]],
+                                 index=pd.to_datetime([1383876043, 1383876043, 1383876035, 1383876035],
+                                                       unit='s', utc=True),
+                                 columns=['sequence_number', 'column_one'])
+        with _mocked_session('get', 200, data):
+            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
+            result = cli.query('select column_one from foo;', output_format='dataframe')
+            assert_frame_equal(dataframe, result)

@@ -296,7 +296,7 @@ class InfluxDBClient(object):
     # Querying Data
     #
     # GET db/:name/series. It takes five parameters
-    def query(self, query, time_precision='s', chunked=False):
+    def query(self, query, time_precision='s', chunked=False, output_format='json'):
         """
         Quering data
         """
@@ -326,9 +326,29 @@ class InfluxDBClient(object):
         )
 
         if chunked:
-            return list(chunked_json.loads(response.content.decode()))
+            result = list(chunked_json.loads(response.content.decode()))
         else:
-            return response.json()
+            result = response.json()
+        if output_format == 'dataframe':
+            result = self._to_dataframe(result[0], time_precision)
+        return result
+
+    def _to_dataframe(self, json_result, time_precision):
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError('pandas required for retrieving as dataframe.')
+        dataframe = pd.DataFrame(data=json_result['points'],
+                                 columns=json_result['columns'])
+        pandas_time_unit = time_precision
+        if time_precision == 'm':
+            pandas_time_unit = 'ms'
+        elif time_precision == 'u':
+            pandas_time_unit = 'us'
+        dataframe.index = pd.to_datetime(list(dataframe['time']), unit=pandas_time_unit, utc=True)
+        del dataframe['time']
+        return dataframe
+
 
     # Creating and Dropping Databases
     #
