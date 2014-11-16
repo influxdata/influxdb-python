@@ -629,6 +629,39 @@ class TestInfluxDBClient(unittest.TestCase):
                 self.dummy_points
             )
 
+    def test_write_points_from_dataframe_with_period_index(self):
+        now = datetime(2014, 11, 16)
+        self.dummy_points = [
+            {
+                "points": [
+                    ["1", 1, 1.0, time.mktime(now.timetuple())],
+                    ["2", 2, 2.0, time.mktime((now + timedelta(hours=24)).timetuple())]
+                ],
+                "name": "foo",
+                "columns": ["column_one", "column_two", "column_three", "time"]
+            }
+        ]
+        self.dummy_dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
+                                            index = [pd.Period('2014-11-16'), pd.Period('2014-11-17')],
+                                            columns=["column_one", "column_two", "column_three"])
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/db/db/series"
+            )
+
+            cli = InfluxDBClient(database='db')
+            cli.write_points_from_dataframe(
+                self.dummy_dataframe, name="foo"
+            )
+
+            self.assertListEqual(
+                json.loads(m.last_request.body),
+                self.dummy_points
+            )
+
+
     def test_query_into_dataframe(self):
         data = [
             {

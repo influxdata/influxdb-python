@@ -742,7 +742,7 @@ class InfluxDBClient(object):
         self.udp_socket.sendto(byte, (self._host, self.udp_port))
 
     def write_points_from_dataframe(self, dataframe, name):
-        dataframe = dataframe.copy()
+        dataframe.index = dataframe.index.to_datetime()
         dataframe['time'] = [time.mktime(dt.timetuple()) for dt in dataframe.index]
         data = dict()
         data['name'] = name
