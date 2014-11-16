@@ -661,6 +661,27 @@ class TestInfluxDBClient(unittest.TestCase):
                 self.dummy_points
             )
 
+    @raises(TypeError)
+    def test_write_points_from_dataframe_fails_without_time_index(self):
+        self.dummy_dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
+                                            columns=["column_one", "column_two", "column_three"])
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST, "http://localhost:8086/db/db/series")
+
+            cli = InfluxDBClient(database='db')
+            cli.write_points_from_dataframe(self.dummy_dataframe, name="foo")
+
+    @raises(TypeError)
+    def test_write_points_from_dataframe_fails_with_anything_but_dataframe(self):
+        now = datetime(2014, 11, 16)
+        self.dummy_dataframe = pd.Series(data=[1.0, 2.0], index=[now, now+timedelta(hours=1)])
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST, "http://localhost:8086/db/db/series")
+
+            cli = InfluxDBClient(database='db')
+            cli.write_points_from_dataframe(self.dummy_dataframe, name="foo")
 
     def test_query_into_dataframe(self):
         data = [

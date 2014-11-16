@@ -742,6 +742,15 @@ class InfluxDBClient(object):
         self.udp_socket.sendto(byte, (self._host, self.udp_port))
 
     def write_points_from_dataframe(self, dataframe, name):
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError('pandas required for writing as dataframe.')
+        if not isinstance(dataframe, pd.DataFrame):
+            raise TypeError('Must be DataFrame, but type was: {}.'.format(type(dataframe)))
+        if not (isinstance(dataframe.index, pd.tseries.period.PeriodIndex) or
+                isinstance(dataframe.index, pd.tseries.index.DatetimeIndex)):
+            raise TypeError('Must be DataFrame with DatetimeIndex or PeriodIndex.')
         dataframe.index = dataframe.index.to_datetime()
         dataframe['time'] = [time.mktime(dt.timetuple()) for dt in dataframe.index]
         data = dict()
