@@ -167,12 +167,14 @@ class InfluxDBClient(object):
     # by doing a POST to /db/foo_production/series?u=some_user&p=some_password
     # with a JSON body of points.
 
-    def write_points(self, *args, **kwargs):
+    def write_points(self, data, *args, **kwargs):
         """
         write_points()
 
         Write to multiple time series names.
 
+        :param data: A list of dicts, or a dictionary mapping series names to
+            pandas DataFrames
         :param batch_size: [Optional] Value to write the points in batches
             instead of all at one time. Useful for when doing data dumps from
             one database to another or when doing a massive write operation
@@ -185,27 +187,30 @@ class InfluxDBClient(object):
             for i in xrange(0, len(l), n):
                 yield l[i:i + n]
 
+        # check for pandas dataframe
+        if isinstance(data, dict):
+            data = [self._convert_dataframe_to_json(name=key, dataframe=value) for key, value in data.items()]
         batch_size = kwargs.get('batch_size')
         if batch_size:
-            for data in kwargs.get('data'):
-                name = data.get('name')
-                columns = data.get('columns')
-                point_list = data.get('points')
+            for item in data:
+                name = item.get('name')
+                columns = item.get('columns')
+                point_list = item.get('points')
 
                 for batch in list_chunks(point_list, batch_size):
-                    data = [{
+                    item = [{
                         "points": batch,
                         "name": name,
                         "columns": columns
                     }]
                     time_precision = kwargs.get('time_precision', 's')
                     self.write_points_with_precision(
-                        data=data,
+                        data=item,
                         time_precision=time_precision)
 
                 return True
 
-        return self.write_points_with_precision(*args, **kwargs)
+        return self.write_points_with_precision(data, *args, **kwargs)
 
     def write_points_with_precision(self, data, time_precision='s'):
         """
@@ -219,6 +224,10 @@ class InfluxDBClient(object):
             raise Exception(
                 "InfluxDB only supports seconds precision for udp writes"
             )
+
+        # check for pandas dataframe
+        if isinstance(data, dict):
+            data = [self._convert_dataframe_to_json(name=key, dataframe=value) for key, value in data.items()]
 
         url = "db/{0}/series".format(self._database)
 
@@ -238,6 +247,23 @@ class InfluxDBClient(object):
             )
 
         return True
+
+    def _convert_dataframe_to_json(self, dataframe, name):
+        try:
+            import pandas as pd
+        except ImportError:
+            raise ImportError('pandas required for writing as dataframe.')
+        if not isinstance(dataframe, pd.DataFrame):
+            raise TypeError('Must be DataFrame, but type was: {}.'.format(type(dataframe)))
+        if not (isinstance(dataframe.index, pd.tseries.period.PeriodIndex) or
+                isinstance(dataframe.index, pd.tseries.index.DatetimeIndex)):
+            raise TypeError('Must be DataFrame with DatetimeIndex or PeriodIndex.')
+        dataframe.index = dataframe.index.to_datetime()
+        dataframe['time'] = [time.mktime(dt.timetuple()) for dt in dataframe.index]
+        data = {'name':name,
+                'columns':list(dataframe.columns),
+                'points':list([list(x) for x in dataframe.values])}
+        return data
 
     # One Time Deletes
 
@@ -299,6 +325,13 @@ class InfluxDBClient(object):
     def query(self, query, time_precision='s', chunked=False, output_format='json'):
         """
         Quering data
+
+        :param time_precision: [Optional, default 's'] Either 's', 'm', 'ms' or 'u'.
+        :param chunked: [Optional, default=False] True if the data shall be retrieved
+            in chunks, False otherwise.
+        :param output_format: [Optional, default 'json'] Format of the resulting
+            output. Can be 'json' or 'dataframe' for a pandas DataFrame.
+
         """
         if time_precision not in ['s', 'm', 'ms', 'u']:
             raise Exception(
@@ -740,22 +773,3 @@ class InfluxDBClient(object):
         data = json.dumps(packet)
         byte = data.encode('utf-8')
         self.udp_socket.sendto(byte, (self._host, self.udp_port))
-
-    def write_points_from_dataframe(self, dataframe, name):
-        try:
-            import pandas as pd
-        except ImportError:
-            raise ImportError('pandas required for writing as dataframe.')
-        if not isinstance(dataframe, pd.DataFrame):
-            raise TypeError('Must be DataFrame, but type was: {}.'.format(type(dataframe)))
-        if not (isinstance(dataframe.index, pd.tseries.period.PeriodIndex) or
-                isinstance(dataframe.index, pd.tseries.index.DatetimeIndex)):
-            raise TypeError('Must be DataFrame with DatetimeIndex or PeriodIndex.')
-        dataframe.index = dataframe.index.to_datetime()
-        dataframe['time'] = [time.mktime(dt.timetuple()) for dt in dataframe.index]
-        data = dict()
-        data['name'] = name
-        data['columns'] = list(dataframe.columns)
-        data['points'] = list([list(x) for x in dataframe.values])
-        print(data)
-        self.write_points(data=[data], time_precision='s')
