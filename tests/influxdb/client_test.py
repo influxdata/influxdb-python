@@ -621,6 +621,29 @@ class TestInfluxDBClient(unittest.TestCase):
 
             self.assertListEqual(json.loads(m.last_request.body), points)
 
+    def test_write_points_from_dataframe_with_numeric_column_names(self):
+        now = datetime(2014, 11, 15, 15, 42, 44, 543)
+        points = [
+            {
+                "points": [
+                    ["1", 1, 1.0, time.mktime(now.timetuple())],
+                    ["2", 2, 2.0, time.mktime((now + timedelta(hours=1)).timetuple())]
+                ],
+                "name": "foo",
+                "columns": ['0', '1', '2', "time"]
+            }
+        ]
+        dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
+                                 index = [now, now + timedelta(hours=1)]) # df with numeric column names
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST, "http://localhost:8086/db/db/series")
+
+            cli = InfluxDBClient(database='db')
+            cli.write_points({"foo":dataframe})
+
+            self.assertListEqual(json.loads(m.last_request.body), points)
+
     def test_write_points_from_dataframe_with_period_index(self):
         now = datetime(2014, 11, 16)
         points = [

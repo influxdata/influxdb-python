@@ -261,7 +261,7 @@ class InfluxDBClient(object):
         dataframe.index = dataframe.index.to_datetime()
         dataframe['time'] = [time.mktime(dt.timetuple()) for dt in dataframe.index]
         data = {'name':name,
-                'columns':list(dataframe.columns),
+                'columns':[str(column) for column in dataframe.columns],
                 'points':list([list(x) for x in dataframe.values])}
         return data
 
