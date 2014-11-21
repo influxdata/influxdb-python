@@ -8,13 +8,17 @@ import requests_mock
 from nose.tools import raises
 from datetime import datetime, timedelta
 import time
-import pandas as pd
-from pandas.util.testing import assert_frame_equal
+from tests import skipIfPYpy, using_pypy
+
+if not using_pypy:
+    import pandas as pd
+    from pandas.util.testing import assert_frame_equal
 
 from influxdb.misc import DataFrameClient
 from .client_test import _mocked_session
 
 
+@skipIfPYpy
 class TestDataFrameClient(unittest.TestCase):
 
     def test_write_points_from_dataframe(self):
