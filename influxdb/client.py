@@ -5,7 +5,6 @@ Python client for InfluxDB
 import json
 import socket
 import requests
-import time
 
 from influxdb import chunked_json
 
@@ -173,8 +172,7 @@ class InfluxDBClient(object):
 
         Write to multiple time series names.
 
-        :param data: A list of dicts, or a dictionary mapping series names to
-            pandas DataFrames
+        :param data: A list of dicts.
         :param batch_size: [Optional] Value to write the points in batches
             instead of all at one time. Useful for when doing data dumps from
             one database to another or when doing a massive write operation
@@ -187,9 +185,6 @@ class InfluxDBClient(object):
             for i in xrange(0, len(l), n):
                 yield l[i:i + n]
 
-        # check for pandas dataframe
-        if isinstance(data, dict):
-            data = [self._convert_dataframe_to_json(name=key, dataframe=value) for key, value in data.items()]
         batch_size = kwargs.get('batch_size')
         if batch_size:
             for item in data:
@@ -225,10 +220,6 @@ class InfluxDBClient(object):
                 "InfluxDB only supports seconds precision for udp writes"
             )
 
-        # check for pandas dataframe
-        if isinstance(data, dict):
-            data = [self._convert_dataframe_to_json(name=key, dataframe=value) for key, value in data.items()]
-
         url = "db/{0}/series".format(self._database)
 
         params = {
@@ -247,23 +238,6 @@ class InfluxDBClient(object):
             )
 
         return True
-
-    def _convert_dataframe_to_json(self, dataframe, name):
-        try:
-            import pandas as pd
-        except ImportError:
-            raise ImportError('pandas required for writing as dataframe.')
-        if not isinstance(dataframe, pd.DataFrame):
-            raise TypeError('Must be DataFrame, but type was: {}.'.format(type(dataframe)))
-        if not (isinstance(dataframe.index, pd.tseries.period.PeriodIndex) or
-                isinstance(dataframe.index, pd.tseries.index.DatetimeIndex)):
-            raise TypeError('Must be DataFrame with DatetimeIndex or PeriodIndex.')
-        dataframe.index = dataframe.index.to_datetime()
-        dataframe['time'] = [time.mktime(dt.timetuple()) for dt in dataframe.index]
-        data = {'name':name,
-                'columns':[str(column) for column in dataframe.columns],
-                'points':list([list(x) for x in dataframe.values])}
-        return data
 
     # One Time Deletes
 
@@ -322,16 +296,14 @@ class InfluxDBClient(object):
     # Querying Data
     #
     # GET db/:name/series. It takes five parameters
-    def query(self, query, time_precision='s', chunked=False, output_format='json'):
+    def query(self, query, time_precision='s', chunked=False):
         """
         Quering data
 
-        :param time_precision: [Optional, default 's'] Either 's', 'm', 'ms' or 'u'.
-        :param chunked: [Optional, default=False] True if the data shall be retrieved
-            in chunks, False otherwise.
-        :param output_format: [Optional, default 'json'] Format of the resulting
-            output. Can be 'json' or 'dataframe' for a pandas DataFrame.
-
+        :param time_precision: [Optional, default 's'] Either 's', 'm', 'ms'
+            or 'u'.
+        :param chunked: [Optional, default=False] True if the data shall be
+            retrieved in chunks, False otherwise.
         """
         if time_precision not in ['s', 'm', 'ms', 'u']:
             raise Exception(
@@ -359,29 +331,9 @@ class InfluxDBClient(object):
         )
 
         if chunked:
-            result = list(chunked_json.loads(response.content.decode()))
+            return list(chunked_json.loads(response.content.decode()))
         else:
-            result = response.json()
-        if output_format == 'dataframe':
-            result = self._to_dataframe(result[0], time_precision)
-        return result
-
-    def _to_dataframe(self, json_result, time_precision):
-        try:
-            import pandas as pd
-        except ImportError:
-            raise ImportError('pandas required for retrieving as dataframe.')
-        dataframe = pd.DataFrame(data=json_result['points'],
-                                 columns=json_result['columns'])
-        pandas_time_unit = time_precision
-        if time_precision == 'm':
-            pandas_time_unit = 'ms'
-        elif time_precision == 'u':
-            pandas_time_unit = 'us'
-        dataframe.index = pd.to_datetime(list(dataframe['time']), unit=pandas_time_unit, utc=True)
-        del dataframe['time']
-        return dataframe
-
+            return response.json()
 
     # Creating and Dropping Databases
     #
