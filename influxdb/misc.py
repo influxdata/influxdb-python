@@ -3,6 +3,7 @@
 Miscellaneous
 """
 import math
+import warnings
 
 from .client import InfluxDBClient
 
@@ -54,8 +55,14 @@ class DataFrameClient(InfluxDBClient):
 
     def write_points_with_precision(self, data, time_precision='s'):
         """
-        Write to multiple time series names
+        DEPRECATED. Write to multiple time series names
+
         """
+        warnings.warn(
+            "write_points_with_precision is deprecated, and will be removed "
+            "in future versions. Please use "
+            "``DataFrameClient.write_points(time_precision='..')`` instead.",
+            FutureWarning)
         return self.write_points(data, time_precision='s')
 
     def query(self, query, time_precision='s', chunked=False):
