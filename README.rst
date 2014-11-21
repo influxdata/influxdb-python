@@ -52,15 +52,16 @@ On Debian/Ubuntu, you can install it with this command::
 Dependencies
 ============
 
-The InfluxDB-Python distribution is supported and tested on Python 2.7 and Python 3.3.
+The InfluxDB-Python distribution is supported and tested on Python 2.7 and Python 3.4.
 
-Main dependencie is:
+Main dependency is:
 
 - Requests: HTTP library for human beings (http://docs.python-requests.org/)
 
 
 Additional dependencies are:
 
+- pandas: for writing from and reading to DataFrames (http://pandas.pydata.org/)
 - Sphinx: Tool to create and manage the documentation (http://sphinx-doc.org/)
 - Nose: to auto-discover tests (http://nose.readthedocs.org/en/latest/)
 - Mock: to mock tests (https://pypi.python.org/pypi/mock)

@@ -20,9 +20,17 @@ ports. The below instantiation statements are all equivalent::
     # using UDP
     client = InfluxDBClient(host='127.0.0.1', dbname='dbname', use_udp=True, udp_port=4444)
 
+To write pandas DataFrames or to read data into a
+pandas DataFrame, use a :py:class:`~influxdb.misc.DataFrameClient` object.
+These clients are initiated in the same way as the
+:py:class:`~influxdb.InfluxDBClient`::
+
+    from influxdb.misc import DataFrameClient
+
+    client = DataFrameClient(host='127.0.0.1', port=8086, username='root', password='root', dbname='dbname')
+
 
 .. note:: Only when using UDP (use_udp=True) the connections is established.
-
 
 
 .. _InfluxDBClient-api:
@@ -34,5 +42,15 @@ ports. The below instantiation statements are all equivalent::
 
 .. currentmodule:: influxdb.InfluxDBClient
 .. autoclass:: influxdb.InfluxDBClient
+    :members:
+    :undoc-members:
+
+-----------------------
+:class:`DataFrameClient`
+-----------------------
+
+
+.. currentmodule:: influxdb.misc.DataFrameClient
+.. autoclass:: influxdb.misc.DataFrameClient
     :members:
     :undoc-members:
