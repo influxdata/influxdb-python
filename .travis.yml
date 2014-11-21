@@ -13,7 +13,7 @@ install:
     - sudo pip install tox
     - sudo pip install coveralls
 script:
-    - tox -e $TOX_ENV
+    - travis_wait tox -e $TOX_ENV
 after_success:
     - if [ "$TOX_ENV" == "coverage" ] ; then coveralls; fi
 deploy:
