@@ -1,3 +1,4 @@
 nose
 mock
 requests-mock
+pandas
