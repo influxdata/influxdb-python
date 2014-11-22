@@ -2,7 +2,6 @@
 """
 Miscellaneous
 """
-from time import mktime
 
 from .client import InfluxDBClient
 
@@ -13,6 +12,9 @@ class DataFrameClient(InfluxDBClient):
     to InfluxDB. Requests can be made to InfluxDB directly through the client.
     The client reads and writes from pandas DataFrames.
     """
+
+    import pandas as pd
+    EPOCH = pd.Timestamp('1970-01-01 00:00:00.000+00:00')
 
     def write_points(self, data, *args, **kwargs):
         """
@@ -84,8 +86,13 @@ class DataFrameClient(InfluxDBClient):
             raise TypeError('Must be DataFrame with DatetimeIndex or \
                             PeriodIndex.')
         dataframe.index = dataframe.index.to_datetime()
-        dataframe['time'] = [mktime(dt.timetuple()) for dt in dataframe.index]
+        if dataframe.index.tzinfo == None:
+            dataframe.index = dataframe.index.tz_localize('UTC')
+        dataframe['time'] = [self._datetime_to_epoch(dt) for dt in dataframe.index]
         data = {'name': name,
                 'columns': [str(column) for column in dataframe.columns],
                 'points': list([list(x) for x in dataframe.values])}
         return data
+
+    def _datetime_to_epoch(self, datetime):
+        return (datetime - DataFrameClient.EPOCH).total_seconds()
