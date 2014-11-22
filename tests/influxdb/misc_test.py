@@ -129,14 +129,15 @@ class TestDataFrameClient(unittest.TestCase):
                 "name": "foo",
                 "columns": ["time", "sequence_number", "column_one"],
                 "points": [
-                    [1383876043, 16, 2], [1383876043, 15, 1],
-                    [1383876035, 14, 2], [1383876035, 13, 1]
+                    [3600, 16, 2], [3600, 15, 1],
+                    [0, 14, 2], [0, 13, 1]
                 ]
             }
         ]
-        dataframe = pd.DataFrame(data=[[16, 2], [15, 1], [14, 2], [13, 1]],
-                                 index=pd.to_datetime([1383876043, 1383876043,
-                                                      1383876035, 1383876035],
+        # dataframe sorted ascending by time first, then sequence_number
+        dataframe = pd.DataFrame(data=[[13, 1], [14, 2], [15, 1], [16, 2]],
+                                 index=pd.to_datetime([0, 0,
+                                                      3600, 3600],
                                                       unit='s', utc=True),
                                  columns=['sequence_number', 'column_one'])
         with _mocked_session('get', 200, data):
