@@ -71,7 +71,10 @@ class DataFrameClient(InfluxDBClient):
         result = InfluxDBClient.query(self, query=query,
                                       time_precision=time_precision,
                                       chunked=chunked)
-        return self._to_dataframe(result[0], time_precision)
+        if len(result) > 0:
+            return self._to_dataframe(result[0], time_precision)
+        else:
+            return result
 
     def _to_dataframe(self, json_result, time_precision):
         try:

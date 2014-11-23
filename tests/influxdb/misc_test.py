@@ -159,6 +159,12 @@ class TestDataFrameClient(unittest.TestCase):
             result = cli.query('select column_one from foo;')
             assert_frame_equal(dataframe, result)
 
+    def test_query_with_empty_result(self):
+        with _mocked_session('get', 200, []):
+            cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
+            result = cli.query('select column_one from foo;')
+            assert result == []
+
     def test_list_series(self):
         response = [
             {
