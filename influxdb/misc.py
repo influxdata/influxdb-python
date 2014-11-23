@@ -2,6 +2,7 @@
 """
 Miscellaneous
 """
+import math
 
 from .client import InfluxDBClient
 
@@ -29,10 +30,27 @@ class DataFrameClient(InfluxDBClient):
         :type batch_size: int
         """
 
-        data = [self._convert_dataframe_to_json(name=key, dataframe=value)
-                for key, value in data.items()]
-        return InfluxDBClient.write_points_with_precision(self, data,
-                                                          *args, **kwargs)
+        batch_size = kwargs.get('batch_size')
+        if batch_size:
+            kwargs.pop('batch_size')  # don't hand over to InfluxDBClient
+            for key, data_frame in data.items():
+                number_batches = int(math.ceil(len(data_frame)
+                                     / float(batch_size)))
+                for batch in range(number_batches):
+                    start_index = batch * batch_size
+                    end_index = (batch + 1) * batch_size
+                    data = [self._convert_dataframe_to_json(
+                        name=key,
+                        dataframe=data_frame.ix[start_index:end_index].copy())]
+                    InfluxDBClient.write_points_with_precision(self, data,
+                                                               *args, **kwargs)
+            return True
+        else:
+            data = [self._convert_dataframe_to_json(name=key,
+                                                    dataframe=dataframe)
+                    for key, dataframe in data.items()]
+            return InfluxDBClient.write_points_with_precision(self, data,
+                                                              *args, **kwargs)
 
     def write_points_with_precision(self, data, time_precision='s'):
         """
@@ -90,9 +108,10 @@ class DataFrameClient(InfluxDBClient):
             raise TypeError('Must be DataFrame with DatetimeIndex or \
                             PeriodIndex.')
         dataframe.index = dataframe.index.to_datetime()
-        if dataframe.index.tzinfo == None:
+        if dataframe.index.tzinfo is None:
             dataframe.index = dataframe.index.tz_localize('UTC')
-        dataframe['time'] = [self._datetime_to_epoch(dt) for dt in dataframe.index]
+        dataframe['time'] = [self._datetime_to_epoch(dt)
+                             for dt in dataframe.index]
         data = {'name': name,
                 'columns': [str(column) for column in dataframe.columns],
                 'points': list([list(x) for x in dataframe.values])}
