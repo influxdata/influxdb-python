@@ -293,9 +293,6 @@ class InfluxDBClient(object):
         """
         raise NotImplementedError()
 
-    # Querying Data
-    #
-    # GET db/:name/series. It takes five parameters
     def query(self, query, time_precision='s', chunked=False):
         """
         Quering data
@@ -305,6 +302,13 @@ class InfluxDBClient(object):
         :param chunked: [Optional, default=False] True if the data shall be
             retrieved in chunks, False otherwise.
         """
+        return self._query(query, time_precision=time_precision,
+                           chunked=chunked)
+
+    # Querying Data
+    #
+    # GET db/:name/series. It takes five parameters
+    def _query(self, query, time_precision='s', chunked=False):
         if time_precision not in ['s', 'm', 'ms', 'u']:
             raise Exception(
                 "Invalid time precision is given. (use 's', 'm', 'ms' or 'u')")
@@ -431,7 +435,7 @@ class InfluxDBClient(object):
         Get a list of all time series in a database
         """
 
-        response = self.query('list series')
+        response = self._query('list series')
 
         series_list = []
         for series in response[0]['points']:
@@ -444,7 +448,7 @@ class InfluxDBClient(object):
         Get a list of continuous queries
         """
 
-        response = self.query('list continuous queries')
+        response = self._query('list continuous queries')
         queries_list = []
         for query in response[0]['points']:
             queries_list.append(query[2])

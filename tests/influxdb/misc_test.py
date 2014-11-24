@@ -6,8 +6,7 @@ import unittest
 import json
 import requests_mock
 from nose.tools import raises
-from datetime import datetime, timedelta
-import time
+from datetime import timedelta
 from tests import skipIfPYpy, using_pypy
 
 if not using_pypy:
@@ -22,7 +21,7 @@ from .client_test import _mocked_session
 class TestDataFrameClient(unittest.TestCase):
 
     def test_write_points_from_dataframe(self):
-        now = datetime(2014, 11, 15, 15, 42, 44, 543)
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
                                  index=[now, now + timedelta(hours=1)],
                                  columns=["column_one", "column_two",
@@ -30,9 +29,8 @@ class TestDataFrameClient(unittest.TestCase):
         points = [
             {
                 "points": [
-                    ["1", 1, 1.0, time.mktime(now.timetuple())],
-                    ["2", 2, 2.0, time.mktime((now + timedelta(hours=1))
-                                              .timetuple())]
+                    ["1", 1, 1.0, 0],
+                    ["2", 2, 2.0, 3600]
                 ],
                 "name": "foo",
                 "columns": ["column_one", "column_two", "column_three", "time"]
@@ -48,17 +46,30 @@ class TestDataFrameClient(unittest.TestCase):
 
             self.assertListEqual(json.loads(m.last_request.body), points)
 
+    def test_write_points_from_dataframe_in_batches(self):
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["column_one", "column_two",
+                                          "column_three"])
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/db/db/series")
+
+            cli = DataFrameClient(database='db')
+            assert cli.write_points({"foo": dataframe},
+                                    batch_size=1) is True
+
     def test_write_points_from_dataframe_with_numeric_column_names(self):
-        now = datetime(2014, 11, 15, 15, 42, 44, 543)
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
         # df with numeric column names
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
                                  index=[now, now + timedelta(hours=1)])
         points = [
             {
                 "points": [
-                    ["1", 1, 1.0, time.mktime(now.timetuple())],
-                    ["2", 2, 2.0, time.mktime((now + timedelta(hours=1))
-                                              .timetuple())]
+                    ["1", 1, 1.0, 0],
+                    ["2", 2, 2.0, 3600]
                 ],
                 "name": "foo",
                 "columns": ['0', '1', '2', "time"]
@@ -75,18 +86,16 @@ class TestDataFrameClient(unittest.TestCase):
             self.assertListEqual(json.loads(m.last_request.body), points)
 
     def test_write_points_from_dataframe_with_period_index(self):
-        now = datetime(2014, 11, 16)
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
-                                 index=[pd.Period('2014-11-16'),
-                                        pd.Period('2014-11-17')],
+                                 index=[pd.Period('1970-01-01'),
+                                        pd.Period('1970-01-02')],
                                  columns=["column_one", "column_two",
                                           "column_three"])
         points = [
             {
                 "points": [
-                    ["1", 1, 1.0, time.mktime(now.timetuple())],
-                    ["2", 2, 2.0, time.mktime((now + timedelta(hours=24))
-                                              .timetuple())]
+                    ["1", 1, 1.0, 0],
+                    ["2", 2, 2.0, 86400]
                 ],
                 "name": "foo",
                 "columns": ["column_one", "column_two", "column_three", "time"]
@@ -117,7 +126,7 @@ class TestDataFrameClient(unittest.TestCase):
 
     @raises(TypeError)
     def test_write_points_from_dataframe_fails_with_series(self):
-        now = datetime(2014, 11, 16)
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.Series(data=[1.0, 2.0],
                               index=[now, now + timedelta(hours=1)])
 
@@ -134,17 +143,37 @@ class TestDataFrameClient(unittest.TestCase):
                 "name": "foo",
                 "columns": ["time", "sequence_number", "column_one"],
                 "points": [
-                    [1383876043, 16, 2], [1383876043, 15, 1],
-                    [1383876035, 14, 2], [1383876035, 13, 1]
+                    [3600, 16, 2], [3600, 15, 1],
+                    [0, 14, 2], [0, 13, 1]
                 ]
             }
         ]
-        dataframe = pd.DataFrame(data=[[16, 2], [15, 1], [14, 2], [13, 1]],
-                                 index=pd.to_datetime([1383876043, 1383876043,
-                                                      1383876035, 1383876035],
+        # dataframe sorted ascending by time first, then sequence_number
+        dataframe = pd.DataFrame(data=[[13, 1], [14, 2], [15, 1], [16, 2]],
+                                 index=pd.to_datetime([0, 0,
+                                                      3600, 3600],
                                                       unit='s', utc=True),
                                  columns=['sequence_number', 'column_one'])
         with _mocked_session('get', 200, data):
             cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
             result = cli.query('select column_one from foo;')
             assert_frame_equal(dataframe, result)
+
+    def test_query_with_empty_result(self):
+        with _mocked_session('get', 200, []):
+            cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
+            result = cli.query('select column_one from foo;')
+            assert result == []
+
+    def test_list_series(self):
+        response = [
+            {
+                'columns': ['time', 'name'],
+                'name': 'list_series_result',
+                'points': [[0, 'seriesA'], [0, 'seriesB']]
+            }
+        ]
+        with _mocked_session('get', 200, response):
+            cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
+            series_list = cli.get_list_series()
+            assert series_list == ['seriesA', 'seriesB']
