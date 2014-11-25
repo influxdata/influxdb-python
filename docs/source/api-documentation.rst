@@ -13,12 +13,12 @@ ports. The below instantiation statements are all equivalent::
     from influxdb import InfluxDBClient
 
     # using Http
-    client = InfluxDBClient(dbname='dbname')
-    client = InfluxDBClient(host='127.0.0.1', port=8086, dbname='dbname')
-    client = InfluxDBClient(host='127.0.0.1', port=8086, username='root', password='root', dbname='dbname')
+    client = InfluxDBClient(database='dbname')
+    client = InfluxDBClient(host='127.0.0.1', port=8086, database='dbname')
+    client = InfluxDBClient(host='127.0.0.1', port=8086, username='root', password='root', database='dbname')
 
     # using UDP
-    client = InfluxDBClient(host='127.0.0.1', dbname='dbname', use_udp=True, udp_port=4444)
+    client = InfluxDBClient(host='127.0.0.1', database='dbname', use_udp=True, udp_port=4444)
 
 To write pandas DataFrames or to read data into a
 pandas DataFrame, use a :py:class:`~influxdb.misc.DataFrameClient` object.
