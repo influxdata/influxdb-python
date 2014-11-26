@@ -5,6 +5,7 @@ Python client for InfluxDB
 import json
 import socket
 import requests
+import warnings
 
 from influxdb import chunked_json
 
@@ -166,7 +167,7 @@ class InfluxDBClient(object):
     # by doing a POST to /db/foo_production/series?u=some_user&p=some_password
     # with a JSON body of points.
 
-    def write_points(self, data, *args, **kwargs):
+    def write_points(self, data, time_precision='s', *args, **kwargs):
         """
         write_points()
 
@@ -198,19 +199,27 @@ class InfluxDBClient(object):
                         "name": name,
                         "columns": columns
                     }]
-                    time_precision = kwargs.get('time_precision', 's')
-                    self.write_points_with_precision(
+                    self._write_points(
                         data=item,
                         time_precision=time_precision)
 
                 return True
 
-        return self.write_points_with_precision(data, *args, **kwargs)
+        return self._write_points(data=data, time_precision=time_precision)
 
     def write_points_with_precision(self, data, time_precision='s'):
         """
-        Write to multiple time series names
+        DEPRECATED. Write to multiple time series names
+
         """
+        warnings.warn(
+            "write_points_with_precision is deprecated, and will be removed "
+            "in future versions. Please use "
+            "``InfluxDBClient.write_points(time_precision='..')`` instead.",
+            FutureWarning)
+        return self._write_points(data=data, time_precision=time_precision)
+
+    def _write_points(self, data, time_precision):
         if time_precision not in ['s', 'm', 'ms', 'u']:
             raise Exception(
                 "Invalid time precision is given. (use 's', 'm', 'ms' or 'u')")
