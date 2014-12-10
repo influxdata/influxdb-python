@@ -32,6 +32,7 @@ class DataFrameClient(InfluxDBClient):
         """
 
         batch_size = kwargs.get('batch_size')
+        time_precision = kwargs.get('time_precision', 's')
         if batch_size:
             kwargs.pop('batch_size')  # don't hand over to InfluxDBClient
             for key, data_frame in data.items():
@@ -42,14 +43,15 @@ class DataFrameClient(InfluxDBClient):
                     end_index = (batch + 1) * batch_size
                     data = [self._convert_dataframe_to_json(
                         name=key,
-                        dataframe=data_frame.ix[start_index:end_index].copy())]
+                        dataframe=data_frame.ix[start_index:end_index].copy(),
+                        time_precision=time_precision)]
                     InfluxDBClient.write_points_with_precision(self, data,
                                                                *args, **kwargs)
             return True
         else:
-            data = [self._convert_dataframe_to_json(name=key,
-                                                    dataframe=dataframe)
-                    for key, dataframe in data.items()]
+            data = [self._convert_dataframe_to_json(
+                name=key, dataframe=dataframe, time_precision=time_precision)
+                for key, dataframe in data.items()]
             return InfluxDBClient.write_points_with_precision(self, data,
                                                               *args, **kwargs)
 
@@ -105,7 +107,7 @@ class DataFrameClient(InfluxDBClient):
         del dataframe['time']
         return dataframe
 
-    def _convert_dataframe_to_json(self, dataframe, name):
+    def _convert_dataframe_to_json(self, dataframe, name, time_precision='s'):
         try:
             import pandas as pd
         except ImportError:
@@ -120,12 +122,18 @@ class DataFrameClient(InfluxDBClient):
         dataframe.index = dataframe.index.to_datetime()
         if dataframe.index.tzinfo is None:
             dataframe.index = dataframe.index.tz_localize('UTC')
-        dataframe['time'] = [self._datetime_to_epoch(dt)
+        dataframe['time'] = [self._datetime_to_epoch(dt, time_precision)
                              for dt in dataframe.index]
         data = {'name': name,
                 'columns': [str(column) for column in dataframe.columns],
                 'points': list([list(x) for x in dataframe.values])}
         return data
 
-    def _datetime_to_epoch(self, datetime):
-        return (datetime - DataFrameClient.EPOCH).total_seconds()
+    def _datetime_to_epoch(self, datetime, time_precision='s'):
+        seconds = (datetime - DataFrameClient.EPOCH).total_seconds()
+        if time_precision == 's':
+            return seconds
+        elif time_precision == 'm':
+            return seconds * 1000
+        elif time_precision == 'u':
+            return seconds * 1000000
