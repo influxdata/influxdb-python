@@ -8,6 +8,7 @@ import requests_mock
 from nose.tools import raises
 from datetime import timedelta
 from tests import skipIfPYpy, using_pypy
+import copy
 
 if not using_pypy:
     import pandas as pd
@@ -110,6 +111,44 @@ class TestDataFrameClient(unittest.TestCase):
             cli.write_points({"foo": dataframe})
 
             self.assertListEqual(json.loads(m.last_request.body), points)
+
+    def test_write_points_from_dataframe_with_time_precision(self):
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["column_one", "column_two",
+                                          "column_three"])
+        points = [
+            {
+                "points": [
+                    ["1", 1, 1.0, 0],
+                    ["2", 2, 2.0, 3600]
+                ],
+                "name": "foo",
+                "columns": ["column_one", "column_two", "column_three", "time"]
+            }
+        ]
+
+        points_ms = copy.deepcopy(points)
+        points_ms[0]["points"][1][-1] = 3600 * 1000
+
+        points_us = copy.deepcopy(points)
+        points_us[0]["points"][1][-1] = 3600 * 1000000
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/db/db/series")
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points({"foo": dataframe}, time_precision='s')
+            self.assertListEqual(json.loads(m.last_request.body), points)
+
+            cli.write_points({"foo": dataframe}, time_precision='m')
+            self.assertListEqual(json.loads(m.last_request.body), points_ms)
+
+            cli.write_points({"foo": dataframe}, time_precision='u')
+            self.assertListEqual(json.loads(m.last_request.body), points_us)
 
     @raises(TypeError)
     def test_write_points_from_dataframe_fails_without_time_index(self):
