@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """
-Miscellaneous
+DataFrame client for InfluxDB
 """
 import math
 import warnings
+import pandas as pd
 
 from .client import InfluxDBClient
 
@@ -15,7 +16,6 @@ class DataFrameClient(InfluxDBClient):
     The client reads and writes from pandas DataFrames.
     """
 
-    import pandas as pd
     EPOCH = pd.Timestamp('1970-01-01 00:00:00.000+00:00')
 
     def write_points(self, data, *args, **kwargs):
@@ -86,10 +86,6 @@ class DataFrameClient(InfluxDBClient):
             return result
 
     def _to_dataframe(self, json_result, time_precision):
-        try:
-            import pandas as pd
-        except ImportError:
-            raise ImportError('pandas required for retrieving as dataframe.')
         dataframe = pd.DataFrame(data=json_result['points'],
                                  columns=json_result['columns'])
         if 'sequence_number' in dataframe.keys():
@@ -108,10 +104,6 @@ class DataFrameClient(InfluxDBClient):
         return dataframe
 
     def _convert_dataframe_to_json(self, dataframe, name, time_precision='s'):
-        try:
-            import pandas as pd
-        except ImportError:
-            raise ImportError('pandas required for writing as dataframe.')
         if not isinstance(dataframe, pd.DataFrame):
             raise TypeError('Must be DataFrame, but type was: {}.'
                             .format(type(dataframe)))
