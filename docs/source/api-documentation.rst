@@ -27,7 +27,7 @@ These clients are initiated in the same way as the
 
     from influxdb import DataFrameClient
 
-    client = DataFrameClient(host='127.0.0.1', port=8086, username='root', password='root', dbname='dbname')
+    client = DataFrameClient(host='127.0.0.1', port=8086, username='root', password='root', database='dbname')
 
 
 .. note:: Only when using UDP (use_udp=True) the connections is established.
