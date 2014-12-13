@@ -1,7 +1,12 @@
 # -*- coding: utf-8 -*-
-from influxdb.client import InfluxDBClient
+from .client import InfluxDBClient
+from .dataframe_client import DataFrameClient
 
 
-__all__ = ['InfluxDBClient']
+__all__ = [
+    'InfluxDBClient',
+    'DataFrameClient',
+]
+
 
 __version__ = '0.1.13'

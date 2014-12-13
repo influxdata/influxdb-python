@@ -1,7 +1,7 @@
 import argparse
 import pandas as pd
 
-from influxdb.misc import DataFrameClient
+from influxdb import DataFrameClient
 
 
 def main(host='localhost', port=8086):

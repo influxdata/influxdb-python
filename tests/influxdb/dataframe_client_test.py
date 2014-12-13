@@ -13,7 +13,7 @@ import copy
 if not using_pypy:
     import pandas as pd
     from pandas.util.testing import assert_frame_equal
-    from influxdb.misc import DataFrameClient
+    from influxdb import DataFrameClient
 
 from .client_test import _mocked_session
 
