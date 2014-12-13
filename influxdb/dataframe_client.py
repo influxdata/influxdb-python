@@ -4,7 +4,6 @@ DataFrame client for InfluxDB
 """
 import math
 import warnings
-import pandas as pd
 
 from .client import InfluxDBClient
 
@@ -16,7 +15,18 @@ class DataFrameClient(InfluxDBClient):
     The client reads and writes from pandas DataFrames.
     """
 
-    EPOCH = pd.Timestamp('1970-01-01 00:00:00.000+00:00')
+    def __init__(self, *args, **kwargs):
+        super(DataFrameClient, self).__init__(*args, **kwargs)
+        try:
+            global pd
+            import pandas as pd
+        except ImportError as ex:
+            raise ImportError(
+                'DataFrameClient requires Pandas, "{ex}" problem importing'
+                .format(ex=str(ex))
+            )
+
+        self.EPOCH = pd.Timestamp('1970-01-01 00:00:00.000+00:00')
 
     def write_points(self, data, *args, **kwargs):
         """
@@ -122,7 +132,7 @@ class DataFrameClient(InfluxDBClient):
         return data
 
     def _datetime_to_epoch(self, datetime, time_precision='s'):
-        seconds = (datetime - DataFrameClient.EPOCH).total_seconds()
+        seconds = (datetime - self.EPOCH).total_seconds()
         if time_precision == 's':
             return seconds
         elif time_precision == 'm':
