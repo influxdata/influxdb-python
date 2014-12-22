@@ -169,11 +169,11 @@ class InfluxDBClient(object):
 
     def write_points(self, data, time_precision='s', *args, **kwargs):
         """
-        write_points()
-
         Write to multiple time series names.
 
         :param data: A list of dicts.
+        :param time_precision: [Optional, default 's'] Either 's', 'm', 'ms'
+            or 'u'.
         :param batch_size: [Optional] Value to write the points in batches
             instead of all at one time. Useful for when doing data dumps from
             one database to another or when doing a massive write operation
