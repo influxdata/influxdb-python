@@ -101,9 +101,9 @@ class InfluxDBClient(object):
 
     # Change member variables
 
-    def switch_db(self, database):
+    def switch_database(self, database):
         """
-        switch_db()
+        switch_database()
 
         Change client database.
 
@@ -111,6 +111,18 @@ class InfluxDBClient(object):
         :type database: string
         """
         self._database = database
+
+    def switch_db(self, database):
+        """
+        DEPRECATED. Change client database.
+
+        """
+        warnings.warn(
+            "switch_db is deprecated, and will be removed "
+            "in future versions. Please use "
+            "``InfluxDBClient.switch_database(database)`` instead.",
+            FutureWarning)
+        return self.switch_db(database)
 
     def switch_user(self, username, password):
         """

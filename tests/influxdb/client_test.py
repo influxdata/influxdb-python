@@ -85,7 +85,14 @@ class TestInfluxDBClient(unittest.TestCase):
         )
         assert cli._baseurl == 'https://host:8086'
 
-    def test_switch_db(self):
+    def test_switch_database(self):
+        cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
+        cli.switch_database('another_database')
+        assert cli._database == 'another_database'
+
+    @raises(FutureWarning)
+    def test_switch_db_deprecated(self):
+        warnings.simplefilter('error', FutureWarning)
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
         cli.switch_db('another_database')
         assert cli._database == 'another_database'
