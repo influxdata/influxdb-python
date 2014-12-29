@@ -9,6 +9,7 @@ import unittest
 import requests_mock
 from nose.tools import raises
 from mock import patch
+import warnings
 
 from influxdb import InfluxDBClient
 from influxdb.client import session
@@ -61,6 +62,9 @@ def _mocked_session(method="GET", status_code=200, content=""):
 class TestInfluxDBClient(unittest.TestCase):
 
     def setUp(self):
+        # By default, ignore warnings
+        warnings.simplefilter('ignore', FutureWarning)
+
         self.dummy_points = [
             {
                 "points": [
@@ -308,7 +312,24 @@ class TestInfluxDBClient(unittest.TestCase):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.delete_database('old_db')
 
-    def test_get_database_list(self):
+    def test_get_list_database(self):
+        data = [
+            {"name": "a_db"}
+        ]
+        with _mocked_session('get', 200, data):
+            cli = InfluxDBClient('host', 8086, 'username', 'password')
+            assert len(cli.get_database_list()) == 1
+            assert cli.get_list_database()[0]['name'] == 'a_db'
+
+    @raises(Exception)
+    def test_get_list_database_fails(self):
+        with _mocked_session('get', 401):
+            cli = InfluxDBClient('host', 8086, 'username', 'password')
+            cli.get_list_database()
+
+    @raises(FutureWarning)
+    def test_get_database_list_deprecated(self):
+        warnings.simplefilter('error', FutureWarning)
         data = [
             {"name": "a_db"}
         ]
@@ -316,12 +337,6 @@ class TestInfluxDBClient(unittest.TestCase):
             cli = InfluxDBClient('host', 8086, 'username', 'password')
             assert len(cli.get_database_list()) == 1
             assert cli.get_database_list()[0]['name'] == 'a_db'
-
-    @raises(Exception)
-    def test_get_database_list_fails(self):
-        with _mocked_session('get', 401):
-            cli = InfluxDBClient('host', 8086, 'username', 'password')
-            cli.get_database_list()
 
     def test_delete_series(self):
         with _mocked_session('delete', 204):

@@ -402,7 +402,7 @@ class InfluxDBClient(object):
     # ### get list of databases
     # curl -X GET http://localhost:8086/db
 
-    def get_database_list(self):
+    def get_list_database(self):
         """
         Get the list of databases
         """
@@ -415,6 +415,18 @@ class InfluxDBClient(object):
         )
 
         return response.json()
+
+    def get_database_list(self):
+        """
+        DEPRECATED. Get the list of databases
+
+        """
+        warnings.warn(
+            "get_database_list is deprecated, and will be removed "
+            "in future versions. Please use "
+            "``InfluxDBClient.get_list_database`` instead.",
+            FutureWarning)
+        return self.get_list_database()
 
     def delete_series(self, series):
         """
