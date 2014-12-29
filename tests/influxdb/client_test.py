@@ -62,8 +62,8 @@ def _mocked_session(method="GET", status_code=200, content=""):
 class TestInfluxDBClient(unittest.TestCase):
 
     def setUp(self):
-        # By default, ignore warnings
-        warnings.simplefilter('ignore', FutureWarning)
+        # By default, raise exceptions on warnings
+        warnings.simplefilter('error', FutureWarning)
 
         self.dummy_points = [
             {
@@ -92,7 +92,6 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(FutureWarning)
     def test_switch_db_deprecated(self):
-        warnings.simplefilter('error', FutureWarning)
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
         cli.switch_db('another_database')
         assert cli._database == 'another_database'
@@ -170,7 +169,7 @@ class TestInfluxDBClient(unittest.TestCase):
                 Exception,
                 "InfluxDB only supports seconds precision for udp writes"
         ):
-            cli.write_points_with_precision(
+            cli.write_points(
                 self.dummy_points,
                 time_precision='ms'
             )
@@ -184,7 +183,7 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_write_points_with_precision(self):
         with _mocked_session('post', 200, self.dummy_points):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            assert cli.write_points_with_precision(self.dummy_points) is True
+            assert cli.write_points(self.dummy_points) is True
 
     def test_write_points_bad_precision(self):
         cli = InfluxDBClient()
@@ -192,7 +191,7 @@ class TestInfluxDBClient(unittest.TestCase):
             Exception,
             "Invalid time precision is given. \(use 's', 'm', 'ms' or 'u'\)"
         ):
-            cli.write_points_with_precision(
+            cli.write_points(
                 self.dummy_points,
                 time_precision='g'
             )
@@ -325,7 +324,7 @@ class TestInfluxDBClient(unittest.TestCase):
         ]
         with _mocked_session('get', 200, data):
             cli = InfluxDBClient('host', 8086, 'username', 'password')
-            assert len(cli.get_database_list()) == 1
+            assert len(cli.get_list_database()) == 1
             assert cli.get_list_database()[0]['name'] == 'a_db'
 
     @raises(Exception)
@@ -336,7 +335,6 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(FutureWarning)
     def test_get_database_list_deprecated(self):
-        warnings.simplefilter('error', FutureWarning)
         data = [
             {"name": "a_db"}
         ]
