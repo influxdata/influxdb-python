@@ -55,15 +55,13 @@ class DataFrameClient(InfluxDBClient):
                         name=key,
                         dataframe=data_frame.ix[start_index:end_index].copy(),
                         time_precision=time_precision)]
-                    InfluxDBClient.write_points_with_precision(self, data,
-                                                               *args, **kwargs)
+                    InfluxDBClient.write_points(self, data, *args, **kwargs)
             return True
         else:
             data = [self._convert_dataframe_to_json(
                 name=key, dataframe=dataframe, time_precision=time_precision)
                 for key, dataframe in data.items()]
-            return InfluxDBClient.write_points_with_precision(self, data,
-                                                              *args, **kwargs)
+            return InfluxDBClient.write_points(self, data, *args, **kwargs)
 
     def write_points_with_precision(self, data, time_precision='s'):
         """

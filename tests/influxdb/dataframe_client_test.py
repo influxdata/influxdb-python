@@ -9,6 +9,7 @@ from nose.tools import raises
 from datetime import timedelta
 from tests import skipIfPYpy, using_pypy
 import copy
+import warnings
 
 if not using_pypy:
     import pandas as pd
@@ -20,6 +21,10 @@ from .client_test import _mocked_session
 
 @skipIfPYpy
 class TestDataFrameClient(unittest.TestCase):
+
+    def setUp(self):
+        # By default, raise exceptions on warnings
+        warnings.simplefilter('error', FutureWarning)
 
     def test_write_points_from_dataframe(self):
         now = pd.Timestamp('1970-01-01 00:00+00:00')
