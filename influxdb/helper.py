@@ -25,6 +25,8 @@ class SeriesHelper(object):
             # Defines all the fields in this time series.
             bulk_size = 5
             # Defines the number of data points to store prior to writing on the wire.
+            autocommit = True
+            # Sets autocommit: must be set to True for bulk_size to have any affect.
     
     # The following will create *five* (immutable) data points.
     # Since bulk_size is set to 5, upon the fifth construction call, *all* data
@@ -35,6 +37,7 @@ class SeriesHelper(object):
     MySeriesHelper(server_name='us.east-1', time=156)
     MySeriesHelper(server_name='us.east-1', time=155)
     
+    # If autocommit unset (or set to False), one must call commit to write datapoints.
     # To manually submit data points which are not yet written, call commit:
     MySeriesHelper.commit()
     
@@ -61,6 +64,7 @@ class SeriesHelper(object):
                 except AttributeError:
                     raise AttributeError('Missing {} in {} Meta class.'.format(attr, cls.__name__))
     
+            cls._autocommit = getattr(_meta, 'autocommit', False)
             cls._bulk_size = getattr(_meta, 'bulk_size', 1)
 
             cls._datapoints = defaultdict(list)
@@ -81,7 +85,7 @@ class SeriesHelper(object):
 
         cls._datapoints[cls._series_name.format(**kw)].append(cls._type(**kw))
 
-        if len(cls._datapoints) >= cls._bulk_size:
+        if cls._autocommit and len(cls._datapoints) >= cls._bulk_size:
             cls.commit()
 
     @classmethod

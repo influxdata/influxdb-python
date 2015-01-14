@@ -18,6 +18,7 @@ class TestSeriesHelper(unittest.TestCase):
                 series_name = 'events.stats.{server_name}'
                 fields = ['time', 'server_name']
                 bulk_size = 5
+                autocommit = False
 
         TestSeriesHelper.MySeriesHelper = MySeriesHelper
 
@@ -35,7 +36,8 @@ class TestSeriesHelper(unittest.TestCase):
                                    [156, 'us.east-1']],
                         'name': 'events.stats.us.east-1',
                         'columns': ['time', 'server_name']}]
-        self.assertListEqual(TestSeriesHelper.MySeriesHelper._json_body_(), expectation, 'Invalid JSON body of time series returned from _json_body_ for one series name.')
+        rcvd = TestSeriesHelper.MySeriesHelper._json_body_()
+        self.assertListEqual(rcvd, expectation, 'Invalid JSON body of time series returned from _json_body_ for one series name: {}.'.format(rcvd))
         TestSeriesHelper.MySeriesHelper._reset_()
         self.assertEqual(TestSeriesHelper.MySeriesHelper._json_body_(), [], 'Resetting helper did not empty datapoints.')
 
@@ -59,6 +61,7 @@ class TestSeriesHelper(unittest.TestCase):
                        {'points': [[159, 'us.east-1']],
                         'name': 'events.stats.us.east-1',
                         'columns': ['time', 'server_name']}]
-        self.assertListEqual(TestSeriesHelper.MySeriesHelper._json_body_(), expectation, 'Invalid JSON body of time series returned from _json_body_ for several series names.')
+        rcvd = TestSeriesHelper.MySeriesHelper._json_body_()
+        self.assertListEqual(rcvd, expectation, 'Invalid JSON body of time series returned from _json_body_ for several series names: {}.'.format(rcvd))
         TestSeriesHelper.MySeriesHelper._reset_()
         self.assertEqual(TestSeriesHelper.MySeriesHelper._json_body_(), [], 'Resetting helper did not empty datapoints.')
