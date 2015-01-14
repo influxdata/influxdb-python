@@ -65,3 +65,28 @@ class TestSeriesHelper(unittest.TestCase):
         self.assertListEqual(rcvd, expectation, 'Invalid JSON body of time series returned from _json_body_ for several series names: {}.'.format(rcvd))
         TestSeriesHelper.MySeriesHelper._reset_()
         self.assertEqual(TestSeriesHelper.MySeriesHelper._json_body_(), [], 'Resetting helper did not empty datapoints.')
+
+    def testInvalidHelpers(self):
+        '''
+        Tests errors in invalid helpers.
+        '''
+        class MissingMeta(SeriesHelper):
+            pass
+        
+        class MissingClient(SeriesHelper):
+            class Meta:
+                series_name = 'events.stats.{server_name}'
+                fields = ['time', 'server_name']
+        
+        class MissingSeriesName(SeriesHelper):
+            class Meta:
+                client = TestSeriesHelper.client
+                fields = ['time', 'server_name']
+        
+        class MissingFields(SeriesHelper):
+            class Meta:
+                client = TestSeriesHelper.client
+                series_name = 'events.stats.{server_name}'
+        
+        for cls in [MissingMeta, MissingClient, MissingFields, MissingSeriesName]:
+            self.assertRaises(AttributeError, cls, **{'time': 159, 'server_name': 'us.east-1'})

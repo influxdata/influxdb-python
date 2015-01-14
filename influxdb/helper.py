@@ -51,8 +51,8 @@ class SeriesHelper(object):
         '''
         Initializes class attributes for subsequent constructor calls.
         '''
-        if not SeriesHelper.__initialized__:
-            SeriesHelper.__initialized__ = True
+        if not cls.__initialized__:
+            cls.__initialized__ = True
             try:
                 _meta = getattr(cls, 'Meta')
             except AttributeError:
