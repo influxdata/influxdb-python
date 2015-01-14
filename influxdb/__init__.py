@@ -7,7 +7,8 @@ from .helper import SeriesHelper
 __all__ = [
     'InfluxDBClient',
     'DataFrameClient',
+    'SeriesHelper',
 ]
 
 
-__version__ = '0.1.13'
+__version__ = '0.1.14'
