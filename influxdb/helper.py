@@ -6,46 +6,89 @@ from collections import namedtuple, defaultdict
 import six
 
 class SeriesHelper(object):
+    '''
+    Subclassing this helper eases writing data points in bulk.
+    All data points are immutable, insuring they do not get overwritten.
+    Each subclass can write to its own database.
+    The time series names can also be based on one or more defined fields.
+    
+    Annotated example:
+    ```
+    class MySeriesHelper(SeriesHelper):
+        class Meta:
+            # Meta class stores time series helper configuration.
+            client = TestSeriesHelper.client
+            # The client should be an instance of InfluxDBClient.
+            series_name = 'events.stats.{server_name}'
+            # The series name must be a string. Add dependent field names in curly brackets.
+            fields = ['time', 'server_name']
+            # Defines all the fields in this time series.
+            bulk_size = 5
+            # Defines the number of data points to store prior to writing on the wire.
+    
+    # The following will create *five* (immutable) data points.
+    # Since bulk_size is set to 5, upon the fifth construction call, *all* data
+    # points will be written on the wire via MySeriesHelper.Meta.client.
+    MySeriesHelper(server_name='us.east-1', time=159)
+    MySeriesHelper(server_name='us.east-1', time=158)
+    MySeriesHelper(server_name='us.east-1', time=157)
+    MySeriesHelper(server_name='us.east-1', time=156)
+    MySeriesHelper(server_name='us.east-1', time=155)
+    
+    # To manually submit data points which are not yet written, call commit:
+    MySeriesHelper.commit()
+    
+    # To inspect the JSON which will be written, call _json_body_():
+    MySeriesHelper._json_body_()
+    ```
+    '''
     __initialized__ = False
 
     def __new__(cls, *args, **kwargs):
+        '''
+        Initializes class attributes for subsequent constructor calls.
+        '''
         if not SeriesHelper.__initialized__:
             SeriesHelper.__initialized__ = True
-            # Introspect series representation.
             try:
                 _meta = getattr(cls, 'Meta')
             except AttributeError:
-                raise AttributeError('SeriesHelper {} does not contain a Meta class.'.format(cls.__name__))
+                raise AttributeError('Missing Meta class in {}.'.format(cls.__name__))
     
-            for attribute in ['series_name', 'fields', 'client']:
+            for attr in ['series_name', 'fields', 'client']:
                 try:
-                    setattr(cls, '_' + attribute, getattr(_meta, attribute))
+                    setattr(cls, '_' + attr, getattr(_meta, attr))
                 except AttributeError:
-                    raise AttributeError('SeriesHelper\' {0} Meta class does not define {1}.'.format(cls.__name__, attribute))
+                    raise AttributeError('Missing {} in {} Meta class.'.format(attr, cls.__name__))
     
             cls._bulk_size = getattr(_meta, 'bulk_size', 1)
-    
-            # Class attribute definitions
-            cls._datapoints = defaultdict(list) # keys are the series name for ease of commit.
+
+            cls._datapoints = defaultdict(list)
             cls._type = namedtuple(cls.__name__, cls._fields)
 
         return super(SeriesHelper, cls).__new__(cls, *args, **kwargs)
 
-    def __init__(self, **kwargs): # Does not support positional arguments.
+    def __init__(self, **kw):
+        '''
+        Constructor call creates a new data point. All fields must be present.
+        :note: Data points written when `bulk_size` is reached per Helper.
+        :warning: Data points are *immutable* (`namedtuples`). 
+        '''
         cls = self.__class__
 
-        if sorted(cls._fields) != sorted(kwargs.keys()):
-            raise NameError('Expected fields {0} and got {1}.'.format(', '.join(sorted(cls._fields)), ', '.join(sorted(kwargs.keys()))))
+        if sorted(cls._fields) != sorted(kw.keys()):
+            raise NameError('Expected {0}, got {1}.'.format(cls._fields, kw.keys()))
 
-        cls._datapoints[cls._series_name.format(**kwargs)].append(cls._type(**kwargs))
+        cls._datapoints[cls._series_name.format(**kw)].append(cls._type(**kw))
 
-        if len(cls._datapoints) > cls._bulk_size:
+        if len(cls._datapoints) >= cls._bulk_size:
             cls.commit()
 
     @classmethod
     def commit(cls):
         '''
         Commit everything from datapoints via the client.
+        :return result of client.write_points.
         '''
         rtn = cls._client.write_points(cls._json_body_())
         cls._reset_()
@@ -56,14 +99,17 @@ class SeriesHelper(object):
         '''
         :return: JSON body of these datapoints.
         '''
-        json_datapoints = []
+        json = []
         for series_name, data in six.iteritems(cls._datapoints):
-            json_datapoints.append({'name': series_name,
-                                    'columns': cls._fields,
-                                    'points': [[point.__dict__[k] for k in cls._fields] for point in data]
-                                    })
-        return json_datapoints
+            json.append({'name': series_name,
+                         'columns': cls._fields,
+                         'points': [[point.__dict__[k] for k in cls._fields] for point in data]
+                         })
+        return json
 
     @classmethod
     def _reset_(cls):
+        '''
+        Reset data storage.
+        '''
         cls._datapoints = defaultdict(list)
