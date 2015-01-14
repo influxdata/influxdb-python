@@ -3,7 +3,6 @@
 Helper class for InfluxDB
 """
 from collections import namedtuple, defaultdict
-import six
 
 class SeriesHelper(object):
     '''
@@ -70,7 +69,7 @@ class SeriesHelper(object):
             cls._datapoints = defaultdict(list)
             cls._type = namedtuple(cls.__name__, cls._fields)
 
-        return super(SeriesHelper, cls).__new__(cls, *args, **kwargs)
+        return super(SeriesHelper, cls).__new__(cls)
 
     def __init__(self, **kw):
         '''
