@@ -9,6 +9,7 @@ import six
 
 
 class SeriesHelper(object):
+
     '''
     Subclassing this helper eases writing data points in bulk.
     All data points are immutable, insuring they do not get overwritten.
@@ -62,30 +63,41 @@ class SeriesHelper(object):
             try:
                 _meta = getattr(cls, 'Meta')
             except AttributeError:
-                raise AttributeError('Missing Meta class in {}.'.format(cls.__name__))
+                raise AttributeError(
+                    'Missing Meta class in {}.'.format(
+                        cls.__name__))
 
             for attr in ['series_name', 'fields']:
                 try:
                     setattr(cls, '_' + attr, getattr(_meta, attr))
                 except AttributeError:
-                    raise AttributeError('Missing {} in {} Meta class.'.format(attr, cls.__name__))
+                    raise AttributeError(
+                        'Missing {} in {} Meta class.'.format(
+                            attr,
+                            cls.__name__))
 
             cls._autocommit = getattr(_meta, 'autocommit', False)
 
             cls._client = getattr(_meta, 'client', None)
             if cls._autocommit and not cls._client:
-                raise AttributeError('In {}, autocommit is set to True, but no client is set.'.format(cls.__name__))
+                raise AttributeError(
+                    'In {}, autocommit is set to True, but no client is set.'.format(
+                        cls.__name__))
 
             try:
                 cls._bulk_size = getattr(_meta, 'bulk_size')
                 if cls._bulk_size < 1 and cls._autocommit:
-                    warn('Definition of bulk_size in {} forced to 1, was less than 1.'.format(cls.__name__))
+                    warn(
+                        'Definition of bulk_size in {} forced to 1, was less than 1.'.format(
+                            cls.__name__))
                     cls._bulk_size = 1
             except AttributeError:
                 cls._bulk_size = -1
             else:
                 if not cls._autocommit:
-                    warn('Definition of bulk_size in {} has no affect because autocommit is false.'.format(cls.__name__))
+                    warn(
+                        'Definition of bulk_size in {} has no affect because autocommit is false.'.format(
+                            cls.__name__))
 
             cls._datapoints = defaultdict(list)
             cls._type = namedtuple(cls.__name__, cls._fields)
@@ -101,7 +113,10 @@ class SeriesHelper(object):
         cls = self.__class__
 
         if sorted(cls._fields) != sorted(kw.keys()):
-            raise NameError('Expected {0}, got {1}.'.format(cls._fields, kw.keys()))
+            raise NameError(
+                'Expected {0}, got {1}.'.format(
+                    cls._fields,
+                    kw.keys()))
 
         cls._datapoints[cls._series_name.format(**kw)].append(cls._type(**kw))
 
