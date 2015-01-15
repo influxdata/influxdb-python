@@ -3,6 +3,7 @@
 Helper class for InfluxDB
 """
 from collections import namedtuple, defaultdict
+import six
 
 class SeriesHelper(object):
     '''
