@@ -3,7 +3,10 @@
 Helper class for InfluxDB
 """
 from collections import namedtuple, defaultdict
+from warnings import warn
+
 import six
+
 
 class SeriesHelper(object):
     '''
@@ -11,23 +14,24 @@ class SeriesHelper(object):
     All data points are immutable, insuring they do not get overwritten.
     Each subclass can write to its own database.
     The time series names can also be based on one or more defined fields.
-    
+
     Annotated example:
     ```
     class MySeriesHelper(SeriesHelper):
         class Meta:
             # Meta class stores time series helper configuration.
-            client = TestSeriesHelper.client
-            # The client should be an instance of InfluxDBClient.
             series_name = 'events.stats.{server_name}'
             # The series name must be a string. Add dependent field names in curly brackets.
             fields = ['time', 'server_name']
             # Defines all the fields in this time series.
+            ### Following attributes are optional. ###
+            client = TestSeriesHelper.client
+            # The client should be an instance of InfluxDBClient. Only used if autocommit is True.
             bulk_size = 5
-            # Defines the number of data points to store prior to writing on the wire.
+            # Defines the number of data points to store prior to writing on the wire. Defaults to 1.
             autocommit = True
-            # Sets autocommit: must be set to True for bulk_size to have any affect.
-    
+            # Sets autocommit: must be set to True for bulk_size to have any affect. Defaults to False.
+
     # The following will create *five* (immutable) data points.
     # Since bulk_size is set to 5, upon the fifth construction call, *all* data
     # points will be written on the wire via MySeriesHelper.Meta.client.
@@ -36,11 +40,11 @@ class SeriesHelper(object):
     MySeriesHelper(server_name='us.east-1', time=157)
     MySeriesHelper(server_name='us.east-1', time=156)
     MySeriesHelper(server_name='us.east-1', time=155)
-    
+
     # If autocommit unset (or set to False), one must call commit to write datapoints.
     # To manually submit data points which are not yet written, call commit:
     MySeriesHelper.commit()
-    
+
     # To inspect the JSON which will be written, call _json_body_():
     MySeriesHelper._json_body_()
     ```
@@ -50,6 +54,8 @@ class SeriesHelper(object):
     def __new__(cls, *args, **kwargs):
         '''
         Initializes class attributes for subsequent constructor calls.
+        :note: *args and **kwargs are not explicitly used in this function,
+        but needed for Python 2 compatibility.
         '''
         if not cls.__initialized__:
             cls.__initialized__ = True
@@ -57,15 +63,29 @@ class SeriesHelper(object):
                 _meta = getattr(cls, 'Meta')
             except AttributeError:
                 raise AttributeError('Missing Meta class in {}.'.format(cls.__name__))
-    
-            for attr in ['series_name', 'fields', 'client']:
+
+            for attr in ['series_name', 'fields']:
                 try:
                     setattr(cls, '_' + attr, getattr(_meta, attr))
                 except AttributeError:
                     raise AttributeError('Missing {} in {} Meta class.'.format(attr, cls.__name__))
-    
+
             cls._autocommit = getattr(_meta, 'autocommit', False)
-            cls._bulk_size = getattr(_meta, 'bulk_size', 1)
+
+            cls._client = getattr(_meta, 'client', None)
+            if cls._autocommit and not cls._client:
+                raise AttributeError('In {}, autocommit is set to True, but no client is set.'.format(cls.__name__))
+
+            try:
+                cls._bulk_size = getattr(_meta, 'bulk_size')
+                if cls._bulk_size < 1 and cls._autocommit:
+                    warn('Definition of bulk_size in {} forced to 1, was less than 1.'.format(cls.__name__))
+                    cls._bulk_size = 1
+            except AttributeError:
+                cls._bulk_size = -1
+            else:
+                if not cls._autocommit:
+                    warn('Definition of bulk_size in {} has no affect because autocommit is false.'.format(cls.__name__))
 
             cls._datapoints = defaultdict(list)
             cls._type = namedtuple(cls.__name__, cls._fields)
@@ -76,7 +96,7 @@ class SeriesHelper(object):
         '''
         Constructor call creates a new data point. All fields must be present.
         :note: Data points written when `bulk_size` is reached per Helper.
-        :warning: Data points are *immutable* (`namedtuples`). 
+        :warning: Data points are *immutable* (`namedtuples`).
         '''
         cls = self.__class__
 
@@ -89,12 +109,16 @@ class SeriesHelper(object):
             cls.commit()
 
     @classmethod
-    def commit(cls):
+    def commit(cls, client=None):
         '''
         Commit everything from datapoints via the client.
+        :param client: InfluxDBClient instance for writing points to InfluxDB.
+        :attention: if a client is provided, it will supersede the one defined in the Helper.
         :return result of client.write_points.
         '''
-        rtn = cls._client.write_points(cls._json_body_())
+        if not client:
+            client = cls._client
+        rtn = client.write_points(cls._json_body_())
         cls._reset_()
         return rtn
 

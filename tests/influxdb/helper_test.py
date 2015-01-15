@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 
 import unittest
+import warnings
 
 from influxdb import SeriesHelper, InfluxDBClient
+from requests.exceptions import ConnectionError
 
 
 class TestSeriesHelper(unittest.TestCase):
@@ -18,7 +20,7 @@ class TestSeriesHelper(unittest.TestCase):
                 series_name = 'events.stats.{server_name}'
                 fields = ['time', 'server_name']
                 bulk_size = 5
-                autocommit = False
+                autocommit = True
 
         TestSeriesHelper.MySeriesHelper = MySeriesHelper
 
@@ -36,6 +38,7 @@ class TestSeriesHelper(unittest.TestCase):
                                    [156, 'us.east-1']],
                         'name': 'events.stats.us.east-1',
                         'columns': ['time', 'server_name']}]
+
         rcvd = TestSeriesHelper.MySeriesHelper._json_body_()
         self.assertTrue(all([el in expectation for el in rcvd]) and all([el in rcvd for el in expectation]), 'Invalid JSON body of time series returned from _json_body_ for one series name: {}.'.format(rcvd))
         TestSeriesHelper.MySeriesHelper._reset_()
@@ -61,6 +64,7 @@ class TestSeriesHelper(unittest.TestCase):
                        {'points': [[159, 'us.east-1']],
                         'name': 'events.stats.us.east-1',
                         'columns': ['time', 'server_name']}]
+
         rcvd = TestSeriesHelper.MySeriesHelper._json_body_()
         self.assertTrue(all([el in expectation for el in rcvd]) and all([el in rcvd for el in expectation]), 'Invalid JSON body of time series returned from _json_body_ for several series names: {}.'.format(rcvd))
         TestSeriesHelper.MySeriesHelper._reset_()
@@ -77,16 +81,43 @@ class TestSeriesHelper(unittest.TestCase):
             class Meta:
                 series_name = 'events.stats.{server_name}'
                 fields = ['time', 'server_name']
+                autocommit = True
         
         class MissingSeriesName(SeriesHelper):
             class Meta:
-                client = TestSeriesHelper.client
                 fields = ['time', 'server_name']
-        
+
         class MissingFields(SeriesHelper):
+            class Meta:
+                series_name = 'events.stats.{server_name}'
+
+        for cls in [MissingMeta, MissingClient, MissingFields, MissingSeriesName]:
+            self.assertRaises(AttributeError, cls, **{'time': 159, 'server_name': 'us.east-1'})
+
+    def testWarnings(self):
+        '''
+        Tests warnings for code coverage test.
+        '''
+        class WarnBulkSizeZero(SeriesHelper):
             class Meta:
                 client = TestSeriesHelper.client
                 series_name = 'events.stats.{server_name}'
+                fields = ['time', 'server_name']
+                bulk_size = 0
+                autocommit = True
+
+        class WarnBulkSizeNoEffect(SeriesHelper):
+            class Meta:
+                series_name = 'events.stats.{server_name}'
+                fields = ['time', 'server_name']
+                bulk_size = 5
+                autocommit = False
         
-        for cls in [MissingMeta, MissingClient, MissingFields, MissingSeriesName]:
-            self.assertRaises(AttributeError, cls, **{'time': 159, 'server_name': 'us.east-1'})
+        for cls in [WarnBulkSizeNoEffect, WarnBulkSizeZero]:
+            with warnings.catch_warnings(record=True) as w:
+                warnings.simplefilter("always")
+                try:
+                    cls(time=159, server_name='us.east-1')
+                except ConnectionError:
+                    pass # Server defined in the client is invalid, we're testing the warning only.
+                self.assertEqual(len(w), 1, 'Calling {} did not generate exactly one warning.'.format(cls))
