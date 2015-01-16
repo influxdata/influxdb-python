@@ -47,7 +47,7 @@ class TestSeriesHelper(unittest.TestCase):
                         'columns': ['time', 'server_name']}]
 
         rcvd = TestSeriesHelper.MySeriesHelper._json_body_()
-        self.assertTrue(all([el in expectation for el in rcvd]) and \
+        self.assertTrue(all([el in expectation for el in rcvd]) and
                         all([el in rcvd for el in expectation]),
                         'Invalid JSON body of time series returned from '
                         '_json_body_ for one series name: {}.'.format(rcvd))
@@ -79,7 +79,7 @@ class TestSeriesHelper(unittest.TestCase):
                         'columns': ['time', 'server_name']}]
 
         rcvd = TestSeriesHelper.MySeriesHelper._json_body_()
-        self.assertTrue(all([el in expectation for el in rcvd]) and \
+        self.assertTrue(all([el in expectation for el in rcvd]) and
                         all([el in rcvd for el in expectation]),
                         'Invalid JSON body of time series returned from '
                         '_json_body_ for several series names: {}.'
@@ -151,5 +151,5 @@ class TestSeriesHelper(unittest.TestCase):
                     # the warning only.
                     pass
                 self.assertEqual(len(w), 1,
-                    'Calling {} did not generate exactly one warning.'
-                    .format(cls))
+                                 'Calling {} did not generate exactly one warning.'
+                                 .format(cls))
