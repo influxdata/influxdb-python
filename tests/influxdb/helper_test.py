@@ -47,8 +47,10 @@ class TestSeriesHelper(unittest.TestCase):
                         'columns': ['time', 'server_name']}]
 
         rcvd = TestSeriesHelper.MySeriesHelper._json_body_()
-        self.assertTrue(all([el in expectation for el in rcvd]) and all([el in rcvd for el in expectation]),
-                        'Invalid JSON body of time series returned from _json_body_ for one series name: {}.'.format(rcvd))
+        self.assertTrue(all([el in expectation for el in rcvd]) and \
+                        all([el in rcvd for el in expectation]),
+                        'Invalid JSON body of time series returned from '
+                        '_json_body_ for one series name: {}.'.format(rcvd))
         TestSeriesHelper.MySeriesHelper._reset_()
         self.assertEqual(
             TestSeriesHelper.MySeriesHelper._json_body_(),
@@ -77,8 +79,11 @@ class TestSeriesHelper(unittest.TestCase):
                         'columns': ['time', 'server_name']}]
 
         rcvd = TestSeriesHelper.MySeriesHelper._json_body_()
-        self.assertTrue(all([el in expectation for el in rcvd]) and all([el in rcvd for el in expectation]),
-                        'Invalid JSON body of time series returned from _json_body_ for several series names: {}.'.format(rcvd))
+        self.assertTrue(all([el in expectation for el in rcvd]) and \
+                        all([el in rcvd for el in expectation]),
+                        'Invalid JSON body of time series returned from '
+                        '_json_body_ for several series names: {}.'
+                        .format(rcvd))
         TestSeriesHelper.MySeriesHelper._reset_()
         self.assertEqual(
             TestSeriesHelper.MySeriesHelper._json_body_(),
@@ -112,7 +117,8 @@ class TestSeriesHelper(unittest.TestCase):
         for cls in [MissingMeta, MissingClient, MissingFields,
                     MissingSeriesName]:
             self.assertRaises(
-                AttributeError, cls, **{'time': 159, 'server_name': 'us.east-1'})
+                AttributeError, cls, **{'time': 159,
+                                        'server_name': 'us.east-1'})
 
     def testWarnings(self):
         '''
@@ -144,7 +150,6 @@ class TestSeriesHelper(unittest.TestCase):
                     # Server defined in the client is invalid, we're testing
                     # the warning only.
                     pass
-                self.assertEqual(
-                    len(w),
-                    1,
-                    'Calling {} did not generate exactly one warning.'.format(cls))
+                self.assertEqual(len(w), 1,
+                    'Calling {} did not generate exactly one warning.'
+                    .format(cls))

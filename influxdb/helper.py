@@ -22,19 +22,21 @@ class SeriesHelper(object):
         class Meta:
             # Meta class stores time series helper configuration.
             series_name = 'events.stats.{server_name}'
-            # The series name must be a string. Add dependent field names in curly brackets.
+            # Series name must be a string, curly brackets for dynamic use.
             fields = ['time', 'server_name']
             # Defines all the fields in this time series.
             ### Following attributes are optional. ###
             client = TestSeriesHelper.client
-            # The client should be an instance of InfluxDBClient. Only used if autocommit is True.
+            # Client should be an instance of InfluxDBClient.
+            :warning: Only used if autocommit is True.
             bulk_size = 5
-            # Defines the number of data points to store prior to writing on the wire. Defaults to 1.
+            # Defines the number of data points to write simultaneously.
+            :warning: Only applicable if autocommit is True.
             autocommit = True
-            # Sets autocommit: must be set to True for bulk_size to have any affect. Defaults to False.
+            # If True and no bulk_size, then will set bulk_size to 1.
 
     # The following will create *five* (immutable) data points.
-    # Since bulk_size is set to 5, upon the fifth construction call, *all* data
+    # Since bulk_size is set to 5, upon the fifth construction call, all data
     # points will be written on the wire via MySeriesHelper.Meta.client.
     MySeriesHelper(server_name='us.east-1', time=159)
     MySeriesHelper(server_name='us.east-1', time=158)
@@ -42,7 +44,7 @@ class SeriesHelper(object):
     MySeriesHelper(server_name='us.east-1', time=156)
     MySeriesHelper(server_name='us.east-1', time=155)
 
-    # If autocommit unset (or set to False), one must call commit to write datapoints.
+    # If autocommit None or False, one must call commit to write datapoints.
     # To manually submit data points which are not yet written, call commit:
     MySeriesHelper.commit()
 
@@ -81,23 +83,23 @@ class SeriesHelper(object):
             cls._client = getattr(_meta, 'client', None)
             if cls._autocommit and not cls._client:
                 raise AttributeError(
-                    'In {}, autocommit is set to True, but no client is set.'.format(
-                        cls.__name__))
+                    'In {}, autocommit is set to True, but no client is set.'
+                    .format(cls.__name__))
 
             try:
                 cls._bulk_size = getattr(_meta, 'bulk_size')
                 if cls._bulk_size < 1 and cls._autocommit:
                     warn(
-                        'Definition of bulk_size in {} forced to 1, was less than 1.'.format(
-                            cls.__name__))
+                        'Definition of bulk_size in {} forced to 1, '
+                        'was less than 1.'.format(cls.__name__))
                     cls._bulk_size = 1
             except AttributeError:
                 cls._bulk_size = -1
             else:
                 if not cls._autocommit:
                     warn(
-                        'Definition of bulk_size in {} has no affect because autocommit is false.'.format(
-                            cls.__name__))
+                        'Definition of bulk_size in {} has no affect because'
+                        ' autocommit is false.'.format(cls.__name__))
 
             cls._datapoints = defaultdict(list)
             cls._type = namedtuple(cls.__name__, cls._fields)
@@ -128,7 +130,7 @@ class SeriesHelper(object):
         '''
         Commit everything from datapoints via the client.
         :param client: InfluxDBClient instance for writing points to InfluxDB.
-        :attention: if a client is provided, it will supersede the one defined in the Helper.
+        :attention: any provided client will supersede the class client.
         :return result of client.write_points.
         '''
         if not client:
@@ -146,7 +148,8 @@ class SeriesHelper(object):
         for series_name, data in six.iteritems(cls._datapoints):
             json.append({'name': series_name,
                          'columns': cls._fields,
-                         'points': [[point.__dict__[k] for k in cls._fields] for point in data]
+                         'points': [[point.__dict__[k] for k in cls._fields] \
+                                    for point in data]
                          })
         return json
 
