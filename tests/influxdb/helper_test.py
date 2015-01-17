@@ -151,5 +151,5 @@ class TestSeriesHelper(unittest.TestCase):
                     # the warning only.
                     pass
                 self.assertEqual(len(w), 1,
-                                 'Calling {} did not generate exactly one warning.'
+                                 '{} call should have generated one warning.'
                                  .format(cls))
