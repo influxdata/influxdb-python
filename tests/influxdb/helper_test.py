@@ -120,9 +120,9 @@ class TestSeriesHelper(unittest.TestCase):
                 AttributeError, cls, **{'time': 159,
                                         'server_name': 'us.east-1'})
 
-    def testWarnings(self):
+    def testWarnBulkSizeZero(self):
         '''
-        Tests warnings for code coverage test.
+        Tests warning for an invalid bulk size.
         '''
         class WarnBulkSizeZero(SeriesHelper):
 
@@ -133,6 +133,24 @@ class TestSeriesHelper(unittest.TestCase):
                 bulk_size = 0
                 autocommit = True
 
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            try:
+                WarnBulkSizeZero(time=159, server_name='us.east-1')
+            except ConnectionError:
+                # Server defined in the client is invalid, we're testing
+                # the warning only.
+                pass
+            self.assertEqual(len(w), 1,
+                             '{} call should have generated one warning.'
+                             .format(WarnBulkSizeZero))
+            self.assertIn('forced to 1', str(w[-1].message),
+                          'Warning message did not contain "forced to 1".')
+
+    def testWarnBulkSizeNoEffect(self):
+        '''
+        Tests warning for a set bulk size but autocommit False.
+        '''
         class WarnBulkSizeNoEffect(SeriesHelper):
 
             class Meta:
@@ -141,15 +159,11 @@ class TestSeriesHelper(unittest.TestCase):
                 bulk_size = 5
                 autocommit = False
 
-        for cls in [WarnBulkSizeNoEffect, WarnBulkSizeZero]:
-            with warnings.catch_warnings(record=True) as w:
-                warnings.simplefilter("always")
-                try:
-                    cls(time=159, server_name='us.east-1')
-                except ConnectionError:
-                    # Server defined in the client is invalid, we're testing
-                    # the warning only.
-                    pass
-                self.assertEqual(len(w), 1,
-                                 '{} call should have generated one warning.'
-                                 .format(cls))
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
+            WarnBulkSizeNoEffect(time=159, server_name='us.east-1')
+            self.assertEqual(len(w), 1,
+                             '{} call should have generated one warning.'
+                             .format(WarnBulkSizeNoEffect))
+            self.assertIn('has no affect', str(w[-1].message),
+                          'Warning message did not contain "has not affect".')
