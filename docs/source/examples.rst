@@ -19,4 +19,9 @@ Tutorials - pandas
 
 .. literalinclude:: ../../examples/tutorial_pandas.py
    :language: python
-   :linenos:
+
+Tutorials - SeriesHelper
+========================
+
+.. literalinclude:: ../../examples/tutorial_serieshelper.py
+   :language: python
