@@ -3,6 +3,7 @@
 import unittest
 import warnings
 
+import mock
 from influxdb import SeriesHelper, InfluxDBClient
 from requests.exceptions import ConnectionError
 
@@ -18,7 +19,8 @@ class TestSeriesHelper(unittest.TestCase):
             8086,
             'username',
             'password',
-            'database')
+            'database'
+        )
 
         class MySeriesHelper(SeriesHelper):
 
@@ -31,10 +33,33 @@ class TestSeriesHelper(unittest.TestCase):
 
         TestSeriesHelper.MySeriesHelper = MySeriesHelper
 
+    def test_auto_commit(self):
+        """
+        Tests that write_points is called after the right number of events
+        """
+        class AutoCommitTest(SeriesHelper):
+
+            class Meta:
+                series_name = 'events.stats.{server_name}'
+                fields = ['time', 'server_name']
+                bulk_size = 5
+                client = InfluxDBClient()
+                autocommit = True
+
+        fake_write_points = mock.MagicMock()
+        AutoCommitTest(server_name='us.east-1', time=159)
+        AutoCommitTest._client.write_points = fake_write_points
+        AutoCommitTest(server_name='us.east-1', time=158)
+        AutoCommitTest(server_name='us.east-1', time=157)
+        AutoCommitTest(server_name='us.east-1', time=156)
+        self.assertFalse(fake_write_points.called)
+        AutoCommitTest(server_name='us.east-1', time=3443)
+        self.assertTrue(fake_write_points.called)
+
     def testSingleSeriesName(self):
-        '''
+        """
         Tests JSON conversion when there is only one series name.
-        '''
+        """
         TestSeriesHelper.MySeriesHelper(server_name='us.east-1', time=159)
         TestSeriesHelper.MySeriesHelper(server_name='us.east-1', time=158)
         TestSeriesHelper.MySeriesHelper(server_name='us.east-1', time=157)
@@ -121,9 +146,9 @@ class TestSeriesHelper(unittest.TestCase):
                                         'server_name': 'us.east-1'})
 
     def testWarnBulkSizeZero(self):
-        '''
+        """
         Tests warning for an invalid bulk size.
-        '''
+        """
         class WarnBulkSizeZero(SeriesHelper):
 
             class Meta:
@@ -148,9 +173,9 @@ class TestSeriesHelper(unittest.TestCase):
                           'Warning message did not contain "forced to 1".')
 
     def testWarnBulkSizeNoEffect(self):
-        '''
+        """
         Tests warning for a set bulk size but autocommit False.
-        '''
+        """
         class WarnBulkSizeNoEffect(SeriesHelper):
 
             class Meta:
