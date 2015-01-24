@@ -122,7 +122,9 @@ class SeriesHelper(object):
 
         cls._datapoints[cls._series_name.format(**kw)].append(cls._type(**kw))
 
-        if cls._autocommit and len(cls._datapoints) >= cls._bulk_size:
+        if cls._autocommit and \
+                sum(len(series) for series in cls._datapoints.values()) \
+                >= cls._bulk_size:
             cls.commit()
 
     @classmethod
