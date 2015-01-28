@@ -54,3 +54,13 @@ These clients are initiated in the same way as the
 .. autoclass:: influxdb.DataFrameClient
     :members:
     :undoc-members:
+
+-----------------------
+:class:`SeriesHelper`
+-----------------------
+
+
+.. currentmodule:: influxdb.SeriesHelper
+.. autoclass:: influxdb.SeriesHelper
+    :members:
+    :undoc-members:
