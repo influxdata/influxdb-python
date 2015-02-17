@@ -45,10 +45,23 @@ def main(host='localhost', port=8086):
     print("Write points: {0}".format(json_body))
     client.write_points(json_body)
 
-    print("Queying data: " + query)
+    print("Querying data: " + query)
     result = client.query(query)
 
     print("Result: {0}".format(result))
+
+#
+    print("Remove admin privilege from user")
+    client.unset_database_admin(dbuser)
+
+    dbusers = client.get_database_users()
+    print("Get list of database users again: {0}".format(dbusers))
+
+    print("Switch user: " + dbuser)
+    client.switch_user(dbuser, dbuser_password)
+
+    print("Write points: {0}".format(json_body))
+    client.write_points(json_body)
 
     print("Switch user: " + user)
     client.switch_user(user, password)

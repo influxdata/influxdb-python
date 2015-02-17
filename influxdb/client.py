@@ -772,3 +772,220 @@ class InfluxDBClient(object):
         data = json.dumps(packet)
         byte = data.encode('utf-8')
         self.udp_socket.sendto(byte, (self._host, self.udp_port))
+
+    def ping(self, database):
+        """
+        Healthcheck
+        """
+        url = "ping"
+
+        response = self.request(
+            url=url,
+            method='GET',
+            status_code=200
+            )
+
+        return response.json()
+
+    def force_compaction(self, database):
+        """
+        Force raft compaction
+        """
+        url = "raft/force_compaction"
+
+        response = self.request(
+            url=url,
+            method='POST',
+            status_code=200
+            )
+
+        return response.json()
+
+    # Cluster config endpoints
+    # get list of cluster servers
+    # curl http://localhost:8086/cluster_admins?u=root&p=root
+
+    # remove cluster servers
+    # curl -X POST http://localhost:8086/cluster_admins?u=root&p=root \
+    #      -d '{"name": "paul", "password": "i write teh docz"}'
+
+    # create shard
+    # curl -X POST http://localhost:8086/cluster_admins/paul?u=root&p=root \
+    #      -d '{"password": "new pass"}'
+
+    # get shards
+    # curl -X POST http://localhost:8086/cluster_admins?u=root&p=root \
+    #      -d '{"name": "paul", "password": "i write teh docz"}'
+
+    # drop shard
+    # curl -X POST http://localhost:8086/cluster_admins/paul?u=root&p=root \
+    #      -d '{"password": "new pass"}'
+
+    def cluster_servers(self, database):
+        """
+        List cluster servers
+        """
+        url = "cluster/servers"
+
+        response = self.request(
+            url=url,
+            method='GET',
+            status_code=200
+            )
+
+        return response.json()
+
+    def remove_cluster_servers(self, database):
+        """
+        Remove cluster servers
+        """
+        url = "cluster/servers/{0}".format(self._id)
+
+        response = self.request(
+            url=url,
+            method='GET',
+            status_code=200
+            )
+
+        return response.json()
+
+    def create_shard(self, database):
+        """
+        Make a shard
+        """
+        url = "cluster/shards"
+
+        self.request(
+            url=url,
+            method='POST',
+            status_code=200
+            )
+
+        return True
+
+    def get_shards(self, database):
+        """
+        Get shards
+        """
+        url = "cluster/shards"
+
+        response = self.request(
+            url=url,
+            method='GET',
+            status_code=200
+            )
+
+        return response.json()
+
+    def drop_shard(self, database):
+        """
+        Drop a shard
+        """
+        url = "cluster/shards/{0}".format(self._id)
+
+        self.request(
+            url=url,
+            method='DELETE',
+            status_code=204
+            )
+
+        return True
+
+    def get_subscriptions(self, database):
+        """
+        Get list of subscriptions
+        """
+        url = "db/{0}/subscriptions".format(database)
+
+        response = self.request(
+            url=url,
+            method='GET',
+            status_code=200
+            )
+
+        return response.json()
+
+    def subscribe_ts(self, database, keyword_list, duration, start, end):
+        """
+        Subscribe to a time series
+        """
+        url = "db/{0}/subscriptions".format(database)
+
+        data = {
+            'kws': keyword_list,
+            'duration': duration,
+            'startTm': start,
+            'endTm': end
+        }
+
+        self.request(
+            url=url,
+            method='POST',
+            data=data,
+            status_code=200
+            )
+
+        return True
+
+    def delete_subscription(self, database, keyword):
+        """
+        Delete a subscription
+        """
+        url = "db/{0}/subscriptions/{1}".format(database, keyword)
+
+        self.request(
+            url=url,
+            method='DELETE',
+            status_code=204
+            )
+
+        return True
+
+    def query_subscriptions(self, database):
+        """
+        Return the data from querying the subscriptions
+        """
+        url = "db/{0}/query_subscriptions".format(database)
+
+        request = self.request(
+            url=url,
+            method='POST',
+            status_code=200
+            )
+
+        return request.json()
+
+    def query_current(self, database):
+        """
+        Query the current value
+        """
+        url = "db/{0}/query_current".format(database)
+
+        request = self.request(
+            url=url,
+            method='POST',
+            status_code=200
+            )
+
+        return request.json()
+
+    def query_follow(self, database, keyword, start, end):
+        """
+        Make a query which follows the values
+        """
+        url = "db/{0}/query_follow".format(database)
+
+        data = {
+            'kw': keyword,
+            'startTime': start,
+            'endTime': end
+        }
+
+        request = self.request(
+            url=url,
+            method='POST',
+            data=data,
+            status_code=200
+            )
+
+        return request.json()
