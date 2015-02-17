@@ -46,8 +46,8 @@ class DataFrameClient(InfluxDBClient):
         if batch_size:
             kwargs.pop('batch_size')  # don't hand over to InfluxDBClient
             for key, data_frame in data.items():
-                number_batches = int(math.ceil(len(data_frame)
-                                     / float(batch_size)))
+                number_batches = int(math.ceil(
+                    len(data_frame) / float(batch_size)))
                 for batch in range(number_batches):
                     start_index = batch * batch_size
                     end_index = (batch + 1) * batch_size
