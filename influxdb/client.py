@@ -174,6 +174,7 @@ class InfluxDBClient(object):
             raise InfluxDBClientError(response.content, response.status_code)
 
     def write(self, data):
+        """ Provided as convenience for influxdb v0.9.0, this may change. """
         self.request(
             url="write",
             method='POST',
