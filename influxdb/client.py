@@ -122,7 +122,7 @@ class InfluxDBClient(object):
             "in future versions. Please use "
             "``InfluxDBClient.switch_database(database)`` instead.",
             FutureWarning)
-        return self.switch_db(database)
+        return self.switch_database(database)
 
     def switch_user(self, username, password):
         """
