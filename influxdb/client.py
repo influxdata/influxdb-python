@@ -173,6 +173,16 @@ class InfluxDBClient(object):
         else:
             raise InfluxDBClientError(response.content, response.status_code)
 
+    def write(self, data):
+        self.request(
+            url="write",
+            method='POST',
+            params=None,
+            data=data,
+            expected_response_code=200
+        )
+        return True
+
     # Writing Data
     #
     # Assuming you have a database named foo_production you can write data

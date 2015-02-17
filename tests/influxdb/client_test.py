@@ -102,6 +102,35 @@ class TestInfluxDBClient(unittest.TestCase):
         assert cli._username == 'another_username'
         assert cli._password == 'another_password'
 
+    def test_write(self):
+          with requests_mock.Mocker() as m:
+              m.register_uri(
+                  requests_mock.POST,
+                  "http://localhost:8086/write"
+              )
+
+              cli = InfluxDBClient(database='db')
+              cli.write(
+                  {"database": "mydb",
+                   "retentionPolicy": "mypolicy",
+                   "points": [{"name": "cpu_load_short",
+                               "tags": {"host": "server01",
+                                        "region": "us-west"},
+                              "timestamp": "2009-11-10T23:00:00Z",
+                              "values": {"value": 0.64}}]}
+              )
+
+              self.assertEqual(
+                  json.loads(m.last_request.body),
+                  {"database": "mydb",
+                   "retentionPolicy": "mypolicy",
+                   "points": [{"name": "cpu_load_short",
+                               "tags": {"host": "server01",
+                                        "region": "us-west"},
+                              "timestamp": "2009-11-10T23:00:00Z",
+                              "values": {"value": 0.64}}]}
+              )
+
     def test_write_points(self):
         with requests_mock.Mocker() as m:
             m.register_uri(
