@@ -302,6 +302,18 @@ class InfluxDBClient(object):
             self.query("SHOW DATABASES")
         )
 
+    def create_database(self, dbname):
+        """
+        Create a new database
+        """
+        self.query("CREATE DATABASE %s" % dbname)
+
+    def drop_database(self, dbname):
+        """
+        Create a new database
+        """
+        self.query("DROP DATABASE %s" % dbname)
+
     def send_packet(self, packet):
         data = json.dumps(packet)
         byte = data.encode('utf-8')

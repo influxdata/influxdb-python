@@ -308,11 +308,19 @@ class TestInfluxDBClient(unittest.TestCase):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.query('select column_one from foo;')
 
-    @unittest.skip('Not implemented for 0.9')
     def test_create_database(self):
-        with _mocked_session('post', 201, {"name": "new_db"}):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            assert cli.create_database('new_db') is True
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text='{"results":[{}]}'
+            )
+            cli = InfluxDBClient('localhost', 8086, 'username', 'password', 'db')
+            cli.create_database('new_db')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create database new_db'
+            )
 
     @raises(Exception)
     def test_create_database_fails(self):
@@ -320,17 +328,25 @@ class TestInfluxDBClient(unittest.TestCase):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.create_database('new_db')
 
-    @unittest.skip('Not implemented for 0.9')
-    def test_delete_database(self):
-        with _mocked_session('delete', 204):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            assert cli.delete_database('old_db') is True
+    def test_drop_database(self):
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text='{"results":[{}]}'
+            )
+            cli = InfluxDBClient('localhost', 8086, 'username', 'password', 'db')
+            cli.drop_database('new_db')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'drop database new_db'
+            )
 
     @raises(Exception)
-    def test_delete_database_fails(self):
+    def test_drop_database_fails(self):
         with _mocked_session('delete', 401):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            cli.delete_database('old_db')
+            cli.drop_database('old_db')
 
     def test_get_list_database(self):
         data = {
