@@ -65,6 +65,7 @@ class TestInfluxDBClient(unittest.TestCase):
         # By default, raise exceptions on warnings
         warnings.simplefilter('error', FutureWarning)
 
+        self.cli = InfluxDBClient('localhost', 8086, 'username', 'password')
         self.dummy_points = [
             {
                 "name": "cpu_load_short",
@@ -305,8 +306,7 @@ class TestInfluxDBClient(unittest.TestCase):
     @raises(Exception)
     def test_query_fail(self):
         with _mocked_session('get', 401):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            cli.query('select column_one from foo;')
+            self.cli.query('select column_one from foo;')
 
     def test_create_database(self):
         with requests_mock.Mocker() as m:
@@ -315,8 +315,7 @@ class TestInfluxDBClient(unittest.TestCase):
                 "http://localhost:8086/query",
                 text='{"results":[{}]}'
             )
-            cli = InfluxDBClient('localhost', 8086, 'username', 'password', 'db')
-            cli.create_database('new_db')
+            self.cli.create_database('new_db')
             self.assertEqual(
                 m.last_request.qs['q'][0],
                 'create database new_db'
@@ -325,8 +324,7 @@ class TestInfluxDBClient(unittest.TestCase):
     @raises(Exception)
     def test_create_database_fails(self):
         with _mocked_session('post', 401):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            cli.create_database('new_db')
+            self.cli.create_database('new_db')
 
     def test_drop_database(self):
         with requests_mock.Mocker() as m:
@@ -335,8 +333,7 @@ class TestInfluxDBClient(unittest.TestCase):
                 "http://localhost:8086/query",
                 text='{"results":[{}]}'
             )
-            cli = InfluxDBClient('localhost', 8086, 'username', 'password', 'db')
-            cli.drop_database('new_db')
+            self.cli.drop_database('new_db')
             self.assertEqual(
                 m.last_request.qs['q'][0],
                 'drop database new_db'
@@ -359,9 +356,8 @@ class TestInfluxDBClient(unittest.TestCase):
         }
 
         with _mocked_session('get', 200, json.dumps(data)):
-            cli = InfluxDBClient('host', 8086, 'username', 'password')
             self.assertListEqual(
-                cli.get_list_database(),
+                self.cli.get_list_database(),
                 [u'mydb', u'myotherdb']
             )
 
@@ -389,4 +385,20 @@ class TestInfluxDBClient(unittest.TestCase):
             self.assertListEqual(
                 cli.get_list_series(),
                 ['foo', 'bar']
+            )
+
+    def test_get_list_retention_policies(self):
+        example_response = \
+            u'{"results": [{"rows": [{"values": [["fsfdsdf", "24h0m0s", 2]],' \
+            u' "columns": ["name", "duration", "replicaN"]}]}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.assertListEqual(
+                self.cli.get_list_retention_policies(),
+                [{u'duration': u'24h0m0s', u'name': u'fsfdsdf', u'replicaN': 2}]
             )

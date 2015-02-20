@@ -99,12 +99,22 @@ class InfluxDBClient(object):
             'Accept': 'text/plain'}
 
     @staticmethod
-    def _get_values_from_query_response(response):
-        """Returns a list of values from a query response"""
-        values = [
-            value[0] for value in response['results'][0]['rows'][0]['values']
-        ]
-        return values
+    def get_items_from_query_response(response):
+        """Returns a list of items from a query response"""
+        items = []
+        if 'results' in response.keys():
+            for result in response['results']:
+                if 'rows' in result.keys():
+                    for row in result['rows']:
+                        if 'columns' in row.keys() and 'values' in row.keys():
+                            for value in row['values']:
+                                item = {}
+                                current_col = 0
+                                for field in value:
+                                    item[row['columns'][current_col]] = field
+                                    current_col += 1
+                                items.append(item)
+        return items
 
     def switch_database(self, database):
         """
@@ -298,9 +308,12 @@ class InfluxDBClient(object):
         """
         Get the list of databases
         """
-        return self._get_values_from_query_response(
-            self.query("SHOW DATABASES")
-        )
+        return [
+            db['name'] for db in
+            self.get_items_from_query_response(
+                self.query("SHOW DATABASES")
+            )
+        ]
 
     def create_database(self, dbname):
         """
@@ -313,6 +326,22 @@ class InfluxDBClient(object):
         Create a new database
         """
         self.query("DROP DATABASE %s" % dbname)
+
+    def get_list_retention_policies(self, database=None):
+        """
+        Get the list of retention policies
+        """
+        return self.get_items_from_query_response(
+            self.query("SHOW RETENTION POLICIES %s" % database or self._database)
+        )
+
+    def get_list_users(self):
+        """
+        Get the list of users
+        """
+        return self.get_items_from_query_response(
+            self.query("SHOW USERS")
+        )
 
     def send_packet(self, packet):
         data = json.dumps(packet)
