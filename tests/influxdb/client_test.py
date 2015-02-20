@@ -67,12 +67,15 @@ class TestInfluxDBClient(unittest.TestCase):
 
         self.dummy_points = [
             {
-                "points": [
-                    ["1", 1, 1.0],
-                    ["2", 2, 2.0]
-                ],
-                "name": "foo",
-                "columns": ["column_one", "column_two", "column_three"]
+                "name": "cpu_load_short",
+                "tags": {
+                    "host": "server01",
+                    "region": "us-west"
+                },
+                "timestamp": "2009-11-10T23:00:00Z",
+                "values": {
+                    "value": 0.64
+                }
             }
         ]
 
@@ -135,25 +138,11 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.write_points(
                 self.dummy_points,
             )
-
             self.assertDictEqual(
-                {u'points':
-                    [
-                        {
-                            u'points': [
-                                [u'1', 1, 1.0],
-                                [u'2', 2, 2.0]
-                            ],
-                            u'name': u'foo',
-                            u'columns': [
-                                u'column_one',
-                                u'column_two',
-                                u'column_three'
-                            ]
-                        }
-                    ],
-                 u'database': u'db',
-                 },
+                {
+                    "database": "db",
+                    "points": self.dummy_points,
+                },
                 json.loads(m.last_request.body)
             )
 
@@ -184,7 +173,6 @@ class TestInfluxDBClient(unittest.TestCase):
                 batch_size=2
             ) is True
 
-    @unittest.skip('Not implemented for 0.9')
     def test_write_points_udp(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.bind(('0.0.0.0', 4444))
@@ -197,10 +185,14 @@ class TestInfluxDBClient(unittest.TestCase):
 
         received_data, addr = s.recvfrom(1024)
 
-        assert self.dummy_points == \
+        self.assertDictEqual(
+            {
+                "points": self.dummy_points,
+                "database": "test"
+            },
             json.loads(received_data.decode(), strict=True)
+        )
 
-    @unittest.skip('Not implemented for 0.9')
     def test_write_bad_precision_udp(self):
         cli = InfluxDBClient(
             'localhost', 8086, 'root', 'root',
@@ -236,21 +228,7 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
             self.assertDictEqual(
-                {u'points':
-                    [
-                        {
-                            u'points': [
-                                [u'1', 1, 1.0],
-                                [u'2', 2, 2.0]
-                            ],
-                            u'name': u'foo',
-                            u'columns': [
-                                u'column_one',
-                                u'column_two',
-                                u'column_three'
-                            ]
-                        }
-                    ],
+                {u'points': self.dummy_points,
                  u'database': u'db',
                  u'precision': u'n',
                  },
@@ -261,7 +239,8 @@ class TestInfluxDBClient(unittest.TestCase):
         cli = InfluxDBClient()
         with self.assertRaisesRegexp(
             Exception,
-            "Invalid time precision is given. \(use 'n', 'u', 'ms', 's', 'm' or 'h'\)"
+            "Invalid time precision is given. "
+            "\(use 'n', 'u', 'ms', 's', 'm' or 'h'\)"
         ):
             cli.write_points(
                 self.dummy_points,

@@ -5,7 +5,6 @@ Python client for InfluxDB
 import json
 import socket
 import requests
-import warnings
 
 from influxdb import chunked_json
 
@@ -221,18 +220,23 @@ class InfluxDBClient(object):
             the client's current db.
         :param retention_policy The retention policy for the points.
         """
-        #TODO: re-implement chunks.
+        # TODO: re-implement chunks.
         return self._write_points(points=points,
                                   time_precision=time_precision,
                                   database=database,
                                   retention_policy=retention_policy)
 
-    def _write_points(self, points, time_precision, database, retention_policy):
+    def _write_points(self,
+                      points,
+                      time_precision,
+                      database,
+                      retention_policy):
         if time_precision not in ['n', 'u', 'ms', 's', 'm', 'h', None]:
             raise Exception(
-                "Invalid time precision is given. (use 'n', 'u', 'ms', 's', 'm' or 'h')")
+                "Invalid time precision is given. "
+                "(use 'n', 'u', 'ms', 's', 'm' or 'h')")
 
-        if self.use_udp and (time_precision != 's' or None):
+        if self.use_udp and time_precision and time_precision != 's':
             raise Exception(
                 "InfluxDB only supports seconds precision for udp writes"
             )
