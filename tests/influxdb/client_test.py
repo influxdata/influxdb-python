@@ -148,24 +148,6 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
     @unittest.skip('Not implemented for 0.9')
-    def test_write_points_string(self):
-        with requests_mock.Mocker() as m:
-            m.register_uri(
-                requests_mock.POST,
-                "http://localhost:8086/db/db/series"
-            )
-
-            cli = InfluxDBClient(database='db')
-            cli.write_points(
-                str(json.dumps(self.dummy_points))
-            )
-
-            self.assertListEqual(
-                json.loads(m.last_request.body),
-                self.dummy_points
-            )
-
-    @unittest.skip('Not implemented for 0.9')
     def test_write_points_batch(self):
         with _mocked_session('post', 200, self.dummy_points):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
@@ -255,20 +237,26 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.write_points_with_precision([])
 
     def test_query(self):
-        data = [
-            {
-                "name": "foo",
-                "columns": ["time", "sequence_number", "column_one"],
-                "points": [
-                    [1383876043, 16, "2"], [1383876043, 15, "1"],
-                    [1383876035, 14, "2"], [1383876035, 13, "1"]
-                ]
-            }
-        ]
-        with _mocked_session('get', 200, data):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            result = cli.query('select column_one from foo;')
-            assert len(result[0]['points']) == 4
+        example_response = \
+            '{"results": [{"rows": [{"name": "sdfsdfsdf", ' \
+            '"columns": ["time", "value"], "values": ' \
+            '[["2009-11-10T23:00:00Z", 0.64]]}]}, {"rows": ' \
+            '[{"name": "cpu_load_short", "columns": ["time", "value"], ' \
+            '"values": [["2009-11-10T23:00:00Z", 0.64]]}]}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.assertDictEqual(
+                self.cli.query('select * from foo'),
+                {u'cpu_load_short':
+                    [{u'value': 0.64, u'time': u'2009-11-10T23:00:00Z'}],
+                 u'sdfsdfsdf':
+                    [{u'value': 0.64, u'time': u'2009-11-10T23:00:00Z'}]}
+            )
 
     @unittest.skip('Not implemented for 0.9')
     def test_query_chunked(self):
@@ -367,24 +355,21 @@ class TestInfluxDBClient(unittest.TestCase):
             cli = InfluxDBClient('host', 8086, 'username', 'password')
             cli.get_list_database()
 
-    @unittest.skip('Not implemented for 0.9')
-    def test_get_series_list(self):
-        cli = InfluxDBClient(database='db')
+    def test_get_list_series(self):
+        example_response = \
+            u'{"results": [{"rows": [{"values": [["fsfdsdf", "24h0m0s", 2]],' \
+            u' "columns": ["name", "duration", "replicaN"]}]}]}'
 
         with requests_mock.Mocker() as m:
-            example_response = \
-                '[{"name":"list_series_result","columns":' \
-                '["time","name"],"points":[[0,"foo"],[0,"bar"]]}]'
-
             m.register_uri(
                 requests_mock.GET,
-                "http://localhost:8086/db/db/series",
+                "http://localhost:8086/query",
                 text=example_response
             )
-
             self.assertListEqual(
-                cli.get_list_series(),
-                ['foo', 'bar']
+                self.cli.get_list_series(),
+                [{u'duration': u'24h0m0s',
+                  u'name': u'fsfdsdf', u'replicaN': 2}]
             )
 
     def test_get_list_retention_policies(self):
@@ -400,5 +385,6 @@ class TestInfluxDBClient(unittest.TestCase):
             )
             self.assertListEqual(
                 self.cli.get_list_retention_policies(),
-                [{u'duration': u'24h0m0s', u'name': u'fsfdsdf', u'replicaN': 2}]
+                [{u'duration': u'24h0m0s',
+                  u'name': u'fsfdsdf', u'replicaN': 2}]
             )

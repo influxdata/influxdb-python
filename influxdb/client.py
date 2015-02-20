@@ -99,13 +99,19 @@ class InfluxDBClient(object):
             'Accept': 'text/plain'}
 
     @staticmethod
-    def get_items_from_query_response(response):
+    def format_query_response(response):
         """Returns a list of items from a query response"""
-        items = []
+
+        series = {}
         if 'results' in response.keys():
             for result in response['results']:
                 if 'rows' in result.keys():
                     for row in result['rows']:
+                        items = []
+                        if 'name' in row.keys():
+                            series[row['name']] = items
+                        else:
+                            series = items  # Special case for system queries.
                         if 'columns' in row.keys() and 'values' in row.keys():
                             for value in row['values']:
                                 item = {}
@@ -114,7 +120,7 @@ class InfluxDBClient(object):
                                     item[row['columns'][current_col]] = field
                                     current_col += 1
                                 items.append(item)
-        return items
+        return series
 
     def switch_database(self, database):
         """
@@ -191,13 +197,15 @@ class InfluxDBClient(object):
               query,
               params={},
               expected_response_code=200,
-              database=None):
+              database=None,
+              raw=False):
         """
         Query data
 
         :param params: Additional parameters to be passed to requests.
         :param database: Database to query, default to None.
         :param expected_response_code: Expected response code. Defaults to 200.
+        :param raw: Wether or not to return the raw influxdb response.
         """
 
         params['q'] = query
@@ -211,7 +219,11 @@ class InfluxDBClient(object):
             data=None,
             expected_response_code=expected_response_code
         )
-        return response.json()
+
+        if raw:
+            return response.json()
+        else:
+            return self.format_query_response(response.json())
 
     def write_points(self,
                      points,
@@ -308,12 +320,7 @@ class InfluxDBClient(object):
         """
         Get the list of databases
         """
-        return [
-            db['name'] for db in
-            self.get_items_from_query_response(
-                self.query("SHOW DATABASES")
-            )
-        ]
+        return [db['name'] for db in self.query("SHOW DATABASES")]
 
     def create_database(self, dbname):
         """
@@ -331,17 +338,25 @@ class InfluxDBClient(object):
         """
         Get the list of retention policies
         """
-        return self.get_items_from_query_response(
-            self.query("SHOW RETENTION POLICIES %s" % database or self._database)
+        return self.query(
+            "SHOW RETENTION POLICIES %s" % database or self._database
         )
+
+    def get_list_series(self, database=None):
+        """
+        Get the list of series
+        """
+        return self.query("SHOW SERIES", database=database or self._database)
 
     def get_list_users(self):
         """
         Get the list of users
         """
-        return self.get_items_from_query_response(
-            self.query("SHOW USERS")
-        )
+        return self.query("SHOW USERS")
+
+    def delete_series(self, name, database=None):
+        database = database or self._database
+        self.query('DROP SERIES \"%s\"' % name, database=database)
 
     def send_packet(self, packet):
         data = json.dumps(packet)
