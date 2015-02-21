@@ -133,7 +133,7 @@ class DataFrameClient(InfluxDBClient):
         seconds = (datetime - self.EPOCH).total_seconds()
         if time_precision == 's':
             return seconds
-        elif time_precision == 'm':
+        elif time_precision == 'm' or time_precision == 'ms':
             return seconds * 1000
         elif time_precision == 'u':
             return seconds * 1000000

@@ -222,3 +222,28 @@ class TestDataFrameClient(unittest.TestCase):
             cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
             series_list = cli.get_list_series()
             assert series_list == ['seriesA', 'seriesB']
+
+    def test_datetime_to_epoch(self):
+        timestamp = pd.Timestamp('2013-01-01 00:00:00.000+00:00')
+        cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
+
+        self.assertEqual(
+            cli._datetime_to_epoch(timestamp),
+            1356998400.0
+        )
+        self.assertEqual(
+            cli._datetime_to_epoch(timestamp, time_precision='s'),
+            1356998400.0
+        )
+        self.assertEqual(
+            cli._datetime_to_epoch(timestamp, time_precision='m'),
+            1356998400000.0
+        )
+        self.assertEqual(
+            cli._datetime_to_epoch(timestamp, time_precision='ms'),
+            1356998400000.0
+        )
+        self.assertEqual(
+            cli._datetime_to_epoch(timestamp, time_precision='u'),
+            1356998400000000.0
+        )
