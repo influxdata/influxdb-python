@@ -100,14 +100,19 @@ Here's a basic example (for more see the examples directory)::
 
     >>> from influxdb import InfluxDBClient
 
-    >>> json_body = [{
-        "points": [
-            ["1", 1, 1.0],
-            ["2", 2, 2.0]
-        ],
-        "name": "foo",
-        "columns": ["column_one", "column_two", "column_three"]
-    }]
+    >>> json_body = [
+        {
+            "name": "cpu_load_short",
+            "tags": {
+                "host": "server01",
+                "region": "us-west"
+            },
+            "timestamp": "2009-11-10T23:00:00Z",
+            "fields": {
+                "value": 0.64
+            }
+        }
+    ]
 
     >>> client = InfluxDBClient('localhost', 8086, 'root', 'root', 'example')
 
