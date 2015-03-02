@@ -211,9 +211,9 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
             self.assertDictEqual(
-                {u'points': self.dummy_points,
-                 u'database': u'db',
-                 u'precision': u'n',
+                {'points': self.dummy_points,
+                 'database': u'db',
+                 'precision': u'n',
                  },
                 json.loads(m.last_request.body)
             )
