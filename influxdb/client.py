@@ -334,6 +334,26 @@ class InfluxDBClient(object):
         """
         self.query("DROP DATABASE %s" % dbname)
 
+    def create_retention_policy(self, name, duration, replication, database=None, default=False):
+        """
+        Create a retention policy
+
+        :param duration: The duration. Ex: '1d'
+        :param replication: The replication.
+        :param database: The database. Defaults to current database
+        :param default: (bool) Wether or not to set the policy as default
+        """
+
+        query_string = \
+            "CREATE RETENTION POLICY %s ON %s " \
+            "DURATION %s REPLICATION %s" % \
+            (name, database or self._database, duration, replication)
+
+        if default is True:
+            query_string += " DEFAULT"
+
+        self.query(query_string)
+
     def get_list_retention_policies(self, database=None):
         """
         Get the list of retention policies

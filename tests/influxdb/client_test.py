@@ -372,6 +372,42 @@ class TestInfluxDBClient(unittest.TestCase):
                   u'name': u'fsfdsdf', u'replicaN': 2}]
             )
 
+    def test_create_retention_policy_default(self):
+        example_response = u'{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.cli.create_retention_policy(
+                'somename', '1d', 4, default=True, database='db'
+            )
+
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create retention policy somename on db duration 1d replication 4 default'
+            )
+
+    def test_create_retention_policy(self):
+        example_response = u'{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.cli.create_retention_policy(
+                'somename', '1d', 4, database='db'
+            )
+
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create retention policy somename on db duration 1d replication 4'
+            )
+
     def test_get_list_retention_policies(self):
         example_response = \
             u'{"results": [{"rows": [{"values": [["fsfdsdf", "24h0m0s", 2]],' \
