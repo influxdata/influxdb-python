@@ -334,7 +334,9 @@ class InfluxDBClient(object):
         """
         self.query("DROP DATABASE %s" % dbname)
 
-    def create_retention_policy(self, name, duration, replication, database=None, default=False):
+    def create_retention_policy(
+            self, name, duration,
+            replication, database=None, default=False):
         """
         Create a retention policy
 
