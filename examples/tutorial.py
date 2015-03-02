@@ -29,6 +29,9 @@ def main(host='localhost', port=8086):
     print("Create database: " + dbname)
     client.create_database(dbname)
 
+    print("Create a retention policy")
+    client.create_retention_policy('awesome_policy', '3d', 3, default=True)
+
     print("Switch user: " + dbuser)
     client.switch_user(dbuser, dbuser_password)
 
