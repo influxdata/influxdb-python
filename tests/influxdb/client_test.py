@@ -212,8 +212,8 @@ class TestInfluxDBClient(unittest.TestCase):
 
             self.assertDictEqual(
                 {'points': self.dummy_points,
-                 'database': u'db',
-                 'precision': u'n',
+                 'database': 'db',
+                 'precision': 'n',
                  },
                 json.loads(m.last_request.body)
             )
@@ -252,10 +252,10 @@ class TestInfluxDBClient(unittest.TestCase):
             )
             self.assertDictEqual(
                 self.cli.query('select * from foo'),
-                {u'cpu_load_short':
-                    [{u'value': 0.64, u'time': u'2009-11-10T23:00:00Z'}],
-                 u'sdfsdfsdf':
-                    [{u'value': 0.64, u'time': u'2009-11-10T23:00:00Z'}]}
+                {'cpu_load_short':
+                    [{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}],
+                 'sdfsdfsdf':
+                    [{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]}
             )
 
     @unittest.skip('Not implemented for 0.9')
@@ -346,7 +346,7 @@ class TestInfluxDBClient(unittest.TestCase):
         with _mocked_session('get', 200, json.dumps(data)):
             self.assertListEqual(
                 self.cli.get_list_database(),
-                [u'mydb', u'myotherdb']
+                ['mydb', 'myotherdb']
             )
 
     @raises(Exception)
@@ -357,8 +357,8 @@ class TestInfluxDBClient(unittest.TestCase):
 
     def test_get_list_series(self):
         example_response = \
-            u'{"results": [{"rows": [{"values": [["fsfdsdf", "24h0m0s", 2]],' \
-            u' "columns": ["name", "duration", "replicaN"]}]}]}'
+            '{"results": [{"rows": [{"values": [["fsfdsdf", "24h0m0s", 2]],' \
+            ' "columns": ["name", "duration", "replicaN"]}]}]}'
 
         with requests_mock.Mocker() as m:
             m.register_uri(
@@ -368,12 +368,12 @@ class TestInfluxDBClient(unittest.TestCase):
             )
             self.assertListEqual(
                 self.cli.get_list_series(),
-                [{u'duration': u'24h0m0s',
-                  u'name': u'fsfdsdf', u'replicaN': 2}]
+                [{'duration': '24h0m0s',
+                  'name': 'fsfdsdf', 'replicaN': 2}]
             )
 
     def test_create_retention_policy_default(self):
-        example_response = u'{"results":[{}]}'
+        example_response = '{"results":[{}]}'
 
         with requests_mock.Mocker() as m:
             m.register_uri(
@@ -392,7 +392,7 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
     def test_create_retention_policy(self):
-        example_response = u'{"results":[{}]}'
+        example_response = '{"results":[{}]}'
 
         with requests_mock.Mocker() as m:
             m.register_uri(
@@ -412,8 +412,8 @@ class TestInfluxDBClient(unittest.TestCase):
 
     def test_get_list_retention_policies(self):
         example_response = \
-            u'{"results": [{"rows": [{"values": [["fsfdsdf", "24h0m0s", 2]],' \
-            u' "columns": ["name", "duration", "replicaN"]}]}]}'
+            '{"results": [{"rows": [{"values": [["fsfdsdf", "24h0m0s", 2]],' \
+            ' "columns": ["name", "duration", "replicaN"]}]}]}'
 
         with requests_mock.Mocker() as m:
             m.register_uri(
@@ -423,6 +423,6 @@ class TestInfluxDBClient(unittest.TestCase):
             )
             self.assertListEqual(
                 self.cli.get_list_retention_policies(),
-                [{u'duration': u'24h0m0s',
-                  u'name': u'fsfdsdf', u'replicaN': 2}]
+                [{'duration': '24h0m0s',
+                  'name': 'fsfdsdf', 'replicaN': 2}]
             )
