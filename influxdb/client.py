@@ -211,6 +211,8 @@ class InfluxDBClient(object):
         params['q'] = query
         if database:
             params['db'] = database
+        else:
+            params['db'] = self._database
 
         response = self.request(
             url="query",
