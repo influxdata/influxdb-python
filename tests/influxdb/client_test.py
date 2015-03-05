@@ -238,9 +238,9 @@ class TestInfluxDBClient(unittest.TestCase):
 
     def test_query(self):
         example_response = \
-            '{"results": [{"rows": [{"name": "sdfsdfsdf", ' \
+            '{"results": [{"series": [{"name": "sdfsdfsdf", ' \
             '"columns": ["time", "value"], "values": ' \
-            '[["2009-11-10T23:00:00Z", 0.64]]}]}, {"rows": ' \
+            '[["2009-11-10T23:00:00Z", 0.64]]}]}, {"series": ' \
             '[{"name": "cpu_load_short", "columns": ["time", "value"], ' \
             '"values": [["2009-11-10T23:00:00Z", 0.64]]}]}]}'
 
@@ -337,7 +337,7 @@ class TestInfluxDBClient(unittest.TestCase):
         data = {
             "results":
             [
-                {"rows": [
+                {"series": [
                     {"columns": ["name"],
                      "values":[["mydb"], ["myotherdb"]]}]}
             ]
@@ -357,7 +357,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
     def test_get_list_series(self):
         example_response = \
-            '{"results": [{"rows": [{"values": [["fsfdsdf", "24h0m0s", 2]],' \
+            '{"results": [{"series": [{"values": [["fsfdsdf", "24h0m0s", 2]],'\
             ' "columns": ["name", "duration", "replicaN"]}]}]}'
 
         with requests_mock.Mocker() as m:
@@ -412,7 +412,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
     def test_get_list_retention_policies(self):
         example_response = \
-            '{"results": [{"rows": [{"values": [["fsfdsdf", "24h0m0s", 2]],' \
+            '{"results": [{"series": [{"values": [["fsfdsdf", "24h0m0s", 2]],'\
             ' "columns": ["name", "duration", "replicaN"]}]}]}'
 
         with requests_mock.Mocker() as m:

@@ -26,7 +26,6 @@ class InfluxDBClientError(Exception):
 
 
 class InfluxDBClient(object):
-
     """
     The ``InfluxDBClient`` object holds information necessary to connect
     to InfluxDB. Requests can be made to InfluxDB directly through the client.
@@ -101,12 +100,11 @@ class InfluxDBClient(object):
     @staticmethod
     def format_query_response(response):
         """Returns a list of items from a query response"""
-
         series = {}
         if 'results' in response.keys():
             for result in response['results']:
-                if 'rows' in result.keys():
-                    for row in result['rows']:
+                if 'series' in result.keys():
+                    for row in result['series']:
                         items = []
                         if 'name' in row.keys():
                             series[row['name']] = items
