@@ -46,7 +46,7 @@ def main(host='localhost', port=8086):
     print("Switch user: " + user)
     client.switch_user(user, password)
 
-    print("Delete database: " + dbname)
+    print("Drop database: " + dbname)
     client.drop_database(dbname)
 
 

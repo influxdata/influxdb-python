@@ -85,11 +85,11 @@ class DataFrameClient(InfluxDBClient):
             retrieved in chunks, False otherwise.
 
         """
-        result = InfluxDBClient.query(self, query=query,
+        result = InfluxDBClient._query(self, query=query,
                                       time_precision=time_precision,
                                       chunked=chunked)
-        if len(result) > 0:
-            return self._to_dataframe(result[0], time_precision)
+        if len(result['results'][0]) > 0:
+            return self._to_dataframe(result['results'][0], time_precision)
         else:
             return result
 
