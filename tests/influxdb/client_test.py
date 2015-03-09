@@ -74,7 +74,7 @@ class TestInfluxDBClient(unittest.TestCase):
                     "region": "us-west"
                 },
                 "timestamp": "2009-11-10T23:00:00Z",
-                "values": {
+                "fields": {
                     "value": 0.64
                 }
             }
@@ -114,7 +114,7 @@ class TestInfluxDBClient(unittest.TestCase):
                              "tags": {"host": "server01",
                                       "region": "us-west"},
                              "timestamp": "2009-11-10T23:00:00Z",
-                             "values": {"value": 0.64}}]}
+                             "fields": {"value": 0.64}}]}
             )
 
             self.assertEqual(
@@ -125,7 +125,7 @@ class TestInfluxDBClient(unittest.TestCase):
                              "tags": {"host": "server01",
                                       "region": "us-west"},
                              "timestamp": "2009-11-10T23:00:00Z",
-                             "values": {"value": 0.64}}]}
+                             "fields": {"value": 0.64}}]}
             )
 
     def test_write_points(self):
