@@ -29,7 +29,17 @@ class TestChunkJson(unittest.TestCase):
         self.assertListEqual(
             [
                 {
-                    'results': [{'series': [{'values': [['2009-11-10T23:00:00Z', 0.64]], 'name': 'sdfsdfsdf', 'columns': ['time', 'value']}]}, {'series': [{'values': [['2009-11-10T23:00:00Z', 0.64]], 'name': 'cpu_load_short', 'columns': ['time', 'value']}]}]
+                    'results': [
+                        {'series': [{
+                            'values': [['2009-11-10T23:00:00Z', 0.64]],
+                            'name': 'sdfsdfsdf',
+                            'columns':
+                                ['time', 'value']}]},
+                        {'series': [{
+                            'values': [['2009-11-10T23:00:00Z', 0.64]],
+                            'name': 'cpu_load_short',
+                            'columns': ['time', 'value']}]}
+                    ]
                 }
             ],
             res
