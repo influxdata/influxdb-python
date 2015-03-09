@@ -20,7 +20,7 @@ def main(host='localhost', port=8086):
     client.create_database(dbname)
 
     print("Write DataFrame")
-    client.write_points({'demo':df})
+    client.write_points({'demo': df})
 
     print("Read DataFrame")
     client.query("select * from demo")
