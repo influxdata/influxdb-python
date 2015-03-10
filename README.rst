@@ -154,6 +154,12 @@ problems or submit contributions.
 .. _Issues: https://github.com/influxdb/influxdb-python/issues
 
 
+TODO
+====
+
+The TODO/Roadmap can be found in Github bug tracker: https://github.com/influxdb/influxdb-python/issues/109
+
+
 Source code
 ===========
 
