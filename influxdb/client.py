@@ -6,7 +6,6 @@ import json
 import socket
 import requests
 
-from influxdb import chunked_json
 
 try:
     xrange
@@ -195,39 +194,20 @@ class InfluxDBClient(object):
               query,
               params={},
               expected_response_code=200,
-              time_precision='s',
               database=None,
-              raw=False,
-              chunked=False):
+              raw=False):
         """
         Query data
 
         :param params: Additional parameters to be passed to requests.
-        :param time_precision: [Optional, default 's'] Either 's', 'm', 'ms'
-            or 'u'.
         :param database: Database to query, default to None.
         :param expected_response_code: Expected response code. Defaults to 200.
         :param raw: Wether or not to return the raw influxdb response.
-        :param chunked: [Optional, default=False] True if the data shall be
-            retrieved in chunks, False otherwise.
-
         """
-
-        if time_precision not in ['s', 'm', 'ms', 'u']:
-            raise Exception(
-                "Invalid time precision is given. (use 's', 'm', 'ms' or 'u')")
 
         params['q'] = query
         if database:
             params['db'] = database
-
-        if time_precision:
-            params['time_precision'] = time_precision
-
-        if chunked is True:
-            params['chunked'] = 'true'
-        else:
-            params['chunked'] = 'false'
 
         response = self.request(
             url="query",
@@ -237,10 +217,8 @@ class InfluxDBClient(object):
             expected_response_code=expected_response_code
         )
 
-        if raw and not chunked:
+        if raw:
             return response.json()
-        elif not raw and chunked:
-            return list(chunked_json.loads(response.content.decode()))
         else:
             return self.format_query_response(response.json())
 
