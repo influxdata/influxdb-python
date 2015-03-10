@@ -283,37 +283,6 @@ class InfluxDBClient(object):
 
         return True
 
-    def _query(self, query, time_precision='s', chunked=False):
-        if time_precision not in ['s', 'm', 'ms', 'u']:
-            raise Exception(
-                "Invalid time precision is given. (use 's', 'm', 'ms' or 'u')")
-
-        if chunked is True:
-            chunked_param = 'true'
-        else:
-            chunked_param = 'false'
-
-        # Build the URL of the serie to query
-        url = "db/{0}/series".format(self._database)
-
-        params = {
-            'q': query,
-            'time_precision': time_precision,
-            'chunked': chunked_param
-        }
-
-        response = self.request(
-            url=url,
-            method='GET',
-            params=params,
-            expected_response_code=200
-        )
-
-        if chunked:
-            return list(chunked_json.loads(response.content.decode()))
-        else:
-            return response.json()
-
     def get_list_database(self):
         """
         Get the list of databases
