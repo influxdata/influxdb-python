@@ -195,50 +195,39 @@ class InfluxDBClient(object):
               query,
               params={},
               expected_response_code=200,
+              time_precision='s',
               database=None,
-              raw=False):
+              raw=False,
+              chunked=False):
         """
         Query data
 
         :param params: Additional parameters to be passed to requests.
+        :param time_precision: [Optional, default 's'] Either 's', 'm', 'ms'
+            or 'u'.
         :param database: Database to query, default to None.
         :param expected_response_code: Expected response code. Defaults to 200.
         :param raw: Wether or not to return the raw influxdb response.
+        :param chunked: [Optional, default=False] True if the data shall be
+            retrieved in chunks, False otherwise.
+
         """
+
+        if time_precision not in ['s', 'm', 'ms', 'u']:
+            raise Exception(
+                "Invalid time precision is given. (use 's', 'm', 'ms' or 'u')")
 
         params['q'] = query
         if database:
             params['db'] = database
 
-        response = self.request(
-            url="query",
-            method='GET',
-            params=params,
-            data=None,
-            expected_response_code=expected_response_code
-        )
-
-        if raw:
-            return response.json()
-        else:
-            return self.format_query_response(response.json())
-
-    def _query(self, query, time_precision='s', chunked=False,
-               expected_response_code=200):
-        if time_precision not in ['s', 'm', 'ms', 'u']:
-            raise Exception(
-                "Invalid time precision is given. (use 's', 'm', 'ms' or 'u')")
+        if time_precision:
+            params['time_precision'] = time_precision
 
         if chunked is True:
-            chunked_param = 'true'
+            params['chunked'] = 'true'
         else:
-            chunked_param = 'false'
-
-        params = {
-            'q': query,
-            'time_precision': time_precision,
-            'chunked': chunked_param
-        }
+            params['chunked'] = 'false'
 
         response = self.request(
             url="query",
@@ -248,10 +237,12 @@ class InfluxDBClient(object):
             expected_response_code=expected_response_code
         )
 
-        if chunked:
+        if raw and not chunked:
+            return response.json()
+        elif not raw and chunked:
             return list(chunked_json.loads(response.content.decode()))
         else:
-            return response.json()
+            return self.format_query_response(response.json())
 
     def write_points(self,
                      points,
@@ -306,6 +297,7 @@ class InfluxDBClient(object):
         if self.use_udp:
             self.send_packet(data)
         else:
+            import ipdb; ipdb.set_trace()
             self.write(
                 data=data,
                 expected_response_code=200
