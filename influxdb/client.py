@@ -297,7 +297,6 @@ class InfluxDBClient(object):
         if self.use_udp:
             self.send_packet(data)
         else:
-            import ipdb; ipdb.set_trace()
             self.write(
                 data=data,
                 expected_response_code=200
