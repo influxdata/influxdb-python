@@ -7,6 +7,11 @@ import warnings
 
 from .client import InfluxDBClient
 
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+
 
 class DataFrameClient(InfluxDBClient):
     """
@@ -17,13 +22,9 @@ class DataFrameClient(InfluxDBClient):
 
     def __init__(self, *args, **kwargs):
         super(DataFrameClient, self).__init__(*args, **kwargs)
-        try:
-            global pd
-            import pandas as pd
-        except ImportError as ex:
+        if not pd:
             raise ImportError(
-                'DataFrameClient requires Pandas, "{ex}" problem importing'
-                .format(ex=str(ex))
+                'DataFrameClient requires Pandas'
             )
 
         self.EPOCH = pd.Timestamp('1970-01-01 00:00:00.000+00:00')
