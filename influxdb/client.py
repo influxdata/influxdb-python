@@ -5,6 +5,7 @@ Python client for InfluxDB
 import json
 import socket
 import requests
+import requests.exceptions
 import warnings
 
 from influxdb import chunked_json
@@ -158,15 +159,25 @@ class InfluxDBClient(object):
         if data is not None and not isinstance(data, str):
             data = json.dumps(data)
 
-        response = session.request(
-            method=method,
-            url=url,
-            params=params,
-            data=data,
-            headers=self._headers,
-            verify=self._verify_ssl,
-            timeout=self._timeout
-        )
+        # Try to send the request a maximum of three times. (see #103)
+        # TODO (aviau): Make this configurable.
+        for i in range(0, 3):
+            try:
+                response = session.request(
+                    method=method,
+                    url=url,
+                    params=params,
+                    data=data,
+                    headers=self._headers,
+                    verify=self._verify_ssl,
+                    timeout=self._timeout
+                )
+                break
+            except requests.exceptions.ConnectionError as e:
+                if i < 2:
+                    continue
+                else:
+                    raise e
 
         if response.status_code == expected_response_code:
             return response
