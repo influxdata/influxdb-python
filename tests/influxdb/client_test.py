@@ -4,12 +4,14 @@ unit tests
 """
 import json
 import requests
+import requests.exceptions
 import socket
 import unittest
 import requests_mock
 from nose.tools import raises
 from mock import patch
 import warnings
+import mock
 
 from influxdb import InfluxDBClient
 from influxdb.client import session
@@ -426,3 +428,51 @@ class TestInfluxDBClient(unittest.TestCase):
                 [{'duration': '24h0m0s',
                   'name': 'fsfdsdf', 'replicaN': 2}]
             )
+
+    @mock.patch('requests.Session.request')
+    def test_request_retry(self, mock_request):
+        """Tests that two connection errors will be handled"""
+
+        class CustomMock(object):
+            i = 0
+
+            def connection_error(self, *args, **kwargs):
+                self.i += 1
+
+                if self.i < 3:
+                    raise requests.exceptions.ConnectionError
+                else:
+                    r = requests.Response()
+                    r.status_code = 200
+                    return r
+
+        mock_request.side_effect = CustomMock().connection_error
+
+        cli = InfluxDBClient(database='db')
+        cli.write_points(
+            self.dummy_points
+        )
+
+    @mock.patch('requests.Session.request')
+    def test_request_retry(self, mock_request):
+        """Tests that three connection errors will not be handled"""
+
+        class CustomMock(object):
+            i = 0
+
+            def connection_error(self, *args, **kwargs):
+                self.i += 1
+
+                if self.i < 4:
+                    raise requests.exceptions.ConnectionError
+                else:
+                    r = requests.Response()
+                    r.status_code = 200
+                    return r
+
+        mock_request.side_effect = CustomMock().connection_error
+
+        cli = InfluxDBClient(database='db')
+
+        with self.assertRaises(requests.exceptions.ConnectionError):
+            cli.write_points(self.dummy_points)
