@@ -181,7 +181,7 @@ class InfluxDBClient(object):
             params=None,
             data=data,
             expected_response_code=200
-        )
+        ).close()
         return True
 
     # Writing Data
@@ -267,7 +267,7 @@ class InfluxDBClient(object):
                 params=params,
                 data=data,
                 expected_response_code=200
-            )
+            ).close()
 
         return True
 
@@ -283,7 +283,7 @@ class InfluxDBClient(object):
             url=url,
             method='DELETE',
             expected_response_code=204
-        )
+        ).close()
 
         return True
 
@@ -398,7 +398,7 @@ class InfluxDBClient(object):
             method='POST',
             data=data,
             expected_response_code=201
-        )
+        ).close()
 
         return True
 
@@ -418,7 +418,7 @@ class InfluxDBClient(object):
             url=url,
             method='DELETE',
             expected_response_code=204
-        )
+        ).close()
 
         return True
 
@@ -470,7 +470,7 @@ class InfluxDBClient(object):
             url=url,
             method='DELETE',
             expected_response_code=204
-        )
+        ).close()
 
         return True
 
@@ -556,7 +556,7 @@ class InfluxDBClient(object):
             method='POST',
             data=data,
             expected_response_code=200
-        )
+        ).close()
 
         return True
 
@@ -575,7 +575,7 @@ class InfluxDBClient(object):
             method='POST',
             data=data,
             expected_response_code=200
-        )
+        ).close()
 
         return True
 
@@ -589,7 +589,7 @@ class InfluxDBClient(object):
             url=url,
             method='DELETE',
             expected_response_code=200
-        )
+        ).close()
 
         return True
 
@@ -615,7 +615,7 @@ class InfluxDBClient(object):
             method='POST',
             data=data,
             expected_response_code=200
-        )
+        ).close()
 
         return True
 
@@ -717,7 +717,7 @@ class InfluxDBClient(object):
             method='POST',
             data=data,
             expected_response_code=200
-        )
+        ).close()
 
         return True
 
@@ -736,7 +736,7 @@ class InfluxDBClient(object):
             method='POST',
             data=data,
             expected_response_code=200
-        )
+        ).close()
 
         if username == self._username:
             self._password = new_password
@@ -753,7 +753,7 @@ class InfluxDBClient(object):
             url=url,
             method='DELETE',
             expected_response_code=200
-        )
+        ).close()
 
         return True
 
