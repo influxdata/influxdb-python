@@ -138,7 +138,7 @@ class InfluxDBClient(object):
         self._username = username
         self._password = password
 
-    def request(self, url, method='GET', params=None, data=None,
+    def request(self, url, method='GET', params=None, data=None, stream=False,
                 expected_response_code=200):
         """
         Make a http request to API
@@ -163,6 +163,7 @@ class InfluxDBClient(object):
             url=url,
             params=params,
             data=data,
+            stream=stream,
             headers=self._headers,
             verify=self._verify_ssl,
             timeout=self._timeout
@@ -340,7 +341,7 @@ class InfluxDBClient(object):
     # Querying Data
     #
     # GET db/:name/series. It takes five parameters
-    def _query(self, query, time_precision='s', chunked=False):
+    def _query(self, query, time_precision='s', chunked=False, output_file=None):
         if time_precision not in ['s', 'm', 'ms', 'u']:
             raise Exception(
                 "Invalid time precision is given. (use 's', 'm', 'ms' or 'u')")
@@ -363,13 +364,20 @@ class InfluxDBClient(object):
             url=url,
             method='GET',
             params=params,
+            stream=(output_file is not None),
             expected_response_code=200
         )
 
-        if chunked:
-            return list(chunked_json.loads(response.content.decode()))
+        if output_file is None:
+            if chunked:
+                return list(chunked_json.loads(response.content.decode()))
+            else:
+                return response.json()
         else:
-            return response.json()
+            with open(output_file, 'w') as f:
+                for chunk in resp.iter_content():
+                    if chunk: f.write(chunk)
+            return True
 
     # Creating and Dropping Databases
     #
