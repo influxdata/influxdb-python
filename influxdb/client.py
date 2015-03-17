@@ -371,7 +371,15 @@ class InfluxDBClient(object):
         else:
             with open(output_file, 'w') as f:
                 for chunk in resp.iter_content():
-                    if chunk: f.write(chunk)
+                    # if chuck has data, write to file.
+                    if chunk:
+                        # Write each chunk to its own line
+                        # this makes it nice and easy (via xreadlines()) to iterate through
+                        # each complete chunk and operate on it
+                        if chunk.endswith("}"):
+                            j.write(chunk + "\n")
+                        else:
+                            j.write(chunk)
             return True
 
     # Creating and Dropping Databases
