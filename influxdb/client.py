@@ -346,18 +346,13 @@ class InfluxDBClient(object):
             raise Exception(
                 "Invalid time precision is given. (use 's', 'm', 'ms' or 'u')")
 
-        if chunked is True:
-            chunked_param = 'true'
-        else:
-            chunked_param = 'false'
-
         # Build the URL of the serie to query
         url = "db/{0}/series".format(self._database)
 
         params = {
             'q': query,
             'time_precision': time_precision,
-            'chunked': chunked_param
+            'chunked': chunked.__str__().lower()
         }
 
         response = self.request(
