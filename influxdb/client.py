@@ -168,6 +168,10 @@ class InfluxDBClient(object):
             timeout=self._timeout
         )
 
+        # consume all the data in order to release 
+        # the connection back to the pool
+        response.content
+
         if response.status_code == expected_response_code:
             return response
         else:
