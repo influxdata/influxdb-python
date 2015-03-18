@@ -326,6 +326,55 @@ class InfluxDBClient(object):
         """
         raise NotImplementedError()
 
+    def query_to_file(self, query, to_file, time_precision='s', chunked=False):
+        """
+        Querying data to file
+
+        :param to_file: file path to write to
+        :param time_precision: [Optional, default 's'] Either 's', 'm', 'ms'
+            or 'u'.
+        :param chunked: [Optional, default=False] True if the data shall be
+            retrieved in chunks, False otherwise.
+        """
+        return self._query_to_file(query, to_file, time_precision=time_precision,
+            chunked=chunked)
+
+    def _query_to_file(self, query, to_file, time_precision='s', chunked=False):
+        if time_precision not in ['s', 'm', 'ms', 'u']:
+            raise Exception(
+                "Invalid time precision is given. (use 's', 'm', 'ms' or 'u')")
+
+        # Build the URL of the serie to query
+        url = "db/{0}/series".format(self._database)
+
+        params = {
+            'q': query,
+            'time_precision': time_precision,
+            'chunked': str(chunked).lower()
+        }
+
+        response = self.request(
+            url=url,
+            method='GET',
+            params=params,
+            stream=True,
+            expected_response_code=200
+        )
+
+        with open(output_file, 'w') as f:
+            for chunk in response.iter_content():
+                # if chuck has data, write to file.
+                if chunk:
+                    # Write each 'chunk' to its own line
+                    # this makes it nice and easy (via `xreadlines()`) to iterate through
+                    # each complete chunk and operate on it
+                    if chunk.endswith("}"):
+                        j.write(chunk + "\n")
+                    else:
+                        j.write(chunk)
+            return True
+        
+
     def query(self, query, time_precision='s', chunked=False):
         """
         Quering data
@@ -341,7 +390,7 @@ class InfluxDBClient(object):
     # Querying Data
     #
     # GET db/:name/series. It takes five parameters
-    def _query(self, query, time_precision='s', chunked=False, output_file=None):
+    def _query(self, query, time_precision='s', chunked=False):
         if time_precision not in ['s', 'm', 'ms', 'u']:
             raise Exception(
                 "Invalid time precision is given. (use 's', 'm', 'ms' or 'u')")
@@ -352,35 +401,20 @@ class InfluxDBClient(object):
         params = {
             'q': query,
             'time_precision': time_precision,
-            'chunked': chunked.__str__().lower()
+            'chunked': str(chunked).lower()
         }
 
         response = self.request(
             url=url,
             method='GET',
             params=params,
-            stream=(output_file is not None),
             expected_response_code=200
         )
 
-        if output_file is None:
-            if chunked:
-                return list(chunked_json.loads(response.content.decode()))
-            else:
-                return response.json()
+        if chunked:
+            return list(chunked_json.loads(response.content.decode()))
         else:
-            with open(output_file, 'w') as f:
-                for chunk in resp.iter_content():
-                    # if chuck has data, write to file.
-                    if chunk:
-                        # Write each chunk to its own line
-                        # this makes it nice and easy (via xreadlines()) to iterate through
-                        # each complete chunk and operate on it
-                        if chunk.endswith("}"):
-                            j.write(chunk + "\n")
-                        else:
-                            j.write(chunk)
-            return True
+            return response.json()
 
     # Creating and Dropping Databases
     #
