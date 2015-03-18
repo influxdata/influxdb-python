@@ -86,7 +86,7 @@ class DataFrameClient(InfluxDBClient):
             retrieved in chunks, False otherwise.
 
         """
-        result = InfluxDBClient.query(self,
+        result = super(DataFrameClient, self).query(
                                       query=query,
                                       time_precision=time_precision,
                                       chunked=chunked)
