@@ -454,7 +454,7 @@ class TestInfluxDBClient(unittest.TestCase):
         )
 
     @mock.patch('requests.Session.request')
-    def test_request_retry(self, mock_request):
+    def test_request_retry_raises(self, mock_request):
         """Tests that three connection errors will not be handled"""
 
         class CustomMock(object):
