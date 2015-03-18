@@ -77,7 +77,10 @@ class DataFrameClient(InfluxDBClient):
 
     def query(self, query, time_precision='s', chunked=False):
         """
-        Quering data into a DataFrame.
+        Quering data into DataFrames.
+
+        Returns a DataFrame for a single time series and a map for multiple
+        time series with the time series as value and its name as key.
 
         :param time_precision: [Optional, default 's'] Either 's', 'm', 'ms'
             or 'u'.
@@ -88,10 +91,14 @@ class DataFrameClient(InfluxDBClient):
         result = InfluxDBClient.query(self, query=query,
                                       time_precision=time_precision,
                                       chunked=chunked)
-        if len(result) > 0:
+        if len(result) == 0:
+            return result
+        elif len(result) == 1:
             return self._to_dataframe(result[0], time_precision)
         else:
-            return result
+            return {time_series['name']: self._to_dataframe(time_series,
+                                                            time_precision)
+                    for time_series in result}
 
     def _to_dataframe(self, json_result, time_precision):
         dataframe = pd.DataFrame(data=json_result['points'],
