@@ -7,6 +7,11 @@ import warnings
 
 from .client import InfluxDBClient
 
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
+
 
 class DataFrameClient(InfluxDBClient):
     """
@@ -17,13 +22,9 @@ class DataFrameClient(InfluxDBClient):
 
     def __init__(self, *args, **kwargs):
         super(DataFrameClient, self).__init__(*args, **kwargs)
-        try:
-            global pd
-            import pandas as pd
-        except ImportError as ex:
+        if not pd:
             raise ImportError(
-                'DataFrameClient requires Pandas, "{ex}" problem importing'
-                .format(ex=str(ex))
+                'DataFrameClient requires Pandas'
             )
 
         self.EPOCH = pd.Timestamp('1970-01-01 00:00:00.000+00:00')
@@ -77,10 +78,7 @@ class DataFrameClient(InfluxDBClient):
 
     def query(self, query, time_precision='s', chunked=False):
         """
-        Quering data into DataFrames.
-
-        Returns a DataFrame for a single time series and a map for multiple
-        time series with the time series as value and its name as key.
+        Quering data into a DataFrame.
 
         :param time_precision: [Optional, default 's'] Either 's', 'm', 'ms'
             or 'u'.
@@ -88,17 +86,14 @@ class DataFrameClient(InfluxDBClient):
             retrieved in chunks, False otherwise.
 
         """
-        result = InfluxDBClient.query(self, query=query,
+        result = InfluxDBClient.query(self,
+                                      query=query,
                                       time_precision=time_precision,
                                       chunked=chunked)
-        if len(result) == 0:
-            return result
-        elif len(result) == 1:
-            return self._to_dataframe(result[0], time_precision)
+        if len(result['results'][0]) > 0:
+            return self._to_dataframe(result['results'][0], time_precision)
         else:
-            return {time_series['name']: self._to_dataframe(time_series,
-                                                            time_precision)
-                    for time_series in result}
+            return result
 
     def _to_dataframe(self, json_result, time_precision):
         dataframe = pd.DataFrame(data=json_result['points'],
