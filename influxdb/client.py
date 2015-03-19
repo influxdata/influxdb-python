@@ -113,10 +113,9 @@ class InfluxDBClient(object):
                         if 'columns' in row.keys() and 'values' in row.keys():
                             for value in row['values']:
                                 item = {}
-                                current_col = 0
-                                for field in value:
-                                    item[row['columns'][current_col]] = field
-                                    current_col += 1
+                                for cur_col, field in enumerate(value):
+                                    item[row['columns'][cur_col]] = field
+                                    cur_col += 1
                                 items.append(item)
         return series
 
