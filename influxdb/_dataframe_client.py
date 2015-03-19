@@ -68,7 +68,7 @@ class DataFrameClient(InfluxDBClient):
             FutureWarning)
         return self.write_points(data, time_precision='s')
 
-    def query(self, query, time_precision='s', chunked=False):
+    def query(self, query, time_precision='s', chunked=False, database=None):
         """
         Quering data into a DataFrame.
 
