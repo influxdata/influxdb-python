@@ -36,14 +36,10 @@ InfluxDB is an open-source distributed time series database, find more about Inf
 
 .. _installation:
 
-InfluxDB < 0.9.0
-================
+InfluxDB v0.8.X users
+=====================
 
-This library only supports InfluxDB>=0.9.0. Users of previous versions of InfluxDB may use the influxdb_0.8 branch.
-
-You may install it from pip with the following command::
-
-    $ pip install https://github.com/influxdb/influxdb-python/archive/influxdb_0.8.zip
+Influxdb >=0.9.0 brings many breaking changes to the API. InfluxDB 0.8.X users may use the legacy client by using ```from influxdb.influxdb08 import InfluxDBClient``` instead.
 
 Installation
 ============
