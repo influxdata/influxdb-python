@@ -36,6 +36,12 @@ InfluxDB is an open-source distributed time series database, find more about Inf
 
 .. _installation:
 
+InfluxDB > v0.9 support
+=======================
+
+The 1.0.0 version of this library now supports InfluxDB 0.9. Please note that InfluxDB 0.9 is still pre-release software. For stability, you should use the ``influxdb.influxdb08`` module in conjunction with InfluxDB 0.8.
+
+
 InfluxDB v0.8.X users
 =====================
 
