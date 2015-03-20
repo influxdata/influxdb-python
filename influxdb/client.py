@@ -325,7 +325,7 @@ class InfluxDBClient(object):
         query_string = \
             "CREATE RETENTION POLICY %s ON %s " \
             "DURATION %s REPLICATION %s" % \
-            (name, database or self._database, duration, replication)
+            (name, (database or self._database), duration, replication)
 
         if default is True:
             query_string += " DEFAULT"
@@ -337,14 +337,14 @@ class InfluxDBClient(object):
         Get the list of retention policies
         """
         return self.query(
-            "SHOW RETENTION POLICIES %s" % database or self._database
+            "SHOW RETENTION POLICIES %s" % (database or self._database)
         )
 
     def get_list_series(self, database=None):
         """
         Get the list of series
         """
-        return self.query("SHOW SERIES", database=database or self._database)
+        return self.query("SHOW SERIES", database=(database or self._database))
 
     def get_list_users(self):
         """
