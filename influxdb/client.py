@@ -236,8 +236,7 @@ class InfluxDBClient(object):
                      time_precision=None,
                      database=None,
                      retention_policy=None,
-                     *args,
-                     **kwargs):
+                     ):
         """
         Write to multiple time series names.
 
