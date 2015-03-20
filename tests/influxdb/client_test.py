@@ -8,6 +8,7 @@ import requests.exceptions
 import socket
 import unittest
 import requests_mock
+import random
 from nose.tools import raises
 from mock import patch
 import warnings
@@ -160,11 +161,12 @@ class TestInfluxDBClient(unittest.TestCase):
 
     def test_write_points_udp(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.bind(('0.0.0.0', 4444))
+        port = random.randint(4000, 8000)
+        s.bind(('0.0.0.0', port))
 
         cli = InfluxDBClient(
             'localhost', 8086, 'root', 'root',
-            'test', use_udp=True, udp_port=4444
+            'test', use_udp=True, udp_port=port
         )
         cli.write_points(self.dummy_points)
 
