@@ -7,10 +7,7 @@ import warnings
 
 from .client import InfluxDBClient
 
-try:
-    import pandas as pd
-except ImportError:
-    pd = None
+import pandas as pd
 
 
 class DataFrameClient(InfluxDBClient):
@@ -20,14 +17,7 @@ class DataFrameClient(InfluxDBClient):
     The client reads and writes from pandas DataFrames.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(DataFrameClient, self).__init__(*args, **kwargs)
-        if not pd:
-            raise ImportError(
-                'DataFrameClient requires Pandas'
-            )
-
-        self.EPOCH = pd.Timestamp('1970-01-01 00:00:00.000+00:00')
+    EPOCH = pd.Timestamp('1970-01-01 00:00:00.000+00:00')
 
     def write_points(self, data, *args, **kwargs):
         """
@@ -56,13 +46,15 @@ class DataFrameClient(InfluxDBClient):
                         name=key,
                         dataframe=data_frame.ix[start_index:end_index].copy(),
                         time_precision=time_precision)]
-                    InfluxDBClient.write_points(self, data, *args, **kwargs)
+                    super(DataFrameClient, self).write_points(data,
+                                                              *args, **kwargs)
             return True
         else:
             data = [self._convert_dataframe_to_json(
                 name=key, dataframe=dataframe, time_precision=time_precision)
                 for key, dataframe in data.items()]
-            return InfluxDBClient.write_points(self, data, *args, **kwargs)
+            return super(DataFrameClient, self).write_points(data,
+                                                             *args, **kwargs)
 
     def write_points_with_precision(self, data, time_precision='s'):
         """
@@ -86,14 +78,11 @@ class DataFrameClient(InfluxDBClient):
             retrieved in chunks, False otherwise.
 
         """
-        result = super(DataFrameClient, self).query(
-                                      query=query,
-                                      time_precision=time_precision,
-                                      chunked=chunked)
-        if len(result['results'][0]) > 0:
-            return self._to_dataframe(result['results'][0], time_precision)
+        results = super(DataFrameClient, self).query(query, database=database)
+        if len(results) > 0:
+            return self._to_dataframe(results, time_precision)
         else:
-            return result
+            return results
 
     def _to_dataframe(self, json_result, time_precision):
         dataframe = pd.DataFrame(data=json_result['points'],

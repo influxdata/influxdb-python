@@ -211,13 +211,24 @@ class TestDataFrameClient(unittest.TestCase):
             assert result == []
 
     def test_list_series(self):
-        response = [
-            {
-                'columns': ['time', 'name'],
-                'name': 'list_series_result',
-                'points': [[0, 'seriesA'], [0, 'seriesB']]
-            }
-        ]
+        response = {
+            'results': [
+                {
+                    'series': [{
+                        'columns': ['id'],
+                        'name': 'seriesA',
+                        'values': [[0]],
+                    }]
+                },
+                {
+                    'series': [{
+                        'columns': ['id'],
+                        'name': 'seriesB',
+                        'values': [[1]],
+                    }]
+                },
+            ]
+        }
         with _mocked_session('get', 200, response):
             cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
             series_list = cli.get_list_series()
