@@ -16,6 +16,9 @@ class SeriesHelper(object):
     Each subclass can write to its own database.
     The time series names can also be based on one or more defined fields.
 
+    A field "timestamp" can be used to write data points at a specific time,
+    rather than the default current time.
+
     Annotated example::
 
         class MySeriesHelper(SeriesHelper):
@@ -141,6 +144,11 @@ class SeriesHelper(object):
                     "fields": {},
                     "tags": {},
                 }
+                if 'timestamp' in point.__dict__ and point.__dict__['timestamp']:
+                    json_point["timestamp"] = point.__dict__['timestamp']
+                    # remove timestamp from fields
+                    if "timestamp" in cls._fields:
+                        cls._fields.remove("timestamp")
 
                 for field in cls._fields:
                     json_point['fields'][field] = point.__dict__[field]
