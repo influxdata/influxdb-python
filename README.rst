@@ -6,7 +6,7 @@ InfluxDB-Python is a client for interacting with InfluxDB_.
     :target: https://travis-ci.org/influxdb/influxdb-python
 
 .. image:: https://readthedocs.org/projects/influxdb-python/badge/?version=latest&style
-    :target: https://readthedocs.org/projects/influxdb-python/?badge=latest
+    :target: http://influxdb-python.readthedocs.org/en/latest/
     :alt: Documentation Status
 
 .. image:: https://img.shields.io/coveralls/influxdb/influxdb-python.svg
