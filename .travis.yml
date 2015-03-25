@@ -12,6 +12,7 @@ env:
 install:
     - sudo pip install tox
     - sudo pip install coveralls
+    - ./build_influxdb_server.sh
 script:
     - travis_wait tox -e $TOX_ENV
 after_success:

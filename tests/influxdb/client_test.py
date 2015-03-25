@@ -1,6 +1,18 @@
 # -*- coding: utf-8 -*-
 """
-unit tests
+unit tests for the InfluxDBClient.
+
+NB/WARNING :
+This module implements tests for the InfluxDBClient class
+but does so
+ + without any server instance running
+ + by mocking all the expected responses.
+
+So any change of (response format from) the server will **NOT** be
+detected by this module.
+
+See client_test_with_server.py for tests against a running server instance.
+
 """
 import json
 import requests
