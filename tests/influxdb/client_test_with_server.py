@@ -28,13 +28,13 @@ import warnings
 from influxdb import InfluxDBClient
 from influxdb.client import InfluxDBClientError
 
-from .misc import get_free_port, is_port_open
+from tests.influxdb.misc import get_free_port, is_port_open
 
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
-# try to find where is located the 'influxd' binary:
+# try to find where the 'influxd' binary is located:
 # You can define 'InfluxDbPythonClientTest_SERVER_BIN_PATH'
 #  env var to force it :
 influxdb_bin_path = influxdb_forced_bin = os.environ.get(
@@ -65,7 +65,7 @@ if is_influxdb_bin_ok:
     print(version, file=sys.stderr)
 
 
-dummy_point = [  # some dummy points .. :o
+dummy_point = [  # some dummy points
     {
         "name": "cpu_load_short",
         "tags": {
@@ -79,7 +79,7 @@ dummy_point = [  # some dummy points .. :o
     }
 ]
 
-dummy_points = [  # some dummy points .. :o
+dummy_points = [  # some dummy points
     dummy_point[0],
     {
         "name": "memory",
@@ -111,7 +111,7 @@ dummy_point_without_timestamp = [
 class InfluxDbInstance(object):
 
     def __init__(self, conf_template):
-        # create a fresh temporary place for storing all needed files
+        # create a temporary dir to store all needed files
         # for the influxdb server instance :
         self.temp_dir_base = tempfile.mkdtemp()
         # "temp_dir_base" will be used for conf file and logs,
@@ -121,7 +121,7 @@ class InfluxDbInstance(object):
         # we need some "free" ports :
         self.broker_port = get_free_port()
         self.admin_port = get_free_port()
-        # as it's UDP we can reuse the same port than the broker:
+        # as it's UDP we can reuse the same port as the broker:
         self.udp_port = get_free_port()
 
         self.logs_file = os.path.join(
@@ -157,8 +157,8 @@ class InfluxDbInstance(object):
 
         # wait for it to listen on the broker and admin ports:
         # usually a fresh instance is ready in less than 1 sec ..
-        timeout = time.time() + 10  # so 10 secs should be rather enough,
-        # otherwise either your system load is rather high,
+        timeout = time.time() + 10  # so 10 secs should be enough,
+        # otherwise either your system load is high,
         # or you run a 286 @ 1Mhz ?
         try:
             while time.time() < timeout:
@@ -200,7 +200,7 @@ class InfluxDbInstance(object):
 
 class InfluxDbClientTestWithServerInstanceMixin(object):
     ''' A mixin for unittest.TestCase to start an influxdb server instance
-    in a fresh temporary place.
+    in a temporary directory.
     '''
 
     # 'influxdb_template_conf' attribute must be set on the class or instance
@@ -219,7 +219,7 @@ class InfluxDbClientTestWithServerInstanceMixin(object):
         self.influxd_inst.close(remove_tree=remove_tree)
 
 
-@unittest.skipIf(not is_influxdb_bin_ok, "not found any influxd binary")
+@unittest.skipIf(not is_influxdb_bin_ok, "could not find influxd binary")
 class TestInfluxDBClient(InfluxDbClientTestWithServerInstanceMixin,
                          unittest.TestCase):
 
@@ -479,7 +479,7 @@ class TestInfluxDBClient(InfluxDbClientTestWithServerInstanceMixin,
         )
 
 
-@unittest.skipIf(not is_influxdb_bin_ok, "not found any influxd binary")
+@unittest.skipIf(not is_influxdb_bin_ok, "could not find influxd binary")
 class UdpTests(InfluxDbClientTestWithServerInstanceMixin,
                unittest.TestCase):
 
@@ -497,11 +497,9 @@ class UdpTests(InfluxDbClientTestWithServerInstanceMixin,
         cli.create_database('db')
         cli.write_points(dummy_point)
 
-        # ho boy,
-        # once write_points finishes then the points aren't actually
-        #  already directly available !!
-        # Well, it's normal because we sent by udp (no response !).
-        # So we have to wait some enough time,
+        # The points are not immediately available after write_points.
+        # This is to be expected because we are using udp (no response !).
+        # So we have to wait some time,
         time.sleep(1)  # 1 sec seems to be a good choice.
         rsp = cli.query('SELECT * FROM cpu_load_short')
 
