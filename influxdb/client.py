@@ -115,7 +115,6 @@ class InfluxDBClient(object):
                                 item = {}
                                 for cur_col, field in enumerate(value):
                                     item[row['columns'][cur_col]] = field
-                                    cur_col += 1
                                 items.append(item)
         return series
 
