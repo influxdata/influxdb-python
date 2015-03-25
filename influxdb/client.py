@@ -113,10 +113,9 @@ class InfluxDBClient(object):
                         if 'columns' in row.keys() and 'values' in row.keys():
                             for value in row['values']:
                                 item = {}
-                                current_col = 0
-                                for field in value:
-                                    item[row['columns'][current_col]] = field
-                                    current_col += 1
+                                for cur_col, field in enumerate(value):
+                                    item[row['columns'][cur_col]] = field
+                                    cur_col += 1
                                 items.append(item)
         return series
 
@@ -237,8 +236,7 @@ class InfluxDBClient(object):
                      time_precision=None,
                      database=None,
                      retention_policy=None,
-                     *args,
-                     **kwargs):
+                     ):
         """
         Write to multiple time series names.
 
@@ -261,12 +259,12 @@ class InfluxDBClient(object):
                       database,
                       retention_policy):
         if time_precision not in ['n', 'u', 'ms', 's', 'm', 'h', None]:
-            raise Exception(
+            raise ValueError(
                 "Invalid time precision is given. "
                 "(use 'n', 'u', 'ms', 's', 'm' or 'h')")
 
         if self.use_udp and time_precision and time_precision != 's':
-            raise Exception(
+            raise ValueError(
                 "InfluxDB only supports seconds precision for udp writes"
             )
 
@@ -325,7 +323,7 @@ class InfluxDBClient(object):
         query_string = \
             "CREATE RETENTION POLICY %s ON %s " \
             "DURATION %s REPLICATION %s" % \
-            (name, (database or self._database), duration, replication)
+            (name, database or self._database, duration, replication)
 
         if default is True:
             query_string += " DEFAULT"
@@ -344,7 +342,7 @@ class InfluxDBClient(object):
         """
         Get the list of series
         """
-        return self.query("SHOW SERIES", database=(database or self._database))
+        return self.query("SHOW SERIES", database=database)
 
     def get_list_users(self):
         """
