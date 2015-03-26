@@ -180,13 +180,17 @@ class InfluxDbInstance(object):
 
     def get_logs_and_output(self):
         proc = self.proc
-        with open(self.logs_file) as fh:
-            return {
-                'rc': proc.returncode,
-                'out': proc.stdout.read(),
-                'err': proc.stderr.read(),
-                'logs': fh.read()
-            }
+        try:
+            with open(self.logs_file) as fh:
+                logs = fh.read()
+        except IOError as err:
+            logs = "Couldn't read logs: %s" % err
+        return {
+            'rc': proc.returncode,
+            'out': proc.stdout.read(),
+            'err': proc.stderr.read(),
+            'logs': logs
+        }
 
     def close(self, remove_tree=True):
         self.proc.terminate()
