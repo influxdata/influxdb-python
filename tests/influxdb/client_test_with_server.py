@@ -116,29 +116,26 @@ class InfluxDbInstance(object):
         self.temp_dir_base = tempfile.mkdtemp()
         # "temp_dir_base" will be used for conf file and logs,
         # while "temp_dir_influxdb" is for the databases files/dirs :
-        self.temp_dir_influxdb = tempfile.mkdtemp(
+        tempdir = self.temp_dir_influxdb = tempfile.mkdtemp(
             dir=self.temp_dir_base)
         # we need some "free" ports :
         self.broker_port = get_free_port()
         self.admin_port = get_free_port()
-        # as it's UDP we can reuse the same port as the broker:
         self.udp_port = get_free_port()
+        self.snapshot_port = get_free_port()
 
-        self.logs_file = os.path.join(
-            self.temp_dir_base, 'logs.txt')
+        self.logs_file = os.path.join(self.temp_dir_base, 'logs.txt')
 
         with open(conf_template) as fh:
             conf = fh.read().format(
                 broker_port=self.broker_port,
                 admin_port=self.admin_port,
                 udp_port=self.udp_port,
-                broker_raft_dir=os.path.join(
-                    self.temp_dir_influxdb, 'raft'),
-                broker_node_dir=os.path.join(
-                    self.temp_dir_influxdb, 'db'),
-                influxdb_cluster_dir=os.path.join(
-                    self.temp_dir_influxdb, 'state'),
-                influxdb_logfile=self.logs_file
+                broker_raft_dir=os.path.join(tempdir, 'raft'),
+                broker_node_dir=os.path.join(tempdir, 'db'),
+                cluster_dir=os.path.join(tempdir, 'state'),
+                logfile=self.logs_file,
+                snapshot_port=self.snapshot_port,
             )
 
         conf_file = os.path.join(self.temp_dir_base, 'influxdb.conf')
