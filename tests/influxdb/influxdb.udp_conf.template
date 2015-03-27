@@ -82,10 +82,10 @@ port = {broker_port}
 
 [cluster]
 # Location for cluster state storage. For storing state persistently across restarts.
-dir = "{influxdb_cluster_dir}"
+dir = "{cluster_dir}"
 
 [logging]
-file   = "{influxdb_logfile}" # Leave blank to redirect logs to stderr.
+file   = "{logfile}" # Leave blank to redirect logs to stderr.
 write-tracing = false # If true, enables detailed logging of the write system.
 raft-tracing = false # If true, enables detailed logging of Raft consensus.
 
@@ -97,3 +97,7 @@ enabled = false
 database = "internal"         # The database to which the data is written.
 retention-policy = "default"   # The retention policy within the database.
 write-interval = "1m"          # Period between writing the data.
+
+[snapshot]
+bind-address = "127.0.0.1"
+port = {snapshot_port}

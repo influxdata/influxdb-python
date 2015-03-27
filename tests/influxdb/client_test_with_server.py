@@ -25,6 +25,9 @@ import unittest
 
 import warnings
 
+# By default, raise exceptions on warnings
+warnings.simplefilter('error', FutureWarning)
+
 from influxdb import InfluxDBClient
 from influxdb.client import InfluxDBClientError
 
@@ -109,6 +112,9 @@ dummy_point_without_timestamp = [
 
 
 class InfluxDbInstance(object):
+    ''' A class to launch of fresh influxdb server instance
+    in a temporary place, using a config file template.
+    '''
 
     def __init__(self, conf_template):
         # create a temporary dir to store all needed files
@@ -116,29 +122,26 @@ class InfluxDbInstance(object):
         self.temp_dir_base = tempfile.mkdtemp()
         # "temp_dir_base" will be used for conf file and logs,
         # while "temp_dir_influxdb" is for the databases files/dirs :
-        self.temp_dir_influxdb = tempfile.mkdtemp(
+        tempdir = self.temp_dir_influxdb = tempfile.mkdtemp(
             dir=self.temp_dir_base)
         # we need some "free" ports :
         self.broker_port = get_free_port()
         self.admin_port = get_free_port()
-        # as it's UDP we can reuse the same port as the broker:
         self.udp_port = get_free_port()
+        self.snapshot_port = get_free_port()
 
-        self.logs_file = os.path.join(
-            self.temp_dir_base, 'logs.txt')
+        self.logs_file = os.path.join(self.temp_dir_base, 'logs.txt')
 
         with open(conf_template) as fh:
             conf = fh.read().format(
                 broker_port=self.broker_port,
                 admin_port=self.admin_port,
                 udp_port=self.udp_port,
-                broker_raft_dir=os.path.join(
-                    self.temp_dir_influxdb, 'raft'),
-                broker_node_dir=os.path.join(
-                    self.temp_dir_influxdb, 'db'),
-                influxdb_cluster_dir=os.path.join(
-                    self.temp_dir_influxdb, 'state'),
-                influxdb_logfile=self.logs_file
+                broker_raft_dir=os.path.join(tempdir, 'raft'),
+                broker_node_dir=os.path.join(tempdir, 'db'),
+                cluster_dir=os.path.join(tempdir, 'state'),
+                logfile=self.logs_file,
+                snapshot_port=self.snapshot_port,
             )
 
         conf_file = os.path.join(self.temp_dir_base, 'influxdb.conf')
@@ -183,13 +186,17 @@ class InfluxDbInstance(object):
 
     def get_logs_and_output(self):
         proc = self.proc
-        with open(self.logs_file) as fh:
-            return {
-                'rc': proc.returncode,
-                'out': proc.stdout.read(),
-                'err': proc.stderr.read(),
-                'logs': fh.read()
-            }
+        try:
+            with open(self.logs_file) as fh:
+                logs = fh.read()
+        except IOError as err:
+            logs = "Couldn't read logs: %s" % err
+        return {
+            'rc': proc.returncode,
+            'out': proc.stdout.read(),
+            'err': proc.stderr.read(),
+            'logs': logs
+        }
 
     def close(self, remove_tree=True):
         self.proc.terminate()
@@ -197,33 +204,68 @@ class InfluxDbInstance(object):
         if remove_tree:
             shutil.rmtree(self.temp_dir_base)
 
+############################################################################
 
-class InfluxDbClientTestWithServerInstanceMixin(object):
+
+def _setup_influxdb_server(inst):
+    inst.influxd_inst = InfluxDbInstance(inst.influxdb_template_conf)
+    inst.cli = InfluxDBClient('localhost',
+                              inst.influxd_inst.broker_port,
+                              'root', '', database='db')
+
+
+def _unsetup_influxdb_server(inst):
+    remove_tree = sys.exc_info() == (None, None, None)
+    inst.influxd_inst.close(remove_tree=remove_tree)
+
+############################################################################
+
+
+class SingleTestCaseWithServerMixin(object):
     ''' A mixin for unittest.TestCase to start an influxdb server instance
-    in a temporary directory.
+    in a temporary directory **for each test function/case**
     '''
 
-    # 'influxdb_template_conf' attribute must be set on the class or instance
+    # 'influxdb_template_conf' attribute must be set
+    # on the TestCase class or instance.
+
+    setUp = _setup_influxdb_server
+    tearDown = _unsetup_influxdb_server
+
+
+class ManyTestCasesWithServerMixin(object):
+    ''' Same than SingleTestCaseWithServerMixin
+    but creates a single instance for the whole class.
+    Also pre-creates a fresh database: 'db'.
+    '''
+
+    # 'influxdb_template_conf' attribute must be set on the class itself !
+
+    @classmethod
+    def setUpClass(cls):
+        _setup_influxdb_server(cls)
 
     def setUp(self):
-        # By default, raise exceptions on warnings
-        warnings.simplefilter('error', FutureWarning)
+        self.cli.create_database('db')
 
-        self.influxd_inst = InfluxDbInstance(self.influxdb_template_conf)
-        self.cli = InfluxDBClient('localhost',
-                                  self.influxd_inst.broker_port,
-                                  'root', '', database='db')
+    @classmethod
+    def tearDownClass(cls):
+        _unsetup_influxdb_server(cls)
 
     def tearDown(self):
-        remove_tree = sys.exc_info() == (None, None, None)
-        self.influxd_inst.close(remove_tree=remove_tree)
+        self.cli.drop_database('db')
+
+############################################################################
 
 
 @unittest.skipIf(not is_influxdb_bin_ok, "could not find influxd binary")
-class TestInfluxDBClient(InfluxDbClientTestWithServerInstanceMixin,
-                         unittest.TestCase):
+class SimpleTests(SingleTestCaseWithServerMixin,
+                  unittest.TestCase):
 
     influxdb_template_conf = os.path.join(THIS_DIR, 'influxdb.conf.template')
+
+    def test_fresh_server_no_db(self):
+        self.assertEqual([], self.cli.get_list_database())
 
     def test_create_database(self):
         self.assertIsNone(self.cli.create_database('new_db_1'))
@@ -253,10 +295,25 @@ class TestInfluxDBClient(InfluxDbClientTestWithServerInstanceMixin,
         self.assertEqual('{"results":[{"error":"database not found"}]}',
                          ctx.exception.content)
 
+    def test_query_fail(self):
+        with self.assertRaises(InfluxDBClientError) as ctx:
+            self.cli.query('select column_one from foo')
+        self.assertEqual(
+            ('500: {"results":[{"error":"database not found: db"}]}',),
+            ctx.exception.args)
+
+############################################################################
+
+
+@unittest.skipIf(not is_influxdb_bin_ok, "could not find influxd binary")
+class CommonTests(ManyTestCasesWithServerMixin,
+                  unittest.TestCase):
+
+    influxdb_template_conf = os.path.join(THIS_DIR, 'influxdb.conf.template')
+
     def test_write(self):
         new_dummy_point = dummy_point[0].copy()
         new_dummy_point['database'] = 'db'
-        self.cli.create_database('db')
         self.assertIs(True, self.cli.write(new_dummy_point))
 
     @unittest.skip("fail against real server instance, "
@@ -279,7 +336,6 @@ class TestInfluxDBClient(InfluxDbClientTestWithServerInstanceMixin,
 
     def test_write_points(self):
         ''' same as test_write() but with write_points \o/ '''
-        self.cli.create_database('db')
         self.assertIs(True, self.cli.write_points(dummy_point))
 
     def test_write_points_check_read(self):
@@ -292,7 +348,6 @@ class TestInfluxDBClient(InfluxDbClientTestWithServerInstanceMixin,
             self.cli.query('SELECT * FROM cpu_load_short'))
 
     def test_write_multiple_points_different_series(self):
-        self.cli.create_database('db')
         self.assertIs(True, self.cli.write_points(dummy_points))
         time.sleep(1)
         self.assertEqual(
@@ -306,7 +361,6 @@ class TestInfluxDBClient(InfluxDbClientTestWithServerInstanceMixin,
 
     @unittest.skip('Not implemented for 0.9')
     def test_write_points_batch(self):
-        self.cli.create_database('db')
         self.cli.write_points(
             points=dummy_point * 3,
             batch_size=2
@@ -341,7 +395,8 @@ class TestInfluxDBClient(InfluxDbClientTestWithServerInstanceMixin,
             # ('h', base_regex + '00:00Z', ),
             # that would require a sleep of possibly up to 3600 secs (/ 2 ?)..
         )):
-            db = 'db'
+            db = 'db1'  # to not shoot us in the foot/head,
+            # we work on a fresh db each time:
             self.cli.create_database(db)
             before = datetime.datetime.now()
             self.assertIs(
@@ -388,7 +443,6 @@ class TestInfluxDBClient(InfluxDbClientTestWithServerInstanceMixin,
             self.cli.drop_database(db)
 
     def test_query(self):
-        self.cli.create_database('db')
         self.assertIs(True, self.cli.write_points(dummy_point))
 
     @unittest.skip('Not implemented for 0.9')
@@ -411,24 +465,15 @@ class TestInfluxDBClient(InfluxDbClientTestWithServerInstanceMixin,
         }
         del cli
         del example_object
-        # TODO
-
-    def test_query_fail(self):
-        with self.assertRaises(InfluxDBClientError) as ctx:
-            self.cli.query('select column_one from foo')
-        self.assertEqual(
-            ('500: {"results":[{"error":"database not found: db"}]}',),
-            ctx.exception.args)
+        # TODO ?
 
     def test_get_list_series_empty(self):
-        self.cli.create_database('mydb')
-        rsp = self.cli.get_list_series('mydb')
+        rsp = self.cli.get_list_series()
         self.assertEqual({}, rsp)
 
     def test_get_list_series_non_empty(self):
-        self.cli.create_database('mydb')
-        self.cli.write_points(dummy_point, database='mydb')
-        rsp = self.cli.get_list_series('mydb')
+        self.cli.write_points(dummy_point)
+        rsp = self.cli.get_list_series()
         self.assertEqual(
             {'cpu_load_short': [
                 {'region': 'us-west', 'host': 'server01', '_id': 1}]},
@@ -436,8 +481,7 @@ class TestInfluxDBClient(InfluxDbClientTestWithServerInstanceMixin,
         )
 
     def test_default_retention_policy(self):
-        self.cli.create_database('db')
-        rsp = self.cli.get_list_retention_policies('db')
+        rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
                 {'duration': '0', 'default': True,
@@ -446,12 +490,10 @@ class TestInfluxDBClient(InfluxDbClientTestWithServerInstanceMixin,
         )
 
     def test_create_retention_policy_default(self):
-        self.cli.create_database('db')
-        rsp = self.cli.create_retention_policy(
-            'somename', '1d', 4, default=True, database='db'
-        )
+        rsp = self.cli.create_retention_policy('somename', '1d', 4,
+                                               default=True)
         self.assertIsNone(rsp)
-        rsp = self.cli.get_list_retention_policies('db')
+        rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
                 {'duration': '0', 'default': False,
@@ -463,11 +505,8 @@ class TestInfluxDBClient(InfluxDbClientTestWithServerInstanceMixin,
         )
 
     def test_create_retention_policy(self):
-        self.cli.create_database('db')
-        self.cli.create_retention_policy(
-            'somename', '1d', 4, database='db'
-        )
-        rsp = self.cli.get_list_retention_policies('db')
+        self.cli.create_retention_policy('somename', '1d', 4)
+        rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
                 {'duration': '0', 'default': True, 'replicaN': 1,
@@ -478,23 +517,23 @@ class TestInfluxDBClient(InfluxDbClientTestWithServerInstanceMixin,
             rsp
         )
 
+############################################################################
+
 
 @unittest.skipIf(not is_influxdb_bin_ok, "could not find influxd binary")
-class UdpTests(InfluxDbClientTestWithServerInstanceMixin,
+class UdpTests(ManyTestCasesWithServerMixin,
                unittest.TestCase):
 
     influxdb_template_conf = os.path.join(THIS_DIR,
                                           'influxdb.udp_conf.template')
 
     def test_write_points_udp(self):
-
         cli = InfluxDBClient(
             'localhost', self.influxd_inst.broker_port,
             'dont', 'care',
             database='db',
             use_udp=True, udp_port=self.influxd_inst.udp_port
         )
-        cli.create_database('db')
         cli.write_points(dummy_point)
 
         # The points are not immediately available after write_points.
