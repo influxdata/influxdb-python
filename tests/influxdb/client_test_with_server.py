@@ -204,6 +204,7 @@ class InfluxDbInstance(object):
         if remove_tree:
             shutil.rmtree(self.temp_dir_base)
 
+############################################################################
 
 
 def _setup_influxdb_server(inst):
@@ -211,9 +212,13 @@ def _setup_influxdb_server(inst):
     inst.cli = InfluxDBClient('localhost',
                               inst.influxd_inst.broker_port,
                               'root', '', database='db')
+
+
 def _unsetup_influxdb_server(inst):
     remove_tree = sys.exc_info() == (None, None, None)
     inst.influxd_inst.close(remove_tree=remove_tree)
+
+############################################################################
 
 
 class SingleTestCaseWithServerMixin(object):
@@ -221,7 +226,8 @@ class SingleTestCaseWithServerMixin(object):
     in a temporary directory **for each test function/case**
     '''
 
-    # 'influxdb_template_conf' attribute must be set on the TestCase class or instance.
+    # 'influxdb_template_conf' attribute must be set
+    # on the TestCase class or instance.
 
     setUp = _setup_influxdb_server
     tearDown = _unsetup_influxdb_server
@@ -248,6 +254,8 @@ class ManyTestCasesWithServerMixin(object):
 
     def tearDown(self):
         self.cli.drop_database('db')
+
+############################################################################
 
 
 @unittest.skipIf(not is_influxdb_bin_ok, "could not find influxd binary")
@@ -294,6 +302,7 @@ class SimpleTests(SingleTestCaseWithServerMixin,
             ('500: {"results":[{"error":"database not found: db"}]}',),
             ctx.exception.args)
 
+############################################################################
 
 
 @unittest.skipIf(not is_influxdb_bin_ok, "could not find influxd binary")
@@ -507,6 +516,8 @@ class CommonTests(ManyTestCasesWithServerMixin,
             ],
             rsp
         )
+
+############################################################################
 
 
 @unittest.skipIf(not is_influxdb_bin_ok, "could not find influxd binary")
