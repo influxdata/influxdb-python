@@ -25,6 +25,9 @@ import unittest
 
 import warnings
 
+# By default, raise exceptions on warnings
+warnings.simplefilter('error', FutureWarning)
+
 from influxdb import InfluxDBClient
 from influxdb.client import InfluxDBClientError
 
@@ -207,8 +210,6 @@ class InfluxDbClientTestWithServerInstanceMixin(object):
     # 'influxdb_template_conf' attribute must be set on the class or instance
 
     def setUp(self):
-        # By default, raise exceptions on warnings
-        warnings.simplefilter('error', FutureWarning)
 
         self.influxd_inst = InfluxDbInstance(self.influxdb_template_conf)
         self.cli = InfluxDBClient('localhost',
