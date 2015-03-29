@@ -14,8 +14,6 @@ try:
 except NameError:
     xrange = range
 
-session = requests.Session()
-
 
 class InfluxDBClientError(Exception):
     """Raised when an error occurs in the request"""
@@ -85,6 +83,7 @@ class InfluxDBClient(object):
 
         self.use_udp = use_udp
         self.udp_port = udp_port
+        self._session = requests.Session()
         if use_udp:
             self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -199,7 +198,7 @@ class InfluxDBClient(object):
         # TODO (aviau): Make this configurable.
         for i in range(0, 3):
             try:
-                response = session.request(
+                response = self._session.request(
                     method=method,
                     url=url,
                     params=params,
