@@ -295,7 +295,8 @@ class InfluxDBClient(object):
         """
         Get the list of databases
         """
-        return [db['name'] for db in self.query("SHOW DATABASES")]
+        rsp = self.query("SHOW DATABASES")
+        return [db['name'] for db in rsp['databases']]
 
     def create_database(self, dbname):
         """
