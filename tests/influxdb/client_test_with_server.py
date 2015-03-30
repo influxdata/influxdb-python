@@ -10,10 +10,11 @@ This basically duplicates what's in client_test.py
 
 """
 
-from __future__ import print_function
+from __future__ import print_function, division
 
 import datetime
 import distutils.spawn
+from functools import partial
 import os
 import re
 import shutil
@@ -66,6 +67,17 @@ if is_influxdb_bin_ok:
     # read version :
     version = subprocess.check_output([influxdb_bin_path, 'version'])
     print(version, file=sys.stderr)
+
+
+def point(serie, tags=None, timestamp=None, **fields):
+    res = {}
+    res['name'] = serie
+    if tags:
+        res['tags'] = tags
+    if timestamp:
+        res['timestamp'] = timestamp
+    res['fields'] = fields
+    return res
 
 
 dummy_point = [  # some dummy points
@@ -516,6 +528,41 @@ class CommonTests(ManyTestCasesWithServerMixin,
             ],
             rsp
         )
+
+    def test_mean_simple_1(self):
+        # test mean() function
+        cli = self.cli
+        cpu = partial(point, 'cpu')
+
+        pts = [
+            cpu(value=10),
+            cpu(value=30, tags={'host': 'srv1'}),
+            cpu(value=60, tags={'host': 'srv2'}),
+            cpu(value=90)
+        ]
+        cli.write_points(pts)
+        time.sleep(1)
+        rsp = cli.query('SELECT mean(value) FROM cpu')
+        self.assertEqual(47.5,  # (10+30+60+90) / 4 == 47.5
+                         rsp['cpu'][0]['mean'])
+
+        # continue with others points..
+        pts = [
+            cpu(value=15),
+            cpu(value=60, tags={'host': 'srv1'}),
+            cpu(value=20, tags={'host': 'srv2'}),
+            cpu(value=90),
+            cpu(value=30, tags={'host': 'srv3'}),
+        ]
+        cli.write_points(pts)
+        time.sleep(1)
+
+        rsp = cli.query("SELECT mean(value) FROM cpu WHERE host = 'srv1'")
+        self.assertEqual(45, rsp['cpu'][0]['mean'])
+
+        rsp = cli.query("SELECT mean(value) FROM cpu "
+                        "WHERE host = 'srv1' OR host = 'srv3'")
+        self.assertEqual(40, rsp['cpu'][0]['mean'])  # (30+60+30) / 3 -> 40
 
 ############################################################################
 
