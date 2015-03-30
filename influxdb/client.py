@@ -109,7 +109,14 @@ class InfluxDBClient(object):
                     for row in result['series']:
                         items = []
                         if 'name' in row.keys():
-                            series[row['name']] = items
+                            name = row['name']
+                            tags = row.get('tags', None)
+                            if tags:
+                                name = (row['name'], tuple(tags.items()))
+                            if name not in series:
+                                series[name] = items
+                            else:
+                                series[name].extend(items)
                         else:
                             series = items  # Special case for system queries.
                         if 'columns' in row.keys() and 'values' in row.keys():
