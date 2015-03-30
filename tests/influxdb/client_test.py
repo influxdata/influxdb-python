@@ -350,14 +350,9 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.drop_database('old_db')
 
     def test_get_list_database(self):
-        data = {
-            "results":
-            [
-                {"series": [
-                    {"columns": ["name"],
-                     "values":[["mydb"], ["myotherdb"]]}]}
-            ]
-        }
+        data = {'results': [{'series': [
+            {'name': 'databases', 'columns': ['name'],
+             'values': [['mydb'], ['myotherdb']]}]}]}
 
         with _mocked_session('get', 200, json.dumps(data)):
             self.assertListEqual(
