@@ -14,6 +14,7 @@ from __future__ import print_function
 
 import datetime
 import distutils.spawn
+from functools import partial
 import os
 import re
 import shutil
@@ -36,7 +37,7 @@ from tests.influxdb.misc import get_free_port, is_port_open
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 
-
+#############################################################################
 # try to find where the 'influxd' binary is located:
 # You can define 'InfluxDbPythonClientTest_SERVER_BIN_PATH'
 #  env var to force it :
@@ -66,6 +67,18 @@ if is_influxdb_bin_ok:
     # read version :
     version = subprocess.check_output([influxdb_bin_path, 'version'])
     print(version, file=sys.stderr)
+
+
+#############################################################################
+
+def point(serie_name, timestamp=None, tags=None, **fields):
+    res = {'name': serie_name}
+    if timestamp:
+        res['timestamp'] = timestamp
+    if tags:
+        res['tags'] = tags
+    res['fields'] = fields
+    return res
 
 
 dummy_point = [  # some dummy points
@@ -109,6 +122,8 @@ dummy_point_without_timestamp = [
         }
     }
 ]
+
+#############################################################################
 
 
 class InfluxDbInstance(object):
@@ -516,6 +531,53 @@ class CommonTests(ManyTestCasesWithServerMixin,
             ],
             rsp
         )
+
+    def test_issue_143(self):
+        pt = partial(point, 'serie', timestamp='2015-03-30T16:16:37Z')
+        pts = [
+            pt(value=15),
+            pt(tags={'tag_1': 'value1'}, value=5),
+            pt(tags={'tag_1': 'value2'}, value=10),
+        ]
+        self.cli.write_points(pts)
+        time.sleep(1)
+        rsp = self.cli.query('SELECT * FROM serie GROUP BY tag_1')
+        # print(rsp, file=sys.stderr)
+        self.assertEqual({
+            ('serie', (('tag_1', ''),)): [
+                {'time': '2015-03-30T16:16:37Z', 'value': 15}],
+            ('serie', (('tag_1', 'value1'),)): [
+                {'time': '2015-03-30T16:16:37Z', 'value': 5}],
+            ('serie', (('tag_1', 'value2'),)): [
+                {'time': '2015-03-30T16:16:37Z', 'value': 10}]},
+            rsp
+        )
+
+        # a slightly more complex one with 2 tags values:
+        pt = partial(point, 'serie2', timestamp='2015-03-30T16:16:37Z')
+        pts = [
+            pt(tags={'tag1': 'value1', 'tag2': 'v1'}, value=0),
+            pt(tags={'tag1': 'value1', 'tag2': 'v2'}, value=5),
+            pt(tags={'tag1': 'value2', 'tag2': 'v1'}, value=10),
+        ]
+        self.cli.write_points(pts)
+        time.sleep(1)
+        rsp = self.cli.query('SELECT * FROM serie2 GROUP BY tag1,tag2')
+        # print(rsp, file=sys.stderr)
+        self.assertEqual(
+            {
+                ('serie2', (('tag1', 'value1'), ('tag2', 'v1'))): [
+                    {'time': '2015-03-30T16:16:37Z', 'value': 0}
+                ],
+                ('serie2', (('tag1', 'value1'), ('tag2', 'v2'))): [
+                    {'time': '2015-03-30T16:16:37Z', 'value': 5}
+                ],
+                ('serie2', (('tag1', 'value2'), ('tag2', 'v1'))): [
+                    {'time': '2015-03-30T16:16:37Z', 'value': 10}]
+            },
+            rsp
+        )
+
 
 ############################################################################
 
