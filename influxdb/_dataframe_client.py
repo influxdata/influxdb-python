@@ -87,7 +87,7 @@ class DataFrameClient(InfluxDBClient):
     def _to_dataframe(self, json_result, time_precision):
         dataframe = pd.DataFrame(data=json_result['points'],
                                  columns=json_result['columns'])
-        if 'sequence_number' in dataframe.keys():
+        if 'sequence_number' in dataframe:
             dataframe.sort(['time', 'sequence_number'], inplace=True)
         else:
             dataframe.sort(['time'], inplace=True)
