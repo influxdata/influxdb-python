@@ -398,14 +398,26 @@ class CommonTests(ManyTestCasesWithServerMixin,
         base_regex = '\d{4}-\d{2}-\d{2}T\d{2}:'  # YYYY-MM-DD 'T' hh:
         base_s_regex = base_regex + '\d{2}:\d{2}'  # base_regex + mm:ss
 
+        point = {
+            "name": "cpu_load_short",
+            "tags": {
+                "host": "server01",
+                "region": "us-west"
+            },
+            "timestamp": "2009-11-10T12:34:56.123456789Z",
+            "fields": {
+                "value": 0.64
+            }
+        }
+
         # As far as we can see the values aren't directly available depending
         # on the precision used.
         # The less the precision, the more to wait for the value to be
         # actually written/available.
         for idx, (precision, expected_regex, sleep_time) in enumerate((
-            ('n', base_s_regex + '\.\d{1,9}Z', 1),
-            ('u', base_s_regex + '\.\d{1,6}Z', 1),
-            ('ms', base_s_regex + '\.\d{1,3}Z', 1),
+            ('n', base_s_regex + '\.\d{9}Z', 1),
+            ('u', base_s_regex + '\.\d{6}Z', 1),
+            ('ms', base_s_regex + '\.\d{3}Z', 1),
             ('s', base_s_regex + 'Z', 1),
             ('m', base_regex + '\d{2}:00Z', 60),
 
@@ -419,7 +431,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
             self.assertIs(
                 True,
                 self.cli.write_points(
-                    dummy_point_without_timestamp,
+                    [point],
                     time_precision=precision,
                     database=db))
 
