@@ -11,10 +11,12 @@ This basically duplicates what's in client_test.py
 """
 
 from __future__ import print_function
+import random
 
 import datetime
 import distutils.spawn
 from functools import partial
+import itertools
 import os
 import re
 import shutil
@@ -578,6 +580,59 @@ class CommonTests(ManyTestCasesWithServerMixin,
             rsp
         )
 
+    def test_tags_json_order(self):
+        n_pts = 100
+        n_tags = 5  # that will make 120 possible orders (fact(5) == 120)
+        all_tags = ['tag%s' % i for i in range(n_tags)]
+        n_tags_values = 1 + n_tags // 3
+        all_tags_values = ['value%s' % random.randint(0, i)
+                           for i in range(n_tags_values)]
+        pt = partial(point, 'serie', timestamp='2015-03-30T16:16:37Z')
+        pts = [
+            pt(value=random.randint(0, 100))
+            for _ in range(n_pts)
+        ]
+        for pt in pts:
+            tags = pt['tags'] = {}
+            for tag in all_tags:
+                tags[tag] = random.choice(all_tags_values)
+
+        self.cli.write_points(pts)
+        time.sleep(1)
+
+        # Influxd, when queried with a "group by tag1(, tag2, ..)" and as far
+        # as we currently see, always returns the tags (alphabetically-)
+        # ordered by their name in the json response..
+        # That might not always be the case so here we will also be
+        # asserting that behavior.
+        expected_ordered_tags = tuple(sorted(all_tags))
+
+        # try all the possible orders of tags for the group by in the query:
+        for tags in itertools.permutations(all_tags):
+            query = ('SELECT * FROM serie '
+                     'GROUP BY %s' % ','.join(tags))
+            rsp = self.cli.query(query)
+            # and verify that, for each "serie_key" in the response,
+            # the tags names are ordered as we expect it:
+            for serie_key in rsp:
+                # first also asserts that the serie key is a 2-tuple:
+                self.assertTrue(isinstance(serie_key, tuple))
+                self.assertEqual(2, len(serie_key))
+                # also assert that the first component is an str instance:
+                self.assertIsInstance(serie_key[0], type(b''.decode()))
+                self.assertIsInstance(serie_key[1], tuple)
+                # also assert that the number of items in the second component
+                # is the number of tags requested in the group by actually,
+                # and that each one has correct format/type/..
+                self.assertEqual(n_tags, len(serie_key[1]))
+                for tag_data in serie_key[1]:
+                    self.assertIsInstance(tag_data, tuple)
+                    self.assertEqual(2, len(tag_data))
+                    tag_name = tag_data[0]
+                    self.assertIsInstance(tag_name, type(b''.decode()))
+                # then check the tags order:
+                rsp_tags = tuple(t[0] for t in serie_key[1])
+                self.assertEqual(expected_ordered_tags, rsp_tags)
 
 ############################################################################
 
