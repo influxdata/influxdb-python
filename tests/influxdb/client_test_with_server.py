@@ -11,9 +11,12 @@ This basically duplicates what's in client_test.py
 """
 
 from __future__ import print_function
+import random
 
 import datetime
 import distutils.spawn
+from functools import partial
+import itertools
 import os
 import re
 import shutil
@@ -36,7 +39,7 @@ from tests.influxdb.misc import get_free_port, is_port_open
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 
-
+#############################################################################
 # try to find where the 'influxd' binary is located:
 # You can define 'InfluxDbPythonClientTest_SERVER_BIN_PATH'
 #  env var to force it :
@@ -66,6 +69,18 @@ if is_influxdb_bin_ok:
     # read version :
     version = subprocess.check_output([influxdb_bin_path, 'version'])
     print(version, file=sys.stderr)
+
+
+#############################################################################
+
+def point(serie_name, timestamp=None, tags=None, **fields):
+    res = {'name': serie_name}
+    if timestamp:
+        res['timestamp'] = timestamp
+    if tags:
+        res['tags'] = tags
+    res['fields'] = fields
+    return res
 
 
 dummy_point = [  # some dummy points
@@ -109,6 +124,8 @@ dummy_point_without_timestamp = [
         }
     }
 ]
+
+#############################################################################
 
 
 class InfluxDbInstance(object):
@@ -516,6 +533,106 @@ class CommonTests(ManyTestCasesWithServerMixin,
             ],
             rsp
         )
+
+    def test_issue_143(self):
+        pt = partial(point, 'serie', timestamp='2015-03-30T16:16:37Z')
+        pts = [
+            pt(value=15),
+            pt(tags={'tag_1': 'value1'}, value=5),
+            pt(tags={'tag_1': 'value2'}, value=10),
+        ]
+        self.cli.write_points(pts)
+        time.sleep(1)
+        rsp = self.cli.query('SELECT * FROM serie GROUP BY tag_1')
+        # print(rsp, file=sys.stderr)
+        self.assertEqual({
+            ('serie', (('tag_1', ''),)): [
+                {'time': '2015-03-30T16:16:37Z', 'value': 15}],
+            ('serie', (('tag_1', 'value1'),)): [
+                {'time': '2015-03-30T16:16:37Z', 'value': 5}],
+            ('serie', (('tag_1', 'value2'),)): [
+                {'time': '2015-03-30T16:16:37Z', 'value': 10}]},
+            rsp
+        )
+
+        # a slightly more complex one with 2 tags values:
+        pt = partial(point, 'serie2', timestamp='2015-03-30T16:16:37Z')
+        pts = [
+            pt(tags={'tag1': 'value1', 'tag2': 'v1'}, value=0),
+            pt(tags={'tag1': 'value1', 'tag2': 'v2'}, value=5),
+            pt(tags={'tag1': 'value2', 'tag2': 'v1'}, value=10),
+        ]
+        self.cli.write_points(pts)
+        time.sleep(1)
+        rsp = self.cli.query('SELECT * FROM serie2 GROUP BY tag1,tag2')
+        # print(rsp, file=sys.stderr)
+        self.assertEqual(
+            {
+                ('serie2', (('tag1', 'value1'), ('tag2', 'v1'))): [
+                    {'time': '2015-03-30T16:16:37Z', 'value': 0}
+                ],
+                ('serie2', (('tag1', 'value1'), ('tag2', 'v2'))): [
+                    {'time': '2015-03-30T16:16:37Z', 'value': 5}
+                ],
+                ('serie2', (('tag1', 'value2'), ('tag2', 'v1'))): [
+                    {'time': '2015-03-30T16:16:37Z', 'value': 10}]
+            },
+            rsp
+        )
+
+    def test_tags_json_order(self):
+        n_pts = 100
+        n_tags = 5  # that will make 120 possible orders (fact(5) == 120)
+        all_tags = ['tag%s' % i for i in range(n_tags)]
+        n_tags_values = 1 + n_tags // 3
+        all_tags_values = ['value%s' % random.randint(0, i)
+                           for i in range(n_tags_values)]
+        pt = partial(point, 'serie', timestamp='2015-03-30T16:16:37Z')
+        pts = [
+            pt(value=random.randint(0, 100))
+            for _ in range(n_pts)
+        ]
+        for pt in pts:
+            tags = pt['tags'] = {}
+            for tag in all_tags:
+                tags[tag] = random.choice(all_tags_values)
+
+        self.cli.write_points(pts)
+        time.sleep(1)
+
+        # Influxd, when queried with a "group by tag1(, tag2, ..)" and as far
+        # as we currently see, always returns the tags (alphabetically-)
+        # ordered by their name in the json response..
+        # That might not always be the case so here we will also be
+        # asserting that behavior.
+        expected_ordered_tags = tuple(sorted(all_tags))
+
+        # try all the possible orders of tags for the group by in the query:
+        for tags in itertools.permutations(all_tags):
+            query = ('SELECT * FROM serie '
+                     'GROUP BY %s' % ','.join(tags))
+            rsp = self.cli.query(query)
+            # and verify that, for each "serie_key" in the response,
+            # the tags names are ordered as we expect it:
+            for serie_key in rsp:
+                # first also asserts that the serie key is a 2-tuple:
+                self.assertTrue(isinstance(serie_key, tuple))
+                self.assertEqual(2, len(serie_key))
+                # also assert that the first component is an str instance:
+                self.assertIsInstance(serie_key[0], type(b''.decode()))
+                self.assertIsInstance(serie_key[1], tuple)
+                # also assert that the number of items in the second component
+                # is the number of tags requested in the group by actually,
+                # and that each one has correct format/type/..
+                self.assertEqual(n_tags, len(serie_key[1]))
+                for tag_data in serie_key[1]:
+                    self.assertIsInstance(tag_data, tuple)
+                    self.assertEqual(2, len(tag_data))
+                    tag_name = tag_data[0]
+                    self.assertIsInstance(tag_name, type(b''.decode()))
+                # then check the tags order:
+                rsp_tags = tuple(t[0] for t in serie_key[1])
+                self.assertEqual(expected_ordered_tags, rsp_tags)
 
 ############################################################################
 

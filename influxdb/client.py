@@ -2,6 +2,7 @@
 """
 Python client for InfluxDB
 """
+from collections import OrderedDict
 import json
 import socket
 import requests
@@ -28,6 +29,7 @@ class InfluxDBClientError(Exception):
 
 
 class InfluxDBClient(object):
+
     """
     The ``InfluxDBClient`` object holds information necessary to connect
     to InfluxDB. Requests can be made to InfluxDB directly through the client.
@@ -67,7 +69,8 @@ class InfluxDBClient(object):
                  verify_ssl=False,
                  timeout=None,
                  use_udp=False,
-                 udp_port=4444):
+                 udp_port=4444,
+                 ):
         """
         Construct a new InfluxDBClient object.
         """
@@ -99,6 +102,27 @@ class InfluxDBClient(object):
             'Content-type': 'application/json',
             'Accept': 'text/plain'}
 
+    #
+    # By default we keep the "order" of the json responses:
+    # more clearly: any dict contained in the json response will have
+    # its key-value items order kept as in the raw answer, thanks to
+    # `collections.OrderedDict`.
+    # if one doesn't care in that, then it can simply change its client
+    # instance 'keep_json_response_order' attribute value (to a falsy one).
+    # This will then eventually help for performance considerations.
+    _keep_json_response_order = True
+    # NB: For "group by" query type :
+    # This setting is actually necessary in order to have a consistent and
+    # reproducible rsp format if you "group by" on more than 1 tag.
+
+    @property
+    def keep_json_response_order(self):
+        return self._keep_json_response_order
+
+    @keep_json_response_order.setter
+    def keep_json_response_order(self, new_value):
+        self._keep_json_response_order = new_value
+
     @staticmethod
     def format_query_response(response):
         """Returns a list of items from a query response"""
@@ -109,14 +133,20 @@ class InfluxDBClient(object):
                     for row in result['series']:
                         items = []
                         if 'name' in row.keys():
-                            series[row['name']] = items
+                            name = row['name']
+                            tags = row.get('tags', None)
+                            if tags:
+                                name = (row['name'], tuple(tags.items()))
+                            assert name not in series
+                            series[name] = items
                         else:
                             series = items  # Special case for system queries.
                         if 'columns' in row.keys() and 'values' in row.keys():
+                            columns = row['columns']
                             for value in row['values']:
                                 item = {}
                                 for cur_col, field in enumerate(value):
-                                    item[row['columns'][cur_col]] = field
+                                    item[columns[cur_col]] = field
                                 items.append(item)
         return series
 
@@ -227,10 +257,13 @@ class InfluxDBClient(object):
             expected_response_code=expected_response_code
         )
 
-        if raw:
-            return response.json()
-        else:
-            return self.format_query_response(response.json())
+        json_kw = {}
+        if self.keep_json_response_order:
+            json_kw.update(object_pairs_hook=OrderedDict)
+        data = response.json(**json_kw)
+
+        return (data if raw
+                else self.format_query_response(data))
 
     def write_points(self,
                      points,
