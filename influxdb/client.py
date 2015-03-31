@@ -127,12 +127,12 @@ class InfluxDBClient(object):
     def format_query_response(response):
         """Returns a list of items from a query response"""
         series = {}
-        if 'results' in response.keys():
+        if 'results' in response:
             for result in response['results']:
-                if 'series' in result.keys():
+                if 'series' in result:
                     for row in result['series']:
                         items = []
-                        if 'name' in row.keys():
+                        if 'name' in row:
                             name = row['name']
                             tags = row.get('tags', None)
                             if tags:
@@ -141,7 +141,7 @@ class InfluxDBClient(object):
                             series[name] = items
                         else:
                             series = items  # Special case for system queries.
-                        if 'columns' in row.keys() and 'values' in row.keys():
+                        if 'columns' in row and 'values' in row:
                             columns = row['columns']
                             for value in row['values']:
                                 item = {}
