@@ -289,7 +289,7 @@ class SimpleTests(SingleTestCaseWithServerMixin,
         self.assertIsNone(self.cli.create_database('new_db_2'))
         self.assertEqual(
             self.cli.get_list_database(),
-            ['new_db_1', 'new_db_2']
+            [{u'name': u'new_db_1'}, {u'name': u'new_db_2'}]
         )
 
     def test_create_database_fails(self):
@@ -303,7 +303,7 @@ class SimpleTests(SingleTestCaseWithServerMixin,
     def test_drop_database(self):
         self.test_create_database()
         self.assertIsNone(self.cli.drop_database('new_db_1'))
-        self.assertEqual(['new_db_2'], self.cli.get_list_database())
+        self.assertEqual([{u'name': u'new_db_2'}], self.cli.get_list_database())
 
     def test_drop_database_fails(self):
         with self.assertRaises(InfluxDBClientError) as ctx:
@@ -498,7 +498,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
     def test_get_list_series_empty(self):
         rsp = self.cli.get_list_series()
-        self.assertEqual({}, rsp)
+        self.assertEqual([], rsp)
 
     def test_get_list_series_non_empty(self):
         self.cli.write_points(dummy_point)
