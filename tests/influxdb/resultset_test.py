@@ -40,10 +40,11 @@ class TestResultSet(unittest.TestCase):
 
     def test_repr(self):
         expected = \
-            "ResultSet({'tag_1': 'value2'}: [{'value': 10, 'time': " \
-            "'2015-03-30T16:16:37Z'}]{'tag_1': ''}: [{'value': 15, 'time': " \
-            "'2015-03-30T16:16:37Z'}]{'tag_1': 'value1'}: " \
-            "[{'value': 5, 'time': '2015-03-30T16:16:37Z'}])"
+            "ResultSet(('serie', {'tag_1': 'value2'}): [{'value': 10, " \
+            "'time': '2015-03-30T16:16:37Z'}]('serie', {'tag_1': ''}):" \
+            " [{'value': 15, 'time': '2015-03-30T16:16:37Z'}]('serie'," \
+            " {'tag_1': 'value1'}): [{'value': 5," \
+            " 'time': '2015-03-30T16:16:37Z'}])"
 
         self.assertEqual(
             str(self.rs),
