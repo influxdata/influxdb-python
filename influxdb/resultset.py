@@ -40,7 +40,7 @@ class ResultSet(collections.MutableMapping):
     def __repr__(self):
         rep = ""
         for serie in self.store.keys():
-            rep += "%s: %s" % (dict((tag, value) for tag, value in serie[1]), self.store[serie])
+            rep += "('%s', %s): %s" % (serie[0], dict((tag, value) for tag, value in serie[1]), self.store[serie])
         return '%s(%s)' % (type(self).__name__, rep)
 
     def __delitem__(self, key):
