@@ -736,11 +736,32 @@ class InfluxDBClient(object):
         """
         Update password
         """
+        return self.alter_database_user(username, new_password)
+
+    def alter_database_user(self, username, password=None, permissions=None):
+        """
+        Alters a database user and/or their permissions.
+        :param permissions: A ``(readFrom, writeTo)`` tuple
+        :raise TypeError: if permissions cannot be read.
+        :raise ValueError: if neither password nor permissions provided.
+        """
         url = "db/{0}/users/{1}".format(self._database, username)
 
-        data = {
-            'password': new_password
-        }
+        if not password and not permissions:
+            raise ValueError("Nothing to alter for user {}.".format(username))
+
+        data = {}
+
+        if password:
+            data['password'] = password
+
+        if permissions:
+            try:
+                data['readFrom'], data['writeTo'] = permissions
+            except (ValueError, TypeError):
+                raise TypeError(
+                    "'permissions' must be (readFrom, writeTo) tuple"
+                )
 
         self.request(
             url=url,
@@ -750,7 +771,7 @@ class InfluxDBClient(object):
         )
 
         if username == self._username:
-            self._password = new_password
+            self._password = password
 
         return True
 
