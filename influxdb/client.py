@@ -8,6 +8,7 @@ import socket
 import requests
 import requests.exceptions
 
+from influxdb.resultset import ResultSet
 
 try:
     xrange
@@ -132,10 +133,8 @@ class InfluxDBClient(object):
                     for row in result['series']:
                         items = []
                         if 'name' in row:
-                            name = row['name']
-                            tags = row.get('tags', None)
-                            if tags:
-                                name = (row['name'], tuple(tags.items()))
+                            tags = row.get('tags', {})
+                            name = (row['name'], tuple(tags.items()))
                             assert name not in series
                             series[name] = items
                         else:
@@ -147,7 +146,7 @@ class InfluxDBClient(object):
                                 for cur_col, field in enumerate(value):
                                     item[columns[cur_col]] = field
                                 items.append(item)
-        return series
+        return ResultSet(series)
 
     def switch_database(self, database):
         """
