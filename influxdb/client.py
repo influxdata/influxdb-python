@@ -124,31 +124,6 @@ class InfluxDBClient(object):
     def keep_json_response_order(self, new_value):
         self._keep_json_response_order = new_value
 
-    @staticmethod
-    def format_query_response(response):
-        """Returns a list of items from a query response"""
-        series = {}
-        if 'results' in response:
-            for result in response['results']:
-                if 'series' in result:
-                    for row in result['series']:
-                        items = []
-                        if 'name' in row:
-                            tags = row.get('tags', {})
-                            name = (row['name'], tuple(tags.items()))
-                            assert name not in series
-                            series[name] = items
-                        else:
-                            series = items  # Special case for system queries.
-                        if 'columns' in row and 'values' in row:
-                            columns = row['columns']
-                            for value in row['values']:
-                                item = {}
-                                for cur_col, field in enumerate(value):
-                                    item[columns[cur_col]] = field
-                                items.append(item)
-        return ResultSet(series)
-
     def switch_database(self, database):
         """
         switch_database()
@@ -234,8 +209,7 @@ class InfluxDBClient(object):
               query,
               params={},
               expected_response_code=200,
-              database=None,
-              raw=False):
+              database=None):
         """
         Query data
 
@@ -261,8 +235,7 @@ class InfluxDBClient(object):
             json_kw.update(object_pairs_hook=OrderedDict)
         data = response.json(**json_kw)
 
-        return (data if raw
-                else self.format_query_response(data))
+        return ResultSet(data)
 
     def write_points(self,
                      points,
@@ -328,7 +301,8 @@ class InfluxDBClient(object):
         Get the list of databases
         """
         rsp = self.query("SHOW DATABASES")
-        return [db['name'] for db in rsp['databases']]
+        print rsp
+        return [db['name'] for db in list(rsp[('databases', {})])[0]['points']]
 
     def create_database(self, dbname):
         """
@@ -376,7 +350,16 @@ class InfluxDBClient(object):
         """
         Get the list of series
         """
-        return self.query("SHOW SERIES", database=database)
+
+        rs = self.query("SHOW SERIES", database=database)
+        series = list(rs)
+        result = []
+        for serie in rs.keys():
+            print "EEEEE", serie
+
+        #x = series[0]
+        #return x['points']
+        return list(self.query("SHOW SERIES", database=database))[0]['points']
 
     def get_list_users(self):
         """
