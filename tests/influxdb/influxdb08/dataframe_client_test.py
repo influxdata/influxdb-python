@@ -16,10 +16,9 @@ import warnings
 if not using_pypy:
     import pandas as pd
     from pandas.util.testing import assert_frame_equal
-    from influxdb import DataFrameClient
+    from influxdb.influxdb08 import DataFrameClient
 
 
-@unittest.skip('Not updated for 0.9')
 @skipIfPYpy
 class TestDataFrameClient(unittest.TestCase):
 
@@ -204,6 +203,46 @@ class TestDataFrameClient(unittest.TestCase):
             result = cli.query('select column_one from foo;')
             assert_frame_equal(dataframe, result)
 
+    def test_query_multiple_time_series(self):
+        data = [
+            {
+                "name": "series1",
+                "columns": ["time", "mean", "min", "max", "stddev"],
+                "points": [[0, 323048, 323048, 323048, 0]]
+            },
+            {
+                "name": "series2",
+                "columns": ["time", "mean", "min", "max", "stddev"],
+                "points": [[0, -2.8233, -2.8503, -2.7832, 0.0173]]
+            },
+            {
+                "name": "series3",
+                "columns": ["time", "mean", "min", "max", "stddev"],
+                "points": [[0, -0.01220, -0.01220, -0.01220, 0]]
+            }
+        ]
+        dataframes = {
+            'series1': pd.DataFrame(data=[[323048, 323048, 323048, 0]],
+                                    index=pd.to_datetime([0], unit='s',
+                                                         utc=True),
+                                    columns=['mean', 'min', 'max', 'stddev']),
+            'series2': pd.DataFrame(data=[[-2.8233, -2.8503, -2.7832, 0.0173]],
+                                    index=pd.to_datetime([0], unit='s',
+                                                         utc=True),
+                                    columns=['mean', 'min', 'max', 'stddev']),
+            'series3': pd.DataFrame(data=[[-0.01220, -0.01220, -0.01220, 0]],
+                                    index=pd.to_datetime([0], unit='s',
+                                                         utc=True),
+                                    columns=['mean', 'min', 'max', 'stddev'])
+        }
+        with _mocked_session('get', 200, data):
+            cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
+            result = cli.query("""select mean(value), min(value), max(value),
+                stddev(value) from series1, series2, series3""")
+            assert dataframes.keys() == result.keys()
+            for key in dataframes.keys():
+                assert_frame_equal(dataframes[key], result[key])
+
     def test_query_with_empty_result(self):
         with _mocked_session('get', 200, []):
             cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
@@ -211,24 +250,13 @@ class TestDataFrameClient(unittest.TestCase):
             assert result == []
 
     def test_list_series(self):
-        response = {
-            'results': [
-                {
-                    'series': [{
-                        'columns': ['id'],
-                        'name': 'seriesA',
-                        'values': [[0]],
-                    }]
-                },
-                {
-                    'series': [{
-                        'columns': ['id'],
-                        'name': 'seriesB',
-                        'values': [[1]],
-                    }]
-                },
-            ]
-        }
+        response = [
+            {
+                'columns': ['time', 'name'],
+                'name': 'list_series_result',
+                'points': [[0, 'seriesA'], [0, 'seriesB']]
+            }
+        ]
         with _mocked_session('get', 200, response):
             cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
             series_list = cli.get_list_series()

@@ -54,7 +54,7 @@ class SeriesHelper(object):
                     'Missing Meta class in {}.'.format(
                         cls.__name__))
 
-            for attr in ['series_name', 'fields', 'tags']:
+            for attr in ['series_name', 'fields']:
                 try:
                     setattr(cls, '_' + attr, getattr(_meta, attr))
                 except AttributeError:
@@ -87,7 +87,7 @@ class SeriesHelper(object):
                         ' autocommit is false.'.format(cls.__name__))
 
             cls._datapoints = defaultdict(list)
-            cls._type = namedtuple(cls.__name__, cls._fields + cls._tags)
+            cls._type = namedtuple(cls.__name__, cls._fields)
 
         return super(SeriesHelper, cls).__new__(cls)
 
@@ -100,10 +100,10 @@ class SeriesHelper(object):
         """
         cls = self.__class__
 
-        if sorted(cls._fields + cls._tags) != sorted(kw.keys()):
+        if sorted(cls._fields) != sorted(kw.keys()):
             raise NameError(
                 'Expected {0}, got {1}.'.format(
-                    sorted(cls._fields + cls._tags),
+                    cls._fields,
                     kw.keys()))
 
         cls._datapoints[cls._series_name.format(**kw)].append(cls._type(**kw))
@@ -135,20 +135,11 @@ class SeriesHelper(object):
         """
         json = []
         for series_name, data in six.iteritems(cls._datapoints):
-            for point in data:
-                json_point = {
-                    "name": series_name,
-                    "fields": {},
-                    "tags": {},
-                }
-
-                for field in cls._fields:
-                    json_point['fields'][field] = point.__dict__[field]
-
-                for tag in cls._tags:
-                    json_point['tags'][tag] = point.__dict__[tag]
-
-                json.append(json_point)
+            json.append({'name': series_name,
+                         'columns': cls._fields,
+                         'points': [[point.__dict__[k] for k in cls._fields]
+                                    for point in data]
+                         })
         return json
 
     @classmethod

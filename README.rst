@@ -6,7 +6,7 @@ InfluxDB-Python is a client for interacting with InfluxDB_.
     :target: https://travis-ci.org/influxdb/influxdb-python
 
 .. image:: https://readthedocs.org/projects/influxdb-python/badge/?version=latest&style
-    :target: https://readthedocs.org/projects/influxdb-python/?badge=latest
+    :target: http://influxdb-python.readthedocs.org/
     :alt: Documentation Status
 
 .. image:: https://img.shields.io/coveralls/influxdb/influxdb-python.svg
@@ -36,14 +36,16 @@ InfluxDB is an open-source distributed time series database, find more about Inf
 
 .. _installation:
 
-InfluxDB v0.9.0
-===============
+InfluxDB > v0.9 support
+=======================
 
-InfluxDB v0.9.0 brings many changes to the influxDB api. v0.9.0 users may use the ``0.9.0_support`` branch. Keep in mind that this is a development branch and may break. When v0.9.0 is released, we will merge the ``0.9.0_support`` branch to master and push it to pypi.
+The 1.0.0 version of this library now supports InfluxDB 0.9. Please note that InfluxDB 0.9 is still pre-release software. For stability, you should use the ``influxdb.influxdb08`` module in conjunction with InfluxDB 0.8.
 
-You may install it from pip with the following command::
 
-    $ pip install https://github.com/influxdb/influxdb-python/archive/0.9.0_support.zip
+InfluxDB v0.8.X users
+=====================
+
+Influxdb >=0.9.0 brings many breaking changes to the API. InfluxDB 0.8.X users may use the legacy client by using ``from influxdb.influxdb08 import InfluxDBClient`` instead.
 
 Installation
 ============
@@ -100,14 +102,19 @@ Here's a basic example (for more see the examples directory)::
 
     >>> from influxdb import InfluxDBClient
 
-    >>> json_body = [{
-        "points": [
-            ["1", 1, 1.0],
-            ["2", 2, 2.0]
-        ],
-        "name": "foo",
-        "columns": ["column_one", "column_two", "column_three"]
-    }]
+    >>> json_body = [
+        {
+            "name": "cpu_load_short",
+            "tags": {
+                "host": "server01",
+                "region": "us-west"
+            },
+            "timestamp": "2009-11-10T23:00:00Z",
+            "fields": {
+                "value": 0.64
+            }
+        }
+    ]
 
     >>> client = InfluxDBClient('localhost', 8086, 'root', 'root', 'example')
 
@@ -147,6 +154,12 @@ problems or submit contributions.
 
 .. _Github: https://github.com/influxdb/influxdb-python/
 .. _Issues: https://github.com/influxdb/influxdb-python/issues
+
+
+TODO
+====
+
+The TODO/Roadmap can be found in Github bug tracker: https://github.com/influxdb/influxdb-python/issues/109
 
 
 Source code

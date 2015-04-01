@@ -1,15 +1,30 @@
 # -*- coding: utf-8 -*-
 """
-unit tests
+unit tests for the InfluxDBClient.
+
+NB/WARNING :
+This module implements tests for the InfluxDBClient class
+but does so
+ + without any server instance running
+ + by mocking all the expected responses.
+
+So any change of (response format from) the server will **NOT** be
+detected by this module.
+
+See client_test_with_server.py for tests against a running server instance.
+
 """
 import json
 import requests
+import requests.exceptions
 import socket
 import unittest
 import requests_mock
+import random
 from nose.tools import raises
 from mock import patch
 import warnings
+import mock
 
 from influxdb import InfluxDBClient
 from influxdb.client import session
@@ -65,14 +80,18 @@ class TestInfluxDBClient(unittest.TestCase):
         # By default, raise exceptions on warnings
         warnings.simplefilter('error', FutureWarning)
 
+        self.cli = InfluxDBClient('localhost', 8086, 'username', 'password')
         self.dummy_points = [
             {
-                "points": [
-                    ["1", 1, 1.0],
-                    ["2", 2, 2.0]
-                ],
-                "name": "foo",
-                "columns": ["column_one", "column_two", "column_three"]
+                "name": "cpu_load_short",
+                "tags": {
+                    "host": "server01",
+                    "region": "us-west"
+                },
+                "timestamp": "2009-11-10T23:00:00Z",
+                "fields": {
+                    "value": 0.64
+                }
             }
         ]
 
@@ -88,12 +107,6 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_switch_database(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
         cli.switch_database('another_database')
-        assert cli._database == 'another_database'
-
-    @raises(FutureWarning)
-    def test_switch_db_deprecated(self):
-        cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
-        cli.switch_db('another_database')
         assert cli._database == 'another_database'
 
     def test_switch_user(self):
@@ -116,7 +129,7 @@ class TestInfluxDBClient(unittest.TestCase):
                              "tags": {"host": "server01",
                                       "region": "us-west"},
                              "timestamp": "2009-11-10T23:00:00Z",
-                             "values": {"value": 0.64}}]}
+                             "fields": {"value": 0.64}}]}
             )
 
             self.assertEqual(
@@ -127,43 +140,29 @@ class TestInfluxDBClient(unittest.TestCase):
                              "tags": {"host": "server01",
                                       "region": "us-west"},
                              "timestamp": "2009-11-10T23:00:00Z",
-                             "values": {"value": 0.64}}]}
+                             "fields": {"value": 0.64}}]}
             )
 
     def test_write_points(self):
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.POST,
-                "http://localhost:8086/db/db/series"
+                "http://localhost:8086/write"
             )
 
             cli = InfluxDBClient(database='db')
             cli.write_points(
-                self.dummy_points
+                self.dummy_points,
+            )
+            self.assertDictEqual(
+                {
+                    "database": "db",
+                    "points": self.dummy_points,
+                },
+                json.loads(m.last_request.body)
             )
 
-            self.assertListEqual(
-                json.loads(m.last_request.body),
-                self.dummy_points
-            )
-
-    def test_write_points_string(self):
-        with requests_mock.Mocker() as m:
-            m.register_uri(
-                requests_mock.POST,
-                "http://localhost:8086/db/db/series"
-            )
-
-            cli = InfluxDBClient(database='db')
-            cli.write_points(
-                str(json.dumps(self.dummy_points))
-            )
-
-            self.assertListEqual(
-                json.loads(m.last_request.body),
-                self.dummy_points
-            )
-
+    @unittest.skip('Not implemented for 0.9')
     def test_write_points_batch(self):
         with _mocked_session('post', 200, self.dummy_points):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
@@ -174,18 +173,24 @@ class TestInfluxDBClient(unittest.TestCase):
 
     def test_write_points_udp(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.bind(('0.0.0.0', 4444))
+        port = random.randint(4000, 8000)
+        s.bind(('0.0.0.0', port))
 
         cli = InfluxDBClient(
             'localhost', 8086, 'root', 'root',
-            'test', use_udp=True, udp_port=4444
+            'test', use_udp=True, udp_port=port
         )
         cli.write_points(self.dummy_points)
 
         received_data, addr = s.recvfrom(1024)
 
-        assert self.dummy_points == \
+        self.assertDictEqual(
+            {
+                "points": self.dummy_points,
+                "database": "test"
+            },
             json.loads(received_data.decode(), strict=True)
+        )
 
     def test_write_bad_precision_udp(self):
         cli = InfluxDBClient(
@@ -209,15 +214,32 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.write_points([])
 
     def test_write_points_with_precision(self):
-        with _mocked_session('post', 200, self.dummy_points):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            assert cli.write_points(self.dummy_points) is True
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/write"
+            )
+
+            cli = InfluxDBClient(database='db')
+            cli.write_points(
+                self.dummy_points,
+                time_precision='n'
+            )
+
+            self.assertDictEqual(
+                {'points': self.dummy_points,
+                 'database': 'db',
+                 'precision': 'n',
+                 },
+                json.loads(m.last_request.body)
+            )
 
     def test_write_points_bad_precision(self):
         cli = InfluxDBClient()
         with self.assertRaisesRegexp(
             Exception,
-            "Invalid time precision is given. \(use 's', 'm', 'ms' or 'u'\)"
+            "Invalid time precision is given. "
+            "\(use 'n', 'u', 'ms', 's', 'm' or 'h'\)"
         ):
             cli.write_points(
                 self.dummy_points,
@@ -230,54 +252,29 @@ class TestInfluxDBClient(unittest.TestCase):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             cli.write_points_with_precision([])
 
-    def test_delete_points(self):
-        with _mocked_session('delete', 204) as mocked:
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            assert cli.delete_points("foo") is True
-
-            assert len(mocked.call_args_list) == 1
-            args, kwds = mocked.call_args_list[0]
-
-            assert kwds['params'] == {'u': 'username', 'p': 'password'}
-            assert kwds['url'] == 'http://host:8086/db/db/series/foo'
-
-    @raises(Exception)
-    def test_delete_points_with_wrong_name(self):
-        with _mocked_session('delete', 400):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            cli.delete_points("nonexist")
-
-    @raises(NotImplementedError)
-    def test_create_scheduled_delete(self):
-        cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-        cli.create_scheduled_delete([])
-
-    @raises(NotImplementedError)
-    def test_get_list_scheduled_delete(self):
-        cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-        cli.get_list_scheduled_delete()
-
-    @raises(NotImplementedError)
-    def test_remove_scheduled_delete(self):
-        cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-        cli.remove_scheduled_delete(1)
-
     def test_query(self):
-        data = [
-            {
-                "name": "foo",
-                "columns": ["time", "sequence_number", "column_one"],
-                "points": [
-                    [1383876043, 16, "2"], [1383876043, 15, "1"],
-                    [1383876035, 14, "2"], [1383876035, 13, "1"]
-                ]
-            }
-        ]
-        with _mocked_session('get', 200, data):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            result = cli.query('select column_one from foo;')
-            assert len(result[0]['points']) == 4
+        example_response = \
+            '{"results": [{"series": [{"name": "sdfsdfsdf", ' \
+            '"columns": ["time", "value"], "values": ' \
+            '[["2009-11-10T23:00:00Z", 0.64]]}]}, {"series": ' \
+            '[{"name": "cpu_load_short", "columns": ["time", "value"], ' \
+            '"values": [["2009-11-10T23:00:00Z", 0.64]]}]}]}'
 
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.assertDictEqual(
+                self.cli.query('select * from foo'),
+                {'cpu_load_short':
+                    [{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}],
+                 'sdfsdfsdf':
+                    [{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]}
+            )
+
+    @unittest.skip('Not implemented for 0.9')
     def test_query_chunked(self):
         cli = InfluxDBClient(database='db')
         example_object = {
@@ -313,47 +310,55 @@ class TestInfluxDBClient(unittest.TestCase):
     @raises(Exception)
     def test_query_fail(self):
         with _mocked_session('get', 401):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            cli.query('select column_one from foo;')
-
-    def test_query_bad_precision(self):
-        cli = InfluxDBClient()
-        with self.assertRaisesRegexp(
-            Exception,
-            "Invalid time precision is given. \(use 's', 'm', 'ms' or 'u'\)"
-        ):
-            cli.query('select column_one from foo', time_precision='g')
+            self.cli.query('select column_one from foo;')
 
     def test_create_database(self):
-        with _mocked_session('post', 201, {"name": "new_db"}):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            assert cli.create_database('new_db') is True
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text='{"results":[{}]}'
+            )
+            self.cli.create_database('new_db')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create database new_db'
+            )
 
     @raises(Exception)
     def test_create_database_fails(self):
         with _mocked_session('post', 401):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            cli.create_database('new_db')
+            self.cli.create_database('new_db')
 
-    def test_delete_database(self):
-        with _mocked_session('delete', 204):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            assert cli.delete_database('old_db') is True
+    def test_drop_database(self):
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text='{"results":[{}]}'
+            )
+            self.cli.drop_database('new_db')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'drop database new_db'
+            )
 
     @raises(Exception)
-    def test_delete_database_fails(self):
+    def test_drop_database_fails(self):
         with _mocked_session('delete', 401):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            cli.delete_database('old_db')
+            cli.drop_database('old_db')
 
     def test_get_list_database(self):
-        data = [
-            {"name": "a_db"}
-        ]
-        with _mocked_session('get', 200, data):
-            cli = InfluxDBClient('host', 8086, 'username', 'password')
-            assert len(cli.get_list_database()) == 1
-            assert cli.get_list_database()[0]['name'] == 'a_db'
+        data = {'results': [{'series': [
+            {'name': 'databases', 'columns': ['name'],
+             'values': [['mydb'], ['myotherdb']]}]}]}
+
+        with _mocked_session('get', 200, json.dumps(data)):
+            self.assertListEqual(
+                self.cli.get_list_database(),
+                ['mydb', 'myotherdb']
+            )
 
     @raises(Exception)
     def test_get_list_database_fails(self):
@@ -361,282 +366,122 @@ class TestInfluxDBClient(unittest.TestCase):
             cli = InfluxDBClient('host', 8086, 'username', 'password')
             cli.get_list_database()
 
-    @raises(FutureWarning)
-    def test_get_database_list_deprecated(self):
-        data = [
-            {"name": "a_db"}
-        ]
-        with _mocked_session('get', 200, data):
-            cli = InfluxDBClient('host', 8086, 'username', 'password')
-            assert len(cli.get_database_list()) == 1
-            assert cli.get_database_list()[0]['name'] == 'a_db'
-
-    def test_delete_series(self):
-        with _mocked_session('delete', 204):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            cli.delete_series('old_series')
-
-    @raises(Exception)
-    def test_delete_series_fails(self):
-        with _mocked_session('delete', 401):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            cli.delete_series('old_series')
-
-    def test_get_series_list(self):
-        cli = InfluxDBClient(database='db')
-
-        with requests_mock.Mocker() as m:
-            example_response = \
-                '[{"name":"list_series_result","columns":' \
-                '["time","name"],"points":[[0,"foo"],[0,"bar"]]}]'
-
-            m.register_uri(
-                requests_mock.GET,
-                "http://localhost:8086/db/db/series",
-                text=example_response
-            )
-
-            self.assertListEqual(
-                cli.get_list_series(),
-                ['foo', 'bar']
-            )
-
-    def test_get_continuous_queries(self):
-        cli = InfluxDBClient(database='db')
-
-        with requests_mock.Mocker() as m:
-
-            # Tip: put this in a json linter!
-            example_response = '[ { "name": "continuous queries", "columns"' \
-                               ': [ "time", "id", "query" ], "points": [ [ ' \
-                               '0, 1, "select foo(bar,95) from \\"foo_bar' \
-                               's\\" group by time(5m) into response_times.' \
-                               'percentiles.5m.95" ], [ 0, 2, "select perce' \
-                               'ntile(value,95) from \\"response_times\\" g' \
-                               'roup by time(5m) into response_times.percen' \
-                               'tiles.5m.95" ] ] } ]'
-
-            m.register_uri(
-                requests_mock.GET,
-                "http://localhost:8086/db/db/series",
-                text=example_response
-            )
-
-            self.assertListEqual(
-                cli.get_list_continuous_queries(),
-                [
-                    'select foo(bar,95) from "foo_bars" group '
-                    'by time(5m) into response_times.percentiles.5m.95',
-
-                    'select percentile(value,95) from "response_times" group '
-                    'by time(5m) into response_times.percentiles.5m.95'
-                ]
-            )
-
-    def test_get_list_cluster_admins(self):
-        pass
-
-    def test_add_cluster_admin(self):
-        with requests_mock.Mocker() as m:
-            m.register_uri(
-                requests_mock.POST,
-                "http://localhost:8086/cluster_admins"
-            )
-
-            cli = InfluxDBClient(database='db')
-            cli.add_cluster_admin(
-                new_username='paul',
-                new_password='laup'
-            )
-
-            self.assertDictEqual(
-                json.loads(m.last_request.body),
-                {
-                    'name': 'paul',
-                    'password': 'laup'
-                }
-            )
-
-    def test_update_cluster_admin_password(self):
-        with requests_mock.Mocker() as m:
-            m.register_uri(
-                requests_mock.POST,
-                "http://localhost:8086/cluster_admins/paul"
-            )
-
-            cli = InfluxDBClient(database='db')
-            cli.update_cluster_admin_password(
-                username='paul',
-                new_password='laup'
-            )
-
-            self.assertDictEqual(
-                json.loads(m.last_request.body),
-                {'password': 'laup'}
-            )
-
-    def test_delete_cluster_admin(self):
-        with requests_mock.Mocker() as m:
-            m.register_uri(
-                requests_mock.DELETE,
-                "http://localhost:8086/cluster_admins/paul",
-                status_code=200,
-            )
-
-            cli = InfluxDBClient(database='db')
-            cli.delete_cluster_admin(username='paul')
-
-            self.assertIsNone(m.last_request.body)
-
-    def test_set_database_admin(self):
-        pass
-
-    def test_unset_database_admin(self):
-        pass
-
-    def test_alter_database_admin(self):
-        with requests_mock.Mocker() as m:
-            m.register_uri(
-                requests_mock.POST,
-                "http://localhost:8086/db/db/users/paul"
-            )
-
-            cli = InfluxDBClient(database='db')
-            cli.alter_database_admin(
-                username='paul',
-                is_admin=False
-            )
-
-            self.assertDictEqual(
-                json.loads(m.last_request.body),
-                {
-                    'admin': False
-                }
-            )
-
-    @raises(NotImplementedError)
-    def test_get_list_database_admins(self):
-        cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-        cli.get_list_database_admins()
-
-    @raises(NotImplementedError)
-    def test_add_database_admin(self):
-        cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-        cli.add_database_admin('admin', 'admin_secret_password')
-
-    @raises(NotImplementedError)
-    def test_update_database_admin_password(self):
-        cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-        cli.update_database_admin_password('admin', 'admin_secret_password')
-
-    @raises(NotImplementedError)
-    def test_delete_database_admin(self):
-        cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-        cli.delete_database_admin('admin')
-
-    def test_get_database_users(self):
-        cli = InfluxDBClient('localhost', 8086, 'username', 'password', 'db')
-
+    def test_get_list_series(self):
         example_response = \
-            '[{"name":"paul","isAdmin":false,"writeTo":".*","readFrom":".*"},'\
-            '{"name":"bobby","isAdmin":false,"writeTo":".*","readFrom":".*"}]'
+            '{"results": [{"series": [{"values": [["fsfdsdf", "24h0m0s", 2]],'\
+            ' "columns": ["name", "duration", "replicaN"]}]}]}'
 
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.GET,
-                "http://localhost:8086/db/db/users",
+                "http://localhost:8086/query",
                 text=example_response
             )
-            users = cli.get_database_users()
+            self.assertListEqual(
+                self.cli.get_list_series(),
+                [{'duration': '24h0m0s',
+                  'name': 'fsfdsdf', 'replicaN': 2}]
+            )
 
-        self.assertEqual(json.loads(example_response), users)
+    def test_create_retention_policy_default(self):
+        example_response = '{"results":[{}]}'
 
-    def test_add_database_user(self):
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.POST,
-                "http://localhost:8086/db/db/users"
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
             )
-            cli = InfluxDBClient(database='db')
-            cli.add_database_user(
-                new_username='paul',
-                new_password='laup',
-                permissions=('.*', '.*')
+            self.cli.create_retention_policy(
+                'somename', '1d', 4, default=True, database='db'
             )
 
-            self.assertDictEqual(
-                json.loads(m.last_request.body),
-                {
-                    'writeTo': '.*',
-                    'password': 'laup',
-                    'readFrom': '.*',
-                    'name': 'paul'
-                }
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create retention policy somename on '
+                'db duration 1d replication 4 default'
             )
 
-    def test_add_database_user_bad_permissions(self):
-        cli = InfluxDBClient()
+    def test_create_retention_policy(self):
+        example_response = '{"results":[{}]}'
 
-        with self.assertRaisesRegexp(
-                Exception,
-                "'permissions' must be \(readFrom, writeTo\) tuple"
-        ):
-            cli.add_database_user(
-                new_password='paul',
-                new_username='paul',
-                permissions=('hello', 'hello', 'hello')
-            )
-
-    def test_update_database_user_password(self):
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.POST,
-                "http://localhost:8086/db/db/users/paul"
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.cli.create_retention_policy(
+                'somename', '1d', 4, database='db'
             )
 
-            cli = InfluxDBClient(database='db')
-            cli.update_database_user_password(
-                username='paul',
-                new_password='laup'
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create retention policy somename on '
+                'db duration 1d replication 4'
             )
 
-            self.assertDictEqual(
-                json.loads(m.last_request.body),
-                {'password': 'laup'}
+    def test_get_list_retention_policies(self):
+        example_response = \
+            '{"results": [{"series": [{"values": [["fsfdsdf", "24h0m0s", 2]],'\
+            ' "columns": ["name", "duration", "replicaN"]}]}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.assertListEqual(
+                self.cli.get_list_retention_policies(),
+                [{'duration': '24h0m0s',
+                  'name': 'fsfdsdf', 'replicaN': 2}]
             )
 
-    def test_update_database_user_password_current_user(self):
-        cli = InfluxDBClient(
-            username='root',
-            password='hello',
-            database='database'
+    @mock.patch('requests.Session.request')
+    def test_request_retry(self, mock_request):
+        """Tests that two connection errors will be handled"""
+
+        class CustomMock(object):
+            i = 0
+
+            def connection_error(self, *args, **kwargs):
+                self.i += 1
+
+                if self.i < 3:
+                    raise requests.exceptions.ConnectionError
+                else:
+                    r = requests.Response()
+                    r.status_code = 200
+                    return r
+
+        mock_request.side_effect = CustomMock().connection_error
+
+        cli = InfluxDBClient(database='db')
+        cli.write_points(
+            self.dummy_points
         )
-        with requests_mock.Mocker() as m:
-            m.register_uri(
-                requests_mock.POST,
-                "http://localhost:8086/db/database/users/root"
-            )
 
-            cli.update_database_user_password(
-                username='root',
-                new_password='bye'
-            )
+    @mock.patch('requests.Session.request')
+    def test_request_retry_raises(self, mock_request):
+        """Tests that three connection errors will not be handled"""
 
-            self.assertEqual(cli._password, 'bye')
+        class CustomMock(object):
+            i = 0
 
-    def test_delete_database_user(self):
-        with requests_mock.Mocker() as m:
-            m.register_uri(
-                requests_mock.DELETE,
-                "http://localhost:8086/db/db/users/paul"
-            )
+            def connection_error(self, *args, **kwargs):
+                self.i += 1
 
-            cli = InfluxDBClient(database='db')
-            cli.delete_database_user(username='paul')
+                if self.i < 4:
+                    raise requests.exceptions.ConnectionError
+                else:
+                    r = requests.Response()
+                    r.status_code = 200
+                    return r
 
-            self.assertIsNone(m.last_request.body)
+        mock_request.side_effect = CustomMock().connection_error
 
-    @raises(NotImplementedError)
-    def test_update_permission(self):
-        cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-        cli.update_permission('admin', [])
+        cli = InfluxDBClient(database='db')
+
+        with self.assertRaises(requests.exceptions.ConnectionError):
+            cli.write_points(self.dummy_points)

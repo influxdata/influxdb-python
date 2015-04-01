@@ -4,7 +4,7 @@ import unittest
 import warnings
 
 import mock
-from influxdb import SeriesHelper, InfluxDBClient
+from influxdb.influxdb08 import SeriesHelper, InfluxDBClient
 from requests.exceptions import ConnectionError
 
 
@@ -27,8 +27,7 @@ class TestSeriesHelper(unittest.TestCase):
             class Meta:
                 client = TestSeriesHelper.client
                 series_name = 'events.stats.{server_name}'
-                fields = ['some_stat']
-                tags = ['server_name', 'other_tag']
+                fields = ['time', 'server_name']
                 bulk_size = 5
                 autocommit = True
 
@@ -42,76 +41,35 @@ class TestSeriesHelper(unittest.TestCase):
 
             class Meta:
                 series_name = 'events.stats.{server_name}'
-                fields = ['some_stat']
-                tags = ['server_name', 'other_tag']
+                fields = ['time', 'server_name']
                 bulk_size = 5
                 client = InfluxDBClient()
                 autocommit = True
 
         fake_write_points = mock.MagicMock()
-        AutoCommitTest(server_name='us.east-1', some_stat=159, other_tag='gg')
+        AutoCommitTest(server_name='us.east-1', time=159)
         AutoCommitTest._client.write_points = fake_write_points
-        AutoCommitTest(server_name='us.east-1', some_stat=158, other_tag='gg')
-        AutoCommitTest(server_name='us.east-1', some_stat=157, other_tag='gg')
-        AutoCommitTest(server_name='us.east-1', some_stat=156, other_tag='gg')
+        AutoCommitTest(server_name='us.east-1', time=158)
+        AutoCommitTest(server_name='us.east-1', time=157)
+        AutoCommitTest(server_name='us.east-1', time=156)
         self.assertFalse(fake_write_points.called)
-        AutoCommitTest(server_name='us.east-1', some_stat=3443, other_tag='gg')
+        AutoCommitTest(server_name='us.east-1', time=3443)
         self.assertTrue(fake_write_points.called)
 
     def testSingleSeriesName(self):
         """
         Tests JSON conversion when there is only one series name.
         """
-        TestSeriesHelper.MySeriesHelper(
-            server_name='us.east-1', other_tag='ello', some_stat=159)
-        TestSeriesHelper.MySeriesHelper(
-            server_name='us.east-1', other_tag='ello', some_stat=158)
-        TestSeriesHelper.MySeriesHelper(
-            server_name='us.east-1', other_tag='ello', some_stat=157)
-        TestSeriesHelper.MySeriesHelper(
-            server_name='us.east-1', other_tag='ello', some_stat=156)
-        expectation = [
-            {
-                "name": "events.stats.us.east-1",
-                "tags": {
-                    "other_tag": "ello",
-                    "server_name": "us.east-1"
-                },
-                "fields": {
-                    "some_stat": 159
-                },
-            },
-            {
-                "name": "events.stats.us.east-1",
-                "tags": {
-                    "other_tag": "ello",
-                    "server_name": "us.east-1"
-                },
-                "fields": {
-                    "some_stat": 158
-                },
-            },
-            {
-                "name": "events.stats.us.east-1",
-                "tags": {
-                    "other_tag": "ello",
-                    "server_name": "us.east-1"
-                },
-                "fields": {
-                    "some_stat": 157
-                },
-            },
-            {
-                "name": "events.stats.us.east-1",
-                "tags": {
-                    "other_tag": "ello",
-                    "server_name": "us.east-1"
-                },
-                "fields": {
-                    "some_stat": 156
-                },
-            }
-        ]
+        TestSeriesHelper.MySeriesHelper(server_name='us.east-1', time=159)
+        TestSeriesHelper.MySeriesHelper(server_name='us.east-1', time=158)
+        TestSeriesHelper.MySeriesHelper(server_name='us.east-1', time=157)
+        TestSeriesHelper.MySeriesHelper(server_name='us.east-1', time=156)
+        expectation = [{'points': [[159, 'us.east-1'],
+                                   [158, 'us.east-1'],
+                                   [157, 'us.east-1'],
+                                   [156, 'us.east-1']],
+                        'name': 'events.stats.us.east-1',
+                        'columns': ['time', 'server_name']}]
 
         rcvd = TestSeriesHelper.MySeriesHelper._json_body_()
         self.assertTrue(all([el in expectation for el in rcvd]) and
@@ -128,56 +86,22 @@ class TestSeriesHelper(unittest.TestCase):
         '''
         Tests JSON conversion when there is only one series name.
         '''
-        TestSeriesHelper.MySeriesHelper(
-            server_name='us.east-1', some_stat=159, other_tag='ello')
-        TestSeriesHelper.MySeriesHelper(
-            server_name='fr.paris-10', some_stat=158, other_tag='ello')
-        TestSeriesHelper.MySeriesHelper(
-            server_name='lu.lux', some_stat=157, other_tag='ello')
-        TestSeriesHelper.MySeriesHelper(
-            server_name='uk.london', some_stat=156, other_tag='ello')
-        expectation = [
-            {
-                'fields': {
-                    'some_stat': 157
-                },
-                'name': 'events.stats.lu.lux',
-                'tags': {
-                    'other_tag': 'ello',
-                    'server_name': 'lu.lux'
-                }
-            },
-            {
-                'fields': {
-                    'some_stat': 156
-                },
-                'name': 'events.stats.uk.london',
-                'tags': {
-                    'other_tag': 'ello',
-                    'server_name': 'uk.london'
-                }
-            },
-            {
-                'fields': {
-                    'some_stat': 158
-                },
-                'name': 'events.stats.fr.paris-10',
-                'tags': {
-                    'other_tag': 'ello',
-                    'server_name': 'fr.paris-10'
-                }
-            },
-            {
-                'fields': {
-                    'some_stat': 159
-                },
-                'name': 'events.stats.us.east-1',
-                'tags': {
-                    'other_tag': 'ello',
-                    'server_name': 'us.east-1'
-                }
-            }
-        ]
+        TestSeriesHelper.MySeriesHelper(server_name='us.east-1', time=159)
+        TestSeriesHelper.MySeriesHelper(server_name='fr.paris-10', time=158)
+        TestSeriesHelper.MySeriesHelper(server_name='lu.lux', time=157)
+        TestSeriesHelper.MySeriesHelper(server_name='uk.london', time=156)
+        expectation = [{'points': [[157, 'lu.lux']],
+                        'name': 'events.stats.lu.lux',
+                        'columns': ['time', 'server_name']},
+                       {'points': [[156, 'uk.london']],
+                        'name': 'events.stats.uk.london',
+                        'columns': ['time', 'server_name']},
+                       {'points': [[158, 'fr.paris-10']],
+                        'name': 'events.stats.fr.paris-10',
+                        'columns': ['time', 'server_name']},
+                       {'points': [[159, 'us.east-1']],
+                        'name': 'events.stats.us.east-1',
+                        'columns': ['time', 'server_name']}]
 
         rcvd = TestSeriesHelper.MySeriesHelper._json_body_()
         self.assertTrue(all([el in expectation for el in rcvd]) and
@@ -231,7 +155,6 @@ class TestSeriesHelper(unittest.TestCase):
                 client = TestSeriesHelper.client
                 series_name = 'events.stats.{server_name}'
                 fields = ['time', 'server_name']
-                tags = []
                 bulk_size = 0
                 autocommit = True
 
@@ -259,7 +182,6 @@ class TestSeriesHelper(unittest.TestCase):
                 series_name = 'events.stats.{server_name}'
                 fields = ['time', 'server_name']
                 bulk_size = 5
-                tags = []
                 autocommit = False
 
         with warnings.catch_warnings(record=True) as w:
