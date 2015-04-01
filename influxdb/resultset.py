@@ -22,24 +22,32 @@ class ResultSet(collections.MutableMapping):
 
         for result in self.raw['results']:
             for serie in result['series']:
-                if serie['name'] == name:
+                serie_name = serie.get('name', 'results')
+                if serie_name == name or serie_name == 'results':
                     serie_matches = True
+
+                    serie_tags = serie.get('tags', {})
 
                     if tags is not None:
                         for tag in tags.items():
-                            if serie['tags'][tag[0]] != tag[1]:
+                            try:
+                                if serie_tags[tag[0]] != tag[1]:
+                                    serie_matches = False
+                                    break
+                            except KeyError:
                                 serie_matches = False
                                 break
 
                     if serie_matches:
                         items = []
-                        for value in serie['values']:
+                        serie_values = serie.get('values', [])
+                        for value in serie_values:
                             item = {}
                             for cur_col, field in enumerate(value):
                                 item[serie['columns'][cur_col]] = field
                             items.append(item)
 
-                        results.append({"points": items, "tags": serie['tags']})
+                        results.append({"points": items, "tags": serie_tags})
                         continue
         return results
 
@@ -53,8 +61,7 @@ class ResultSet(collections.MutableMapping):
         del self.raw[key]
 
     def __iter__(self):
-        for serie in self.raw:
-            yield {"points": self.raw[serie], "tags": dict((tag, value) for tag, value in serie[1])}
+        return iter(self.raw)
 
     def __len__(self):
         return len(self.raw)

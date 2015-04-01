@@ -379,8 +379,6 @@ class TestInfluxDBClient(unittest.TestCase):
                 text=example_response
             )
 
-            print self.cli.get_list_series()
-
             self.assertListEqual(
                 self.cli.get_list_series(),
                 [{'duration': '24h0m0s',

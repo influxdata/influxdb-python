@@ -300,9 +300,7 @@ class InfluxDBClient(object):
         """
         Get the list of databases
         """
-        rsp = self.query("SHOW DATABASES")
-        print rsp
-        return [db['name'] for db in list(rsp[('databases', {})])[0]['points']]
+        return self.query("SHOW DATABASES")['results'][0]['points']
 
     def create_database(self, dbname):
         """
@@ -344,22 +342,16 @@ class InfluxDBClient(object):
         """
         return self.query(
             "SHOW RETENTION POLICIES %s" % (database or self._database)
-        )
+        )['results'][0]['points']
 
     def get_list_series(self, database=None):
         """
         Get the list of series
         """
-
-        rs = self.query("SHOW SERIES", database=database)
-        series = list(rs)
-        result = []
-        for serie in rs.keys():
-            print "EEEEE", serie
-
-        #x = series[0]
-        #return x['points']
-        return list(self.query("SHOW SERIES", database=database))[0]['points']
+        rsp = self.query("SHOW SERIES", database=database)
+        print "RSP", rsp.raw
+        print "RSP", rsp['results']
+        return rsp
 
     def get_list_users(self):
         """
