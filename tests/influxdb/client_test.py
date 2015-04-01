@@ -367,8 +367,9 @@ class TestInfluxDBClient(unittest.TestCase):
 
     def test_get_list_series(self):
         example_response = \
-            '{"results": [{"series": [{"values": [["fsfdsdf", "24h0m0s", 2]],'\
-            ' "columns": ["name", "duration", "replicaN"]}]}]}'
+            '{"results": [{"series": [{"name": "cpu_load_short", "columns": ' \
+            '["_id", "host", "region"], "values": ' \
+            '[[1, "server01", "us-west"]]}]}]}'
 
         with requests_mock.Mocker() as m:
             m.register_uri(
@@ -376,6 +377,9 @@ class TestInfluxDBClient(unittest.TestCase):
                 "http://localhost:8086/query",
                 text=example_response
             )
+
+            print self.cli.get_list_series()
+
             self.assertListEqual(
                 self.cli.get_list_series(),
                 [{'duration': '24h0m0s',
