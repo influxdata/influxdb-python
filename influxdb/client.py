@@ -215,7 +215,9 @@ class InfluxDBClient(object):
         :param params: Additional parameters to be passed to requests.
         :param database: Database to query, default to None.
         :param expected_response_code: Expected response code. Defaults to 200.
-        :param raw: Wether or not to return the raw influxdb response.
+
+        :rtype : ResultSet
+
         """
 
         params['q'] = query
@@ -299,7 +301,10 @@ class InfluxDBClient(object):
         """
         Get the list of databases
         """
-        return self.query("SHOW DATABASES")['results'][0]['points']
+        rsp = self.query("SHOW DATABASES")  #['results'][0]['points']
+        lrsp = list(rsp)
+        return [value[0] for value in lrsp[0].get('values', [])]
+        #return rsp['results'][0]['points']
 
     def create_database(self, dbname):
         """
