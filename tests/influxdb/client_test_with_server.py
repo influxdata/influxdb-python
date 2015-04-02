@@ -287,9 +287,10 @@ class SimpleTests(SingleTestCaseWithServerMixin,
     def test_create_database(self):
         self.assertIsNone(self.cli.create_database('new_db_1'))
         self.assertIsNone(self.cli.create_database('new_db_2'))
+        rsp = self.cli.get_list_database()
         self.assertEqual(
-            self.cli.get_list_database(),
-            [{u'name': u'new_db_1'}, {u'name': u'new_db_2'}]
+            rsp,
+            ['new_db_1', 'new_db_2']
         )
 
     def test_create_database_fails(self):
@@ -303,7 +304,7 @@ class SimpleTests(SingleTestCaseWithServerMixin,
     def test_drop_database(self):
         self.test_create_database()
         self.assertIsNone(self.cli.drop_database('new_db_1'))
-        self.assertEqual([{u'name': u'new_db_2'}], self.cli.get_list_database())
+        self.assertEqual(['new_db_2'], self.cli.get_list_database())
 
     def test_drop_database_fails(self):
         with self.assertRaises(InfluxDBClientError) as ctx:
