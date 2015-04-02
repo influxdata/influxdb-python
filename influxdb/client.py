@@ -111,7 +111,7 @@ class InfluxDBClient(object):
     # if one doesn't care in that, then it can simply change its client
     # instance 'keep_json_response_order' attribute value (to a falsy one).
     # This will then eventually help for performance considerations.
-    _keep_json_response_order = True
+    _keep_json_response_order = False
     # NB: For "group by" query type :
     # This setting is actually necessary in order to have a consistent and
     # reproducible rsp format if you "group by" on more than 1 tag.
