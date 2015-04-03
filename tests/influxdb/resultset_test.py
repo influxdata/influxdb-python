@@ -72,3 +72,47 @@ class TestResultSet(unittest.TestCase):
                       tags={"host": "server02", "region": "us-west"}),
             ]
         )
+
+    def test_keys(self):
+        self.assertItemsEqual(
+            self.rs.keys(),
+            [
+                ('cpu_load_short', {'host': 'server01', 'region': 'us-west'}),
+                ('cpu_load_short', {'host': 'server02', 'region': 'us-west'}),
+                ('other_serie', {'host': 'server01', 'region': 'us-west'})
+            ]
+        )
+
+    def test_len(self):
+        self.assertEqual(
+            len(self.rs),
+            3
+        )
+
+    def test_items(self):
+        items = list(self.rs.items())
+        items_lists = [(item[0], list(item[1])) for item in items]
+
+        self.assertEqual(
+            items_lists,
+            [
+                (
+                    ('cpu_load_short', {'host': 'server01', 'region': 'us-west'}),
+                    [Point("cpu_load_short", ["time", "value"],
+                           ["2015-01-29T21:51:28.968422294Z", 0.64],
+                           tags={"host": "server01", "region": "us-west"})]
+                ),
+                (
+                    ('cpu_load_short', {'host': 'server02', 'region': 'us-west'}),
+                    [Point("cpu_load_short", ["time", "value"],
+                           ["2015-01-29T21:51:28.968422294Z", 0.64],
+                           tags={"host": "server02", "region": "us-west"})]
+                ),
+                (
+                    ('other_serie', {'host': 'server01', 'region': 'us-west'}),
+                    [Point("other_serie", ["time", "value"],
+                           ["2015-01-29T21:51:28.968422294Z", 0.64],
+                           tags={"host": "server01", "region": "us-west"})]
+                )
+            ]
+        )
