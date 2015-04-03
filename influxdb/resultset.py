@@ -7,7 +7,9 @@ from collections import namedtuple
 _sentinel = object()
 
 
+# could it be a namedtuple .. ??
 class NamedValues(object):
+
     def __init__(self, point):
         self._point = point
 
@@ -27,6 +29,15 @@ class NamedValues(object):
 class Point(object):
 
     def __init__(self, serie, columns, values, tags=None):
+        '''
+
+        :param serie:    The name of the serie in which this point resides.
+                         If None then it's a "system" point/result.
+        :param columns:  The ordered list of the columns.
+        :param values:   The actualy list of values of this point. Same order than columns.
+        :param tags:     The eventual tags (dict) associated with the point.
+        :return:
+        '''
         assert len(columns) == len(values)
         self.columns = columns
         self._point_values = values
@@ -38,11 +49,11 @@ class Point(object):
 
     def __getitem__(self, tag_name):
         """Indexing a Point return the tag value associated with
-        the given tag name"""
+        the given tag name, if it exists"""
         return self._tags[tag_name]
 
     def __iter__(self):
-        """Iterating over a Point will return its tags names one per one"""
+        """Iterating over a Point will return its eventual tag names one per one"""
         return iter(self._tags)
 
     def __len__(self):
@@ -50,7 +61,7 @@ class Point(object):
         return len(self.columns)
 
     def __repr__(self):
-        return 'Point(values=%s, tags=%s)' % (
+        return 'Point(values=(%s), tags=%s)' % (
             ', '.join('%s=%r' % (
                 k, getattr(self.values, k)) for k in self.columns),
             self.tags)
@@ -61,23 +72,18 @@ class ResultSet(object):
     """A wrapper around series results """
 
     def __init__(self, series):
-        self.raw = series  # ['results']
-        results = series['results']
-        if False:
-            self.have_tags = (
-            results
-            and 'series' in results[0]
-            and results[0]['series']
-            and 'tags' in results[0]['series'][0]
-        )
-        # self.raw.update(series)  # use the free update to set keys
+        self.raw = series
 
     def __getitem__(self, key):
         '''
         :param key: Either a serie name or a 2-tuple(serie_name, tags_dict)
-                    If the given serie name is None then any serie (matching the eventual
-                    given tags) will be given its points one after the other.
-        :return: A generator yielding `Point`s matching the given key
+                    If the given serie name is None then any serie (matching
+                    the eventual given tags) will be given its points one
+                    after the other.
+        :return: A generator yielding `Point`s matching the given key.
+        NB:
+        The order in which the points are yielded is actually undefined but
+        it might change..
         '''
         if isinstance(key, tuple):
             if 2 != len(key):
@@ -85,17 +91,20 @@ class ResultSet(object):
             name = key[0]
             tags = key[1]
             if not isinstance(tags, dict):
-                raise TypeError('should be a dict')
+                raise TypeError('tags should be a dict')
         else:
             name = key
             tags = None
+        if not isinstance(name, (str, type(None))):
+            raise TypeError('serie_name must be an str or None')
 
         for result in self.raw['results']:
             for serie in result['series']:
                 serie_name = serie.get('name', None)
                 if serie_name is None:
-                    # this is a "system" query or a query which doesn't returned a named "serie"
-                    # 'list retention' is in this case..
+                    # this is a "system" query or a query which
+                    # doesn't return a name attribute.
+                    # like 'show retention policies' ..
                     if key is None:
                         for point in serie['values']:
                             yield Point(None, serie['columns'], point)
@@ -107,7 +116,13 @@ class ResultSet(object):
                     serie_tags = serie.get('tags', {})
                     if tags:
                         serie_matches = False
+                        # if there are some tags requested,
+                        # let's check them:
                         for tag_name, tag_value in tags.items():
+                            # using _sentinel as I'm not sure that "None"
+                            # could be used, because it could be a valid
+                            # serie_tags value : when a serie has no such tag
+                            # then I think it's set to /null/None/.. TBC..
                             serie_tag_value = serie_tags.get(tag_name, _sentinel)
                             if serie_tag_value != tag_value:
                                 break
@@ -125,8 +140,8 @@ class ResultSet(object):
         ''' Iterating a ResultSet will yield one dict instance per serie result.
         '''
         for results in self.raw['results']:
-            for many_series in results['series']:
-                yield many_series
+            for serie in results['series']:
+                yield serie
 
     #def __len__(self):
     #    return len(self.raw)
