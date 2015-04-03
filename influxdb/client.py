@@ -302,8 +302,11 @@ class InfluxDBClient(object):
         """
         Get the list of databases
         """
+
         rsp = self.query("SHOW DATABASES")  #['results'][0]['points']
+        # TODO: to be decided the format of what we return ;)
         lrsp = list(rsp)
+
         return [value[0] for value in lrsp[0].get('values', [])]
         #return rsp['results'][0]['points']
 
@@ -345,9 +348,13 @@ class InfluxDBClient(object):
         """
         Get the list of retention policies
         """
-        return self.query(
+        rsp = self.query(
             "SHOW RETENTION POLICIES %s" % (database or self._database)
-        )['results'][0]['points']
+        )
+        # TODO: same here
+        lrsp = list(rsp)
+        points = list(rsp[None])
+        return lrsp
 
     def get_list_series(self, database=None):
         """
