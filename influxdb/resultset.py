@@ -98,7 +98,7 @@ class ResultSet(object):
                     # 'list retention' is in this case..
                     if key is None:
                         for point in serie['values']:
-                            yield Point('$SYSTEM$', serie['columns'], point)
+                            yield Point(None, serie['columns'], point)
 
                 elif name in (None, serie_name):
                     # by default if no tags was provided then
