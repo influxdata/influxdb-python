@@ -12,7 +12,7 @@ This basically duplicates what's in client_test.py
 
 from __future__ import print_function
 import random
-
+from collections import OrderedDict
 import datetime
 import distutils.spawn
 from functools import partial
@@ -360,22 +360,40 @@ class CommonTests(ManyTestCasesWithServerMixin,
         ''' same as test_write_check_read() but with write_points \o/ '''
         self.test_write_points()
         time.sleep(1)  # same as test_write_check_read()
+        rsp = self.cli.query('SELECT * FROM cpu_load_short')
         self.assertEqual(
-            {'cpu_load_short': [
-                {'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]},
-            self.cli.query('SELECT * FROM cpu_load_short'))
+            [{'values': [['2009-11-10T23:00:00Z', 0.64]],
+              'name': 'cpu_load_short',
+              'columns': ['time', 'value']}],
+            list(rsp)
+            )
+
+        rsp2 = list(rsp['cpu_load_short'])
+        self.assertEqual(len(rsp2), 1)
+        pt = rsp2[0]
+
+        self.assertEqual(
+            ['cpu_load_short', ['time', 'value'], {}, ['2009-11-10T23:00:00Z', 0.64]],
+            [pt.serie, pt.columns, pt.tags, [pt.values.time, pt.values.value]]
+        )
 
     def test_write_multiple_points_different_series(self):
         self.assertIs(True, self.cli.write_points(dummy_points))
         time.sleep(1)
+        rsp = self.cli.query('SELECT * FROM cpu_load_short')
+        lrsp = list(rsp)
         self.assertEqual(
-            {'cpu_load_short': [
-                {'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]},
-            self.cli.query('SELECT * FROM cpu_load_short'))
+            [{'values': [['2009-11-10T23:00:00Z', 0.64]],
+              'name': 'cpu_load_short',
+              'columns': ['time', 'value']}],
+            lrsp)
+        rsp = list(self.cli.query('SELECT * FROM memory'))
         self.assertEqual(
-            {'memory': [
-                {'time': '2009-11-10T23:01:35Z', 'value': 33}]},
-            self.cli.query('SELECT * FROM memory'))
+            [{
+                 'values': [['2009-11-10T23:01:35Z', 33]],
+                 'name': 'memory', 'columns': ['time', 'value']}],
+            rsp
+            )
 
     @unittest.skip('Not implemented for 0.9')
     def test_write_points_batch(self):
@@ -465,7 +483,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
                 time.sleep(sleep_time)
 
             rsp = self.cli.query('SELECT * FROM cpu_load_short', database=db)
-
+            rsp = list(rsp)[0]
             # sys.stderr.write('precision=%s rsp_timestamp = %r\n' % (
             # precision, rsp['cpu_load_short'][0]['time']))
             m = re.match(expected_regex, rsp['cpu_load_short'][0]['time'])
@@ -524,13 +542,10 @@ class CommonTests(ManyTestCasesWithServerMixin,
                                                default=True)
         self.assertIsNone(rsp)
         rsp = self.cli.get_list_retention_policies()
-        self.assertEqual(
-            [
-                {'duration': '0', 'default': False,
-                 'replicaN': 1, 'name': 'default'},
-                {'duration': '24h0m0s', 'default': True,
-                 'replicaN': 4, 'name': 'somename'}
-            ],
+        self.assertEqual([
+                {'columns': ['name', 'duration', 'replicaN', 'default'],
+                 'values': [['default', '0', 1, False],
+                            ['somename', '24h0m0s', 4, True]]}],
             rsp
         )
 
@@ -548,7 +563,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         )
 
     def test_issue_143(self):
-        pt = partial(point, 'serie', timestamp='2015-03-30T16:16:37Z')
+        pt = partial(point, 'a_serie_name', timestamp='2015-03-30T16:16:37Z')
         pts = [
             pt(value=15),
             pt(tags={'tag_1': 'value1'}, value=5),
@@ -556,15 +571,19 @@ class CommonTests(ManyTestCasesWithServerMixin,
         ]
         self.cli.write_points(pts)
         time.sleep(1)
-        rsp = self.cli.query('SELECT * FROM serie GROUP BY tag_1')
+        rsp = list(self.cli.query('SELECT * FROM a_serie_name GROUP BY tag_1'))
         # print(rsp, file=sys.stderr)
-        self.assertEqual({
-            ('serie', (('tag_1', ''),)): [
-                {'time': '2015-03-30T16:16:37Z', 'value': 15}],
-            ('serie', (('tag_1', 'value1'),)): [
-                {'time': '2015-03-30T16:16:37Z', 'value': 5}],
-            ('serie', (('tag_1', 'value2'),)): [
-                {'time': '2015-03-30T16:16:37Z', 'value': 10}]},
+
+        self.assertEqual([
+                {'name': 'a_serie_name', 'columns': ['time', 'value'],
+                 'values': [['2015-03-30T16:16:37Z', 15]],
+                 'tags': {'tag_1': ''}},
+                {'name': 'a_serie_name', 'columns': ['time', 'value'],
+                 'values': [['2015-03-30T16:16:37Z', 5]],
+                 'tags': {'tag_1': 'value1'}},
+                {'name': 'a_serie_name', 'columns': ['time', 'value'],
+                 'values': [['2015-03-30T16:16:37Z', 10]],
+                 'tags': {'tag_1': 'value2'}}],
             rsp
         )
 
@@ -579,19 +598,37 @@ class CommonTests(ManyTestCasesWithServerMixin,
         time.sleep(1)
         rsp = self.cli.query('SELECT * FROM serie2 GROUP BY tag1,tag2')
         # print(rsp, file=sys.stderr)
-        self.assertEqual(
-            {
-                ('serie2', (('tag1', 'value1'), ('tag2', 'v1'))): [
-                    {'time': '2015-03-30T16:16:37Z', 'value': 0}
-                ],
-                ('serie2', (('tag1', 'value1'), ('tag2', 'v2'))): [
-                    {'time': '2015-03-30T16:16:37Z', 'value': 5}
-                ],
-                ('serie2', (('tag1', 'value2'), ('tag2', 'v1'))): [
-                    {'time': '2015-03-30T16:16:37Z', 'value': 10}]
-            },
-            rsp
+        self.assertEqual([
+            {'name': 'serie2', 'columns': ['time', 'value'],
+             'values': [['2015-03-30T16:16:37Z', 0]],
+             'tags': {'tag2': 'v1', 'tag1': 'value1'}},
+            {'name': 'serie2', 'columns': ['time', 'value'],
+             'values': [['2015-03-30T16:16:37Z', 5]],
+             'tags': {'tag2': 'v2', 'tag1': 'value1'}},
+            {'name': 'serie2', 'columns': ['time', 'value'],
+             'values': [['2015-03-30T16:16:37Z', 10]],
+             'tags': {'tag2': 'v1', 'tag1': 'value2'}}],
+            list(rsp)
         )
+
+        d = all_tag2_equal_v1 = list(rsp[None, {'tag2': 'v1'}])
+        self.assertEqual(
+            [
+                2,
+                ['time', 'value'],
+                {'tag2': 'v1', 'tag1': 'value1'},
+                ['2015-03-30T16:16:37Z', 0],
+                {'tag2': 'v1', 'tag1': 'value2'},
+                ['2015-03-30T16:16:37Z', 10]
+            ],
+            [
+                len(d),
+                d[0].columns,
+                d[0].tags, [d[0].values.time, d[0].values.value],
+                d[1].tags, [d[1].values.time, d[1].values.value]
+            ]
+        )
+
 
     def test_tags_json_order(self):
         n_pts = 100
@@ -646,6 +683,33 @@ class CommonTests(ManyTestCasesWithServerMixin,
                 # then check the tags order:
                 rsp_tags = tuple(t[0] for t in serie_key[1])
                 self.assertEqual(expected_ordered_tags, rsp_tags)
+
+
+    def test_query_multiple_series(self):
+        pt = partial(point, 'serie1', timestamp='2015-03-30T16:16:37Z')
+        pts = [
+            pt(tags={'tag1': 'value1', 'tag2': 'v1'}, value=0),
+            #pt(tags={'tag1': 'value1', 'tag2': 'v2'}, value=5),
+            #pt(tags={'tag1': 'value2', 'tag2': 'v1'}, value=10),
+        ]
+        self.cli.write_points(pts)
+
+        pt = partial(point, 'serie2', timestamp='1970-03-30T16:16:37Z')
+        pts = [
+            pt(tags={'tag1': 'value1', 'tag2': 'v1'}, value=0, data1=33, data2="bla"),
+            #pt(tags={'tag1': 'value1', 'tag2': 'v2'}, value=5),
+            #pt(tags={'tag1': 'value2', 'tag2': 'v3'}, value=10),  # data2="what"),
+        ]
+        self.cli.write_points(pts)
+
+        rsp = self.cli.query('SELECT * FROM serie1, serie2')
+        print(rsp)
+
+        # same but with the tags given :
+        #rsp = self.cli.query('SELECT * FROM serie1, serie2 GROUP BY *')
+        print(rsp)
+
+
 
 ############################################################################
 
