@@ -69,3 +69,9 @@ class Point(object):
 
     def __ne__(self, other):
         return not self.__eq__(other)
+
+    def as_dict(self):
+        return {
+            "serie": self.serie,
+            "point": [{col: getattr(self.values, col)} for col in self.columns]
+        }
