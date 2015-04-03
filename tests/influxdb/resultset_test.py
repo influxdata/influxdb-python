@@ -3,6 +3,7 @@
 import unittest
 
 from influxdb.resultset import ResultSet
+from influxdb.point import Point
 
 
 class TestResultSet(unittest.TestCase):
@@ -36,57 +37,38 @@ class TestResultSet(unittest.TestCase):
         self.rs = ResultSet(self.query_response)
 
     def test_filter_by_name(self):
-        self.assertItemsEqual(
-            self.rs['cpu_load_short'],
+        self.assertEqual(
+            list(self.rs['cpu_load_short']),
             [
-                {
-                    "tags": {"host": "server01", "region": "us-west"},
-                    "points": [
-                        {"time": "2015-01-29T21:51:28.968422294Z",
-                         "value": 0.64}
-                    ]
-                },
-                {
-                    "tags": {"host": "server02", "region": "us-west"},
-                    "points": [
-                        {"time": "2015-01-29T21:51:28.968422294Z",
-                         "value": 0.64}
-                    ]
-                }
+                Point("cpu_load_short", ["time", "value"],
+                      ["2015-01-29T21:51:28.968422294Z", 0.64],
+                      tags={"host": "server01", "region": "us-west"}),
+                Point("cpu_load_short", ["time", "value"],
+                      ["2015-01-29T21:51:28.968422294Z", 0.64],
+                      tags={"host": "server02", "region": "us-west"})
             ]
         )
 
     def test_filter_by_tags(self):
-        self.assertItemsEqual(
-            self.rs[('cpu_load_short', {"host": "server01"})],
+        self.assertEqual(
+            list(self.rs[('cpu_load_short', {"host": "server01"})]),
             [
-                {
-                    "tags": {"host": "server01", "region": "us-west"},
-                    "points": [
-                        {"time": "2015-01-29T21:51:28.968422294Z",
-                         "value": 0.64}
-                    ]
-                }
+                Point(
+                    "cpu_load_short", ["time", "value"],
+                    ["2015-01-29T21:51:28.968422294Z", 0.64],
+                    tags={"host": "server01", "region": "us-west"}
+                )
             ]
         )
 
-        self.assertItemsEqual(
-            self.rs[('cpu_load_short', {"region": "us-west"})],
+        self.assertEqual(
+            list(self.rs[('cpu_load_short', {"region": "us-west"})]),
             [
-                {
-                    "tags": {"host": "server01", "region": "us-west"},
-                    "points": [
-                        {"time": "2015-01-29T21:51:28.968422294Z",
-                         "value": 0.64}
-                    ]
-                },
-                {
-                    "tags": {"host": "server02", "region": "us-west"},
-                    "points": [
-                        {"time": "2015-01-29T21:51:28.968422294Z",
-                         "value": 0.64}
-                    ]
-                }
+                Point("cpu_load_short", ["time", "value"],
+                      ["2015-01-29T21:51:28.968422294Z", 0.64],
+                      tags={"host": "server01", "region": "us-west"}),
+                Point("cpu_load_short", ["time", "value"],
+                      ["2015-01-29T21:51:28.968422294Z", 0.64],
+                      tags={"host": "server02", "region": "us-west"}),
             ]
         )
-
