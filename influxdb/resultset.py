@@ -91,14 +91,14 @@ class ResultSet(object):
     def keys(self):
         keys = []
         for serie in self._get_series():
-            keys.append((serie['name'], serie.get('tags', None)))
+            keys.append((serie.get('name', None), serie.get('tags', None)))
         return keys
 
     def items(self):
         items = []
         for serie in self._get_series():
-            serie_key = (serie['name'], serie['tags'])
+            serie_key = (serie.get('name', None), serie.get('tags', None))
             items.append(
-                (serie_key, self.__getitem__(serie_key))
+                (serie_key, self[serie_key])
             )
         return items
