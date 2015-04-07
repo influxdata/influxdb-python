@@ -701,7 +701,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         ]
         self.cli.write_points(pts)
 
-        rsp = self.cli.query('SELECT * FROM serie1, serie2')
+        rsp = self.cli.query('SELECT * FROM serie1; SELECT * FROM serie2')
         print(rsp)
 
         # same but with the tags given :
