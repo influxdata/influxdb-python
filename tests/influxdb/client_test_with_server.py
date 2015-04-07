@@ -287,9 +287,8 @@ class SimpleTests(SingleTestCaseWithServerMixin,
     def test_create_database(self):
         self.assertIsNone(self.cli.create_database('new_db_1'))
         self.assertIsNone(self.cli.create_database('new_db_2'))
-        rsp = self.cli.get_list_database()
         self.assertEqual(
-            rsp,
+            self.cli.get_list_database(),
             ['new_db_1', 'new_db_2']
         )
 
