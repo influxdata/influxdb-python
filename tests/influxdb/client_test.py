@@ -265,12 +265,13 @@ class TestInfluxDBClient(unittest.TestCase):
                 "http://localhost:8086/query",
                 text=example_response
             )
-            self.assertDictEqual(
-                self.cli.query('select * from foo'),
-                {'cpu_load_short':
+            rs = self.cli.query('select * from foo')
+            self.assertListEqual(
+                list(rs),
+                [{'cpu_load_short':
                     [{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}],
                  'sdfsdfsdf':
-                    [{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]}
+                    [{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]}]
             )
 
     @unittest.skip('Not implemented for 0.9')
