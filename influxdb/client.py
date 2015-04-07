@@ -362,13 +362,13 @@ class InfluxDBClient(object):
         rsp = self.query("SHOW SERIES", database=database)
         print "RSP", rsp.raw
         print "RSP", rsp['results']
-        return rsp
+        return list(rsp)
 
     def get_list_users(self):
         """
         Get the list of users
         """
-        return self.query("SHOW USERS")
+        return list(self.query("SHOW USERS"))
 
     def delete_series(self, name, database=None):
         database = database or self._database
