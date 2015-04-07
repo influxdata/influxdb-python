@@ -91,7 +91,7 @@ class ResultSet(object):
     def keys(self):
         keys = []
         for serie in self._get_series():
-            keys.append((serie['name'], serie['tags']))
+            keys.append((serie['name'], serie.get('tags', None)))
         return keys
 
     def items(self):
