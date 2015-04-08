@@ -3,7 +3,6 @@
 import unittest
 
 from influxdb.resultset import ResultSet
-from influxdb.point import Point
 
 
 class TestResultSet(unittest.TestCase):
@@ -40,36 +39,22 @@ class TestResultSet(unittest.TestCase):
         self.assertEqual(
             list(self.rs['cpu_load_short']),
             [
-                Point("cpu_load_short", ["time", "value"],
-                      ["2015-01-29T21:51:28.968422294Z", 0.64],
-                      tags={"host": "server01", "region": "us-west"}),
-                Point("cpu_load_short", ["time", "value"],
-                      ["2015-01-29T21:51:28.968422294Z", 0.64],
-                      tags={"host": "server02", "region": "us-west"})
+                {'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'},
+                {'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'}
             ]
         )
 
     def test_filter_by_tags(self):
         self.assertEqual(
             list(self.rs[('cpu_load_short', {"host": "server01"})]),
-            [
-                Point(
-                    "cpu_load_short", ["time", "value"],
-                    ["2015-01-29T21:51:28.968422294Z", 0.64],
-                    tags={"host": "server01", "region": "us-west"}
-                )
-            ]
+            [{'time': '2015-01-29T21:51:28.968422294Z', 'value': 0.64}]
         )
 
         self.assertEqual(
             list(self.rs[('cpu_load_short', {"region": "us-west"})]),
             [
-                Point("cpu_load_short", ["time", "value"],
-                      ["2015-01-29T21:51:28.968422294Z", 0.64],
-                      tags={"host": "server01", "region": "us-west"}),
-                Point("cpu_load_short", ["time", "value"],
-                      ["2015-01-29T21:51:28.968422294Z", 0.64],
-                      tags={"host": "server02", "region": "us-west"}),
+                {'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'},
+                {'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'}
             ]
         )
 
@@ -98,21 +83,25 @@ class TestResultSet(unittest.TestCase):
             [
                 (
                     ('cpu_load_short', {'host': 'server01', 'region': 'us-west'}),
-                    [Point("cpu_load_short", ["time", "value"],
-                           ["2015-01-29T21:51:28.968422294Z", 0.64],
-                           tags={"host": "server01", "region": "us-west"})]
+                    [{'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'}]
                 ),
                 (
                     ('cpu_load_short', {'host': 'server02', 'region': 'us-west'}),
-                    [Point("cpu_load_short", ["time", "value"],
-                           ["2015-01-29T21:51:28.968422294Z", 0.64],
-                           tags={"host": "server02", "region": "us-west"})]
+                    [{'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'}]
                 ),
                 (
                     ('other_serie', {'host': 'server01', 'region': 'us-west'}),
-                    [Point("other_serie", ["time", "value"],
-                           ["2015-01-29T21:51:28.968422294Z", 0.64],
-                           tags={"host": "server01", "region": "us-west"})]
+                    [{'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'}]
                 )
             ]
+        )
+
+    def test_point_from_cols_vals(self):
+        cols = ['col1', 'col2']
+        vals = [1, '2']
+
+        point = ResultSet.point_from_cols_vals(cols, vals)
+        self.assertDictEqual(
+            point,
+            {'col1': 1, 'col2': '2'}
         )
