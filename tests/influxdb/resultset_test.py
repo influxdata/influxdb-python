@@ -16,21 +16,21 @@ class TestResultSet(unittest.TestCase):
                              "columns": ["time", "value"],
                             "values": [
                                 ["2015-01-29T21:51:28.968422294Z", 0.64]
-                            ]},
+                             ]},
                             {"name": "cpu_load_short",
                              "tags": {"host": "server02",
                                       "region": "us-west"},
                              "columns": ["time", "value"],
                             "values": [
                                 ["2015-01-29T21:51:28.968422294Z", 0.64]
-                            ]},
+                             ]},
                             {"name": "other_serie",
                              "tags": {"host": "server01",
                                       "region": "us-west"},
                              "columns": ["time", "value"],
                             "values": [
                                 ["2015-01-29T21:51:28.968422294Z", 0.64]
-                            ]}]}
+                             ]}]}
             ]
         }
         self.rs = ResultSet(self.query_response)
@@ -59,7 +59,7 @@ class TestResultSet(unittest.TestCase):
         )
 
     def test_keys(self):
-        self.assertItemsEqual(
+        self.assertEqual(
             self.rs.keys(),
             [
                 ('cpu_load_short', {'host': 'server01', 'region': 'us-west'}),
@@ -82,15 +82,18 @@ class TestResultSet(unittest.TestCase):
             items_lists,
             [
                 (
-                    ('cpu_load_short', {'host': 'server01', 'region': 'us-west'}),
+                    ('cpu_load_short',
+                     {'host': 'server01', 'region': 'us-west'}),
                     [{'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'}]
                 ),
                 (
-                    ('cpu_load_short', {'host': 'server02', 'region': 'us-west'}),
+                    ('cpu_load_short',
+                     {'host': 'server02', 'region': 'us-west'}),
                     [{'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'}]
                 ),
                 (
-                    ('other_serie', {'host': 'server01', 'region': 'us-west'}),
+                    ('other_serie',
+                     {'host': 'server01', 'region': 'us-west'}),
                     [{'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'}]
                 )
             ]
@@ -104,4 +107,34 @@ class TestResultSet(unittest.TestCase):
         self.assertDictEqual(
             point,
             {'col1': 1, 'col2': '2'}
+        )
+
+    def test_system_query(self):
+        rs = ResultSet(
+            {u'results': [
+                {u'series': [
+                    {u'values': [[u'another', u'48h0m0s', 3, False],
+                                 [u'default', u'0', 1, False],
+                                 [u'somename', u'24h0m0s', 4, True]],
+                     u'columns': [u'name', u'duration',
+                                  u'replicaN', u'default']}]}
+            ]
+            }
+        )
+
+        self.assertEqual(
+            rs.keys(),
+            [('results', None)]
+        )
+
+        self.assertEqual(
+            list(rs['results']),
+            [
+                {'duration': u'48h0m0s', u'default': False, u'replicaN': 3,
+                 u'name': u'another'},
+                {u'duration': u'0', u'default': False, u'replicaN': 1,
+                 u'name': u'default'},
+                {u'duration': u'24h0m0s', u'default': True, u'replicaN': 4,
+                 u'name': u'somename'}
+            ]
         )

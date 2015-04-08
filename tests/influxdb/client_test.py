@@ -266,12 +266,10 @@ class TestInfluxDBClient(unittest.TestCase):
                 text=example_response
             )
             rs = self.cli.query('select * from foo')
+
             self.assertListEqual(
-                list(rs),
-                [{'cpu_load_short':
-                    [{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}],
-                 'sdfsdfsdf':
-                    [{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]}]
+                list(rs['cpu_load_short']),
+                [{'value': 0.64, 'time': u'2009-11-10T23:00:00Z'}]
             )
 
     @unittest.skip('Not implemented for 0.9')
@@ -350,14 +348,18 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.drop_database('old_db')
 
     def test_get_list_database(self):
-        data = {'results': [{'series': [
-            {'name': 'databases', 'columns': ['name'],
-             'values': [['mydb'], ['myotherdb']]}]}]}
+        data = {'results': [
+            {'series': [
+                {'values': [
+                    ['new_db_1'],
+                    ['new_db_2']],
+                 'columns': ['name']}]}
+        ]}
 
         with _mocked_session(self.cli, 'get', 200, json.dumps(data)):
             self.assertListEqual(
                 self.cli.get_list_database(),
-                ['mydb', 'myotherdb']
+                [{'name': 'new_db_1'}, {'name': 'new_db_2'}]
             )
 
     @raises(Exception)
@@ -381,8 +383,10 @@ class TestInfluxDBClient(unittest.TestCase):
 
             self.assertListEqual(
                 self.cli.get_list_series(),
-                [{'duration': '24h0m0s',
-                  'name': 'fsfdsdf', 'replicaN': 2}]
+                [{'name': 'cpu_load_short',
+                  'tags': [
+                      {'host': 'server01', '_id': 1, 'region': u'us-west'}
+                  ]}]
             )
 
     def test_create_retention_policy_default(self):

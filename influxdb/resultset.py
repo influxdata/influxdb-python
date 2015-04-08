@@ -25,31 +25,37 @@ class ResultSet(object):
                 raise TypeError('only 2-tuples allowed')
             name = key[0]
             tags = key[1]
-            if not isinstance(tags, dict):
+            if not isinstance(tags, dict) and tags is not None:
                 raise TypeError('tags should be a dict')
         else:
             name = key
             tags = None
-        if not isinstance(name, (str, type(None))):
+        if not isinstance(name, (str, type(None), type(u''))):
             raise TypeError('serie_name must be an str or None')
 
         for serie in self._get_series():
-            serie_name = serie.get('name', None)
+            serie_name = serie.get('name', 'results')
             if serie_name is None:
                 # this is a "system" query or a query which
                 # doesn't return a name attribute.
                 # like 'show retention policies' ..
                 if key is None:
                     for point in serie['values']:
-                        yield self.point_from_cols_vals(serie['columns'], point)
+                        yield self.point_from_cols_vals(
+                            serie['columns'],
+                            point
+                        )
 
             elif name in (None, serie_name):
                 # by default if no tags was provided then
                 # we will matches every returned serie
                 serie_tags = serie.get('tags', {})
                 if tags is None or self._tag_matches(serie_tags, tags):
-                    for point in serie['values']:
-                        yield self.point_from_cols_vals(serie['columns'], point)
+                    for point in serie.get('values', []):
+                        yield self.point_from_cols_vals(
+                            serie['columns'],
+                            point
+                        )
 
     def __repr__(self):
         return str(self.raw)
@@ -57,9 +63,8 @@ class ResultSet(object):
     def __iter__(self):
         """ Iterating a ResultSet will yield one dict instance per serie result.
         """
-        for results in self.raw['results']:
-            for serie in results['series']:
-                yield serie
+        for key in self.keys():
+            yield list(self.__getitem__(key))
 
     def _tag_matches(self, tags, filter):
         """Checks if all key/values in filter match in tags"""
@@ -89,13 +94,15 @@ class ResultSet(object):
     def keys(self):
         keys = []
         for serie in self._get_series():
-            keys.append((serie.get('name', None), serie.get('tags', None)))
+            keys.append(
+                (serie.get('name', 'results'), serie.get('tags', None))
+            )
         return keys
 
     def items(self):
         items = []
         for serie in self._get_series():
-            serie_key = (serie.get('name', None), serie.get('tags', None))
+            serie_key = (serie.get('name', 'results'), serie.get('tags', None))
             items.append(
                 (serie_key, self[serie_key])
             )
