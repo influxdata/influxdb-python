@@ -96,9 +96,11 @@ class DataFrameClient(InfluxDBClient):
         elif len(result) == 1:
             return self._to_dataframe(result[0], time_precision)
         else:
-            return {time_series['name']: self._to_dataframe(time_series,
-                                                            time_precision)
-                    for time_series in result}
+            ret = {}
+            for time_series in result:
+                ret[time_series['name']] = self._to_dataframe(time_series,
+                                                              time_precision)
+            return ret
 
     def _to_dataframe(self, json_result, time_precision):
         dataframe = pd.DataFrame(data=json_result['points'],

@@ -27,7 +27,6 @@ import warnings
 import mock
 
 from influxdb import InfluxDBClient
-from influxdb.client import session
 
 
 def _build_response_object(status_code=200, content=""):
@@ -37,7 +36,7 @@ def _build_response_object(status_code=200, content=""):
     return resp
 
 
-def _mocked_session(method="GET", status_code=200, content=""):
+def _mocked_session(cli, method="GET", status_code=200, content=""):
 
     method = method.upper()
 
@@ -66,7 +65,7 @@ def _mocked_session(method="GET", status_code=200, content=""):
         return _build_response_object(status_code=status_code, content=c)
 
     mocked = patch.object(
-        session,
+        cli._session,
         'request',
         side_effect=request
     )
@@ -164,8 +163,8 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @unittest.skip('Not implemented for 0.9')
     def test_write_points_batch(self):
-        with _mocked_session('post', 200, self.dummy_points):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
+        cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
+        with _mocked_session(cli, 'post', 200, self.dummy_points):
             assert cli.write_points(
                 data=self.dummy_points,
                 batch_size=2
@@ -209,8 +208,8 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_write_points_fails(self):
-        with _mocked_session('post', 500):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
+        cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
+        with _mocked_session(cli, 'post', 500):
             cli.write_points([])
 
     def test_write_points_with_precision(self):
@@ -248,8 +247,8 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_write_points_with_precision_fails(self):
-        with _mocked_session('post', 500):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
+        cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
+        with _mocked_session(cli, 'post', 500):
             cli.write_points_with_precision([])
 
     def test_query(self):
@@ -309,7 +308,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_query_fail(self):
-        with _mocked_session('get', 401):
+        with _mocked_session(self.cli, 'get', 401):
             self.cli.query('select column_one from foo;')
 
     def test_create_database(self):
@@ -327,7 +326,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_create_database_fails(self):
-        with _mocked_session('post', 401):
+        with _mocked_session(self.cli, 'post', 401):
             self.cli.create_database('new_db')
 
     def test_drop_database(self):
@@ -345,8 +344,8 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_drop_database_fails(self):
-        with _mocked_session('delete', 401):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
+        cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
+        with _mocked_session(cli, 'delete', 401):
             cli.drop_database('old_db')
 
     def test_get_list_database(self):
@@ -354,7 +353,7 @@ class TestInfluxDBClient(unittest.TestCase):
             {'name': 'databases', 'columns': ['name'],
              'values': [['mydb'], ['myotherdb']]}]}]}
 
-        with _mocked_session('get', 200, json.dumps(data)):
+        with _mocked_session(self.cli, 'get', 200, json.dumps(data)):
             self.assertListEqual(
                 self.cli.get_list_database(),
                 ['mydb', 'myotherdb']
@@ -362,8 +361,8 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_get_list_database_fails(self):
-        with _mocked_session('get', 401):
-            cli = InfluxDBClient('host', 8086, 'username', 'password')
+        cli = InfluxDBClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'get', 401):
             cli.get_list_database()
 
     def test_get_list_series(self):
