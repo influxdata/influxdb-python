@@ -133,7 +133,7 @@ class InfluxDbInstance(object):
     in a temporary place, using a config file template.
     '''
 
-    def __init__(self, conf_template, udp_enabled=False):
+    def __init__(self, conf_template):
         # create a temporary dir to store all needed files
         # for the influxdb server instance :
         self.temp_dir_base = tempfile.mkdtemp()
@@ -142,28 +142,28 @@ class InfluxDbInstance(object):
         tempdir = self.temp_dir_influxdb = tempfile.mkdtemp(
             dir=self.temp_dir_base)
         # we need some "free" ports :
+        self.broker_port = get_free_port()
+        self.admin_port = get_free_port()
+        self.udp_port = get_free_port()
+        self.snapshot_port = get_free_port()
 
-        ports = dict(
-            broker_port=get_free_port(),
-            webui_port=get_free_port(),
-            admin_port=get_free_port(),
-            udp_port=get_free_port() if udp_enabled else -1,
-        )
+        self.logs_file = os.path.join(self.temp_dir_base, 'logs.txt')
 
-        conf_data = dict(
-            broker_raft_dir=os.path.join(tempdir, 'raft'),
-            broker_node_dir=os.path.join(tempdir, 'db'),
-            cluster_dir=os.path.join(tempdir, 'state'),
-            logs_file=os.path.join(self.temp_dir_base, 'logs.txt'),
-            udp_enabled='true' if udp_enabled else 'false',
-        )
-        conf_data.update(ports)
-        self.__dict__.update(conf_data)
+        with open(conf_template) as fh:
+            conf = fh.read().format(
+                broker_port=self.broker_port,
+                admin_port=self.admin_port,
+                udp_port=self.udp_port,
+                broker_raft_dir=os.path.join(tempdir, 'raft'),
+                broker_node_dir=os.path.join(tempdir, 'db'),
+                cluster_dir=os.path.join(tempdir, 'state'),
+                logfile=self.logs_file,
+                snapshot_port=self.snapshot_port,
+            )
 
         conf_file = os.path.join(self.temp_dir_base, 'influxdb.conf')
         with open(conf_file, "w") as fh:
-            with open(conf_template) as fh_template:
-                fh.write(fh_template.read().format(**conf_data))
+            fh.write(conf)
 
         # now start the server instance:
         proc = self.proc = subprocess.Popen(
@@ -182,13 +182,8 @@ class InfluxDbInstance(object):
         # or you run a 286 @ 1Mhz ?
         try:
             while time.time() < timeout:
-                if (is_port_open(self.webui_port)
+                if (is_port_open(self.broker_port)
                         and is_port_open(self.admin_port)):
-                    # it's hard to check if a UDP port is open..
-                    if udp_enabled:
-                        # so let's just sleep 0.5 sec in this case
-                        # to be sure that the server has open the port
-                        time.sleep(0.5)
                     break
                 time.sleep(0.5)
                 if proc.poll() is not None:
@@ -197,13 +192,13 @@ class InfluxDbInstance(object):
                 proc.terminate()
                 proc.wait()
                 raise RuntimeError('Timeout waiting for influxdb to listen'
-                                   ' on its ports (%s)' % ports)
+                                   ' on its broker port')
         except RuntimeError as err:
             data = self.get_logs_and_output()
             data['reason'] = str(err)
             data['now'] = datetime.datetime.now()
             raise RuntimeError("%(now)s > %(reason)s. RC=%(rc)s\n"
-                               "stdout=%(out)s\nstderr=%(err)s\nlogs=%(logs)r"
+                               "stdout=%(out)r\nstderr=%(err)r\nlogs=%(logs)r"
                                % data)
 
     def get_logs_and_output(self):
@@ -230,11 +225,9 @@ class InfluxDbInstance(object):
 
 
 def _setup_influxdb_server(inst):
-    inst.influxd_inst = InfluxDbInstance(
-        inst.influxdb_template_conf,
-        udp_enabled=getattr(inst, 'influxdb_udp_enabled', False))
+    inst.influxd_inst = InfluxDbInstance(inst.influxdb_template_conf)
     inst.cli = InfluxDBClient('localhost',
-                              inst.influxd_inst.webui_port,
+                              inst.influxd_inst.broker_port,
                               'root', '', database='db')
 
 
@@ -660,14 +653,12 @@ class CommonTests(ManyTestCasesWithServerMixin,
 class UdpTests(ManyTestCasesWithServerMixin,
                unittest.TestCase):
 
-    influxdb_udp_enabled = True
-
     influxdb_template_conf = os.path.join(THIS_DIR,
-                                          'influxdb.conf.template')
+                                          'influxdb.udp_conf.template')
 
     def test_write_points_udp(self):
         cli = InfluxDBClient(
-            'localhost', self.influxd_inst.webui_port,
+            'localhost', self.influxd_inst.broker_port,
             'dont', 'care',
             database='db',
             use_udp=True, udp_port=self.influxd_inst.udp_port

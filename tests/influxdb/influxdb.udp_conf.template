@@ -55,9 +55,9 @@ enabled = false
 
 # Configure UDP listener for series data.
 [udp]
-enabled = false
+enabled = true
 #bind-address = "0.0.0.0"
-#port = 4444
+port = {udp_port}
 
 # Broker configuration. Brokers are nodes which participate in distributed
 # consensus.
@@ -97,7 +97,6 @@ enabled = false
 database = "internal"         # The database to which the data is written.
 retention-policy = "default"   # The retention policy within the database.
 write-interval = "1m"          # Period between writing the data.
-
 
 [snapshot]
 bind-address = "127.0.0.1"
