@@ -521,30 +521,34 @@ class CommonTests(ManyTestCasesWithServerMixin,
     def test_get_list_series_non_empty(self):
         self.cli.write_points(dummy_point)
         rsp = self.cli.get_list_series()
-        self.assertEqual(
-            {'cpu_load_short': [
-                {'region': 'us-west', 'host': 'server01', '_id': 1}]},
-            rsp
-        )
+        self.assertEqual([
+            {
+                'serie_name': 'cpu_load_short',
+                '_id':      1,
+                "tags": {
+                    "host": "server01",
+                    "region": "us-west"
+                }
+            }],
+            rsp)
 
     def test_default_retention_policy(self):
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
-                {'duration': '0', 'default': True,
-                 'replicaN': 1, 'name': 'default'}],
+                {'name': 'default', 'duration': '0', 'replicaN': 1, 'default': True}
+            ],
             rsp
         )
 
     def test_create_retention_policy_default(self):
-        rsp = self.cli.create_retention_policy('somename', '1d', 4,
-                                               default=True)
-        self.assertIsNone(rsp)
+        self.cli.create_retention_policy('somename', '1d', 4, default=True)
+        self.cli.create_retention_policy('another', '2d', 3, default=False)
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual([
-                {'columns': ['name', 'duration', 'replicaN', 'default'],
-                 'values': [['default', '0', 1, False],
-                            ['somename', '24h0m0s', 4, True]]}],
+            {'name': 'somename', 'duration': '1d', 'replicaN': 4, 'default': True},
+            {'name': 'another', 'duration': '2d', 'replicaN': 3, 'default': False}
+            ],
             rsp
         )
 
@@ -553,10 +557,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
-                {'duration': '0', 'default': True, 'replicaN': 1,
-                 'name': 'default'},
-                {'duration': '24h0m0s', 'default': False, 'replicaN': 4,
-                 'name': 'somename'}
+                {'name': 'somename', 'duration': '1d', 'replicaN': 4, 'default': False},
             ],
             rsp
         )
