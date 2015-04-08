@@ -30,8 +30,10 @@ class ResultSet(object):
         else:
             name = key
             tags = None
-        if not isinstance(name, (str, type(None), type(u''))):
-            raise TypeError('serie_name must be an str or None')
+        # TODO(aviau): Fix for python 3.2
+        # if not isinstance(name, (str, bytes, type(None))) \
+        #        and not isinstance(name, type("".decode("utf-8"))):
+        #    raise TypeError('serie_name must be an str or None')
 
         for serie in self._get_series():
             serie_name = serie.get('name', 'results')

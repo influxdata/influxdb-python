@@ -111,13 +111,13 @@ class TestResultSet(unittest.TestCase):
 
     def test_system_query(self):
         rs = ResultSet(
-            {u'results': [
-                {u'series': [
-                    {u'values': [[u'another', u'48h0m0s', 3, False],
-                                 [u'default', u'0', 1, False],
-                                 [u'somename', u'24h0m0s', 4, True]],
-                     u'columns': [u'name', u'duration',
-                                  u'replicaN', u'default']}]}
+            {'results': [
+                {'series': [
+                    {'values': [['another', '48h0m0s', 3, False],
+                                ['default', '0', 1, False],
+                                ['somename', '24h0m0s', 4, True]],
+                     'columns': ['name', 'duration',
+                                 'replicaN', 'default']}]}
             ]
             }
         )
@@ -130,11 +130,11 @@ class TestResultSet(unittest.TestCase):
         self.assertEqual(
             list(rs['results']),
             [
-                {'duration': u'48h0m0s', u'default': False, u'replicaN': 3,
-                 u'name': u'another'},
-                {u'duration': u'0', u'default': False, u'replicaN': 1,
-                 u'name': u'default'},
-                {u'duration': u'24h0m0s', u'default': True, u'replicaN': 4,
-                 u'name': u'somename'}
+                {'duration': '48h0m0s', 'default': False, 'replicaN': 3,
+                 'name': 'another'},
+                {'duration': '0', 'default': False, 'replicaN': 1,
+                 'name': 'default'},
+                {'duration': '24h0m0s', 'default': True, 'replicaN': 4,
+                 'name': 'somename'}
             ]
         )

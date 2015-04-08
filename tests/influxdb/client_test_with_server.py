@@ -523,8 +523,8 @@ class CommonTests(ManyTestCasesWithServerMixin,
         self.assertEqual(
             [
                 {'name': 'cpu_load_short',
-                 'tags': [{u'host': u'server01', u'_id': 1,
-                           u'region': u'us-west'}]}
+                 'tags': [{'host': 'server01', '_id': 1,
+                           'region': 'us-west'}]}
             ],
             rsp
         )

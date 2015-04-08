@@ -269,7 +269,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
             self.assertListEqual(
                 list(rs['cpu_load_short']),
-                [{'value': 0.64, 'time': u'2009-11-10T23:00:00Z'}]
+                [{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]
             )
 
     @unittest.skip('Not implemented for 0.9')
@@ -386,7 +386,7 @@ class TestInfluxDBClient(unittest.TestCase):
                 self.cli.get_list_series(),
                 [{'name': 'cpu_load_short',
                   'tags': [
-                      {'host': 'server01', '_id': 1, 'region': u'us-west'}
+                      {'host': 'server01', '_id': 1, 'region': 'us-west'}
                   ]}]
             )
 
