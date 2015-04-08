@@ -12,7 +12,7 @@ env:
 install:
     - sudo pip install tox
     - sudo pip install coveralls
-    - ./build_influxdb_server.sh
+    - wget http://get.influxdb.org/influxdb_0.9.0-rc18_amd64.deb && sudo dpkg -i influxdb_0.9.0-rc18_amd64.deb
 script:
     - travis_wait tox -e $TOX_ENV
 after_success:
