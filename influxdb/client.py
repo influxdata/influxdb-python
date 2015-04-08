@@ -108,16 +108,19 @@ class InfluxDBClient(object):
             'Accept': 'text/plain'}
 
     @staticmethod
-    def from_DSN(dsn):
+    def from_DSN(dsn, **kwargs):
         """
         Returns an instance of InfluxDBClient from the provided data source 
         name.
         :param dsn: data source name
         :type dsn: string
+        :param **kwargs: additional parameters for InfluxDBClient.
+        :type **kwargs: dict
+        :note: parameters provided in **kwargs may override dsn parameters.
         :raise ValueError: if the provided DSN has any unexpected value.
         """
         dsn = dsn.lower()
-        
+
         init_args = {}
         conn_params = urlparse(dsn)
         scheme_info = conn_params.scheme.split('+')
@@ -126,7 +129,7 @@ class InfluxDBClient(object):
             modifier = None
         else:
             modifier, scheme = scheme_info
-        
+
         if scheme != 'influxdb':
             raise ValueError('Unknown scheme "{}".'.format(scheme))
         if modifier:
@@ -136,7 +139,7 @@ class InfluxDBClient(object):
                 init_args['ssl'] = True
             else:
                 raise ValueError('Unknown scheme modifier "{}".'.format(modifier))
-        
+
         if conn_params.hostname:
             init_args['host'] = conn_params.hostname
         if conn_params.port:
@@ -147,7 +150,9 @@ class InfluxDBClient(object):
             init_args['password'] = conn_params.password
         if conn_params.path and len(conn_params.path) > 1:
             init_args['database'] = conn_params.path[1:]
-        
+
+        init_args.update(kwargs)
+
         return InfluxDBClient(**init_args)
 
     #
