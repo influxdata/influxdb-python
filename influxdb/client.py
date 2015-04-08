@@ -301,7 +301,7 @@ class InfluxDBClient(object):
         """
         Get the list of databases
         """
-        return list(self.query("SHOW DATABASES")['results'])
+        return list(self.query("SHOW DATABASES")['databases'])
 
     def create_database(self, dbname):
         """

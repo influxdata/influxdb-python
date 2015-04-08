@@ -350,9 +350,10 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_get_list_database(self):
         data = {'results': [
             {'series': [
-                {'values': [
-                    ['new_db_1'],
-                    ['new_db_2']],
+                {'name': 'databases',
+                 'values': [
+                     ['new_db_1'],
+                     ['new_db_2']],
                  'columns': ['name']}]}
         ]}
 
