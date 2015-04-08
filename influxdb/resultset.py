@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from influxdb.point import Point
-
 _sentinel = object()
 
 
@@ -43,7 +41,7 @@ class ResultSet(object):
                 # like 'show retention policies' ..
                 if key is None:
                     for point in serie['values']:
-                        yield Point(None, serie['columns'], point)
+                        yield self.point_from_cols_vals(serie['columns'], point)
 
             elif name in (None, serie_name):
                 # by default if no tags was provided then
@@ -51,7 +49,7 @@ class ResultSet(object):
                 serie_tags = serie.get('tags', {})
                 if tags is None or self._tag_matches(serie_tags, tags):
                     for point in serie['values']:
-                        yield Point(serie_name, serie['columns'], point, serie_tags)
+                        yield self.point_from_cols_vals(serie['columns'], point)
 
     def __repr__(self):
         return str(self.raw)
@@ -102,3 +100,10 @@ class ResultSet(object):
                 (serie_key, self[serie_key])
             )
         return items
+
+    @staticmethod
+    def point_from_cols_vals(cols, vals):
+        point = {}
+        for col_index, col_name in enumerate(cols):
+            point[col_name] = vals[col_index]
+        return point
