@@ -11,12 +11,9 @@ This basically duplicates what's in client_test.py
 """
 
 from __future__ import print_function
-import random
-
 import datetime
 import distutils.spawn
 from functools import partial
-import itertools
 import os
 import re
 import shutil
@@ -289,7 +286,7 @@ class SimpleTests(SingleTestCaseWithServerMixin,
         self.assertIsNone(self.cli.create_database('new_db_2'))
         self.assertEqual(
             self.cli.get_list_database(),
-            ['new_db_1', 'new_db_2']
+            [{'name': 'new_db_1'}, {'name': 'new_db_2'}]
         )
 
     def test_create_database_fails(self):
@@ -303,7 +300,7 @@ class SimpleTests(SingleTestCaseWithServerMixin,
     def test_drop_database(self):
         self.test_create_database()
         self.assertIsNone(self.cli.drop_database('new_db_1'))
-        self.assertEqual(['new_db_2'], self.cli.get_list_database())
+        self.assertEqual([{'name': 'new_db_2'}], self.cli.get_list_database())
 
     def test_drop_database_fails(self):
         with self.assertRaises(InfluxDBClientError) as ctx:
@@ -352,29 +349,46 @@ class CommonTests(ManyTestCasesWithServerMixin,
         )
 
     def test_write_points(self):
-        ''' same as test_write() but with write_points \o/ '''
+        """ same as test_write() but with write_points \o/ """
         self.assertIs(True, self.cli.write_points(dummy_point))
 
     def test_write_points_check_read(self):
-        ''' same as test_write_check_read() but with write_points \o/ '''
+        """ same as test_write_check_read() but with write_points \o/ """
         self.test_write_points()
         time.sleep(1)  # same as test_write_check_read()
+        rsp = self.cli.query('SELECT * FROM cpu_load_short')
+
         self.assertEqual(
-            {'cpu_load_short': [
-                {'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]},
-            self.cli.query('SELECT * FROM cpu_load_short'))
+            list(rsp),
+            [[{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]]
+        )
+
+        rsp2 = list(rsp['cpu_load_short'])
+        self.assertEqual(len(rsp2), 1)
+        pt = rsp2[0]
+
+        self.assertEqual(
+            pt,
+            {'time': '2009-11-10T23:00:00Z', 'value': 0.64}
+        )
 
     def test_write_multiple_points_different_series(self):
         self.assertIs(True, self.cli.write_points(dummy_points))
         time.sleep(1)
+        rsp = self.cli.query('SELECT * FROM cpu_load_short')
+        lrsp = list(rsp)
+
         self.assertEqual(
-            {'cpu_load_short': [
-                {'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]},
-            self.cli.query('SELECT * FROM cpu_load_short'))
+            [[{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]],
+            lrsp
+        )
+
+        rsp = list(self.cli.query('SELECT * FROM memory'))
+
         self.assertEqual(
-            {'memory': [
-                {'time': '2009-11-10T23:01:35Z', 'value': 33}]},
-            self.cli.query('SELECT * FROM memory'))
+            rsp,
+            [[{'value': 33, 'time': '2009-11-10T23:01:35Z'}]]
+        )
 
     @unittest.skip('Not implemented for 0.9')
     def test_write_points_batch(self):
@@ -419,7 +433,6 @@ class CommonTests(ManyTestCasesWithServerMixin,
             ('u', base_s_regex + '\.\d{6}Z', 1),
             ('ms', base_s_regex + '\.\d{3}Z', 1),
             ('s', base_s_regex + 'Z', 1),
-            ('m', base_regex + '\d{2}:00Z', 60),
 
             # ('h', base_regex + '00:00Z', ),
             # that would require a sleep of possibly up to 3600 secs (/ 2 ?)..
@@ -457,17 +470,20 @@ class CommonTests(ManyTestCasesWithServerMixin,
                 else:
                     pass
                     # sys.stderr.write('ok !\n')
-                sleep_time = 0
+
+            # sys.stderr.write('sleeping %s..\n' % sleep_time)
 
             if sleep_time:
-                # sys.stderr.write('sleeping %s..\n' % sleep_time)
                 time.sleep(sleep_time)
 
             rsp = self.cli.query('SELECT * FROM cpu_load_short', database=db)
-
             # sys.stderr.write('precision=%s rsp_timestamp = %r\n' % (
             # precision, rsp['cpu_load_short'][0]['time']))
-            m = re.match(expected_regex, rsp['cpu_load_short'][0]['time'])
+
+            m = re.match(
+                expected_regex,
+                list(rsp['cpu_load_short'])[0]['time']
+            )
             self.assertIsNotNone(m)
             self.cli.drop_database(db)
 
@@ -498,14 +514,18 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
     def test_get_list_series_empty(self):
         rsp = self.cli.get_list_series()
-        self.assertEqual({}, rsp)
+        self.assertEqual([], rsp)
 
     def test_get_list_series_non_empty(self):
         self.cli.write_points(dummy_point)
         rsp = self.cli.get_list_series()
+
         self.assertEqual(
-            {'cpu_load_short': [
-                {'region': 'us-west', 'host': 'server01', '_id': 1}]},
+            [
+                {'name': 'cpu_load_short',
+                 'tags': [{'host': 'server01', '_id': 1,
+                           'region': 'us-west'}]}
+            ],
             rsp
         )
 
@@ -513,23 +533,26 @@ class CommonTests(ManyTestCasesWithServerMixin,
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
-                {'duration': '0', 'default': True,
-                 'replicaN': 1, 'name': 'default'}],
+                {'name': 'default',
+                 'duration': '0',
+                 'replicaN': 1,
+                 'default': True}
+            ],
             rsp
         )
 
     def test_create_retention_policy_default(self):
-        rsp = self.cli.create_retention_policy('somename', '1d', 4,
-                                               default=True)
-        self.assertIsNone(rsp)
+        self.cli.create_retention_policy('somename', '1d', 4, default=True)
+        self.cli.create_retention_policy('another', '2d', 3, default=False)
         rsp = self.cli.get_list_retention_policies()
+
         self.assertEqual(
-            [
-                {'duration': '0', 'default': False,
-                 'replicaN': 1, 'name': 'default'},
-                {'duration': '24h0m0s', 'default': True,
-                 'replicaN': 4, 'name': 'somename'}
-            ],
+            [{'duration': '48h0m0s', 'default': False,
+              'replicaN': 3, 'name': 'another'},
+             {'duration': '0', 'default': False,
+              'replicaN': 1, 'name': 'default'},
+             {'duration': '24h0m0s', 'default': True,
+              'replicaN': 4, 'name': 'somename'}],
             rsp
         )
 
@@ -537,17 +560,15 @@ class CommonTests(ManyTestCasesWithServerMixin,
         self.cli.create_retention_policy('somename', '1d', 4)
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
-            [
-                {'duration': '0', 'default': True, 'replicaN': 1,
-                 'name': 'default'},
-                {'duration': '24h0m0s', 'default': False, 'replicaN': 4,
-                 'name': 'somename'}
-            ],
+            [{'duration': '0', 'default': True,
+              'replicaN': 1, 'name': 'default'},
+             {'duration': '24h0m0s', 'default': False,
+              'replicaN': 4, 'name': 'somename'}],
             rsp
         )
 
     def test_issue_143(self):
-        pt = partial(point, 'serie', timestamp='2015-03-30T16:16:37Z')
+        pt = partial(point, 'a_serie_name', timestamp='2015-03-30T16:16:37Z')
         pts = [
             pt(value=15),
             pt(tags={'tag_1': 'value1'}, value=5),
@@ -555,15 +576,14 @@ class CommonTests(ManyTestCasesWithServerMixin,
         ]
         self.cli.write_points(pts)
         time.sleep(1)
-        rsp = self.cli.query('SELECT * FROM serie GROUP BY tag_1')
-        # print(rsp, file=sys.stderr)
-        self.assertEqual({
-            ('serie', (('tag_1', ''),)): [
-                {'time': '2015-03-30T16:16:37Z', 'value': 15}],
-            ('serie', (('tag_1', 'value1'),)): [
-                {'time': '2015-03-30T16:16:37Z', 'value': 5}],
-            ('serie', (('tag_1', 'value2'),)): [
-                {'time': '2015-03-30T16:16:37Z', 'value': 10}]},
+        rsp = list(self.cli.query('SELECT * FROM a_serie_name GROUP BY tag_1'))
+
+        self.assertEqual(
+            [
+                [{'value': 15, 'time': '2015-03-30T16:16:37Z'}],
+                [{'value': 5, 'time': '2015-03-30T16:16:37Z'}],
+                [{'value': 10, 'time': '2015-03-30T16:16:37Z'}]
+            ],
             rsp
         )
 
@@ -577,74 +597,38 @@ class CommonTests(ManyTestCasesWithServerMixin,
         self.cli.write_points(pts)
         time.sleep(1)
         rsp = self.cli.query('SELECT * FROM serie2 GROUP BY tag1,tag2')
-        # print(rsp, file=sys.stderr)
+
         self.assertEqual(
-            {
-                ('serie2', (('tag1', 'value1'), ('tag2', 'v1'))): [
-                    {'time': '2015-03-30T16:16:37Z', 'value': 0}
-                ],
-                ('serie2', (('tag1', 'value1'), ('tag2', 'v2'))): [
-                    {'time': '2015-03-30T16:16:37Z', 'value': 5}
-                ],
-                ('serie2', (('tag1', 'value2'), ('tag2', 'v1'))): [
-                    {'time': '2015-03-30T16:16:37Z', 'value': 10}]
-            },
-            rsp
+            [
+                [{'value': 0, 'time': '2015-03-30T16:16:37Z'}],
+                [{'value': 5, 'time': '2015-03-30T16:16:37Z'}],
+                [{'value': 10, 'time': '2015-03-30T16:16:37Z'}]
+            ],
+            list(rsp)
         )
 
-    def test_tags_json_order(self):
-        n_pts = 100
-        n_tags = 5  # that will make 120 possible orders (fact(5) == 120)
-        all_tags = ['tag%s' % i for i in range(n_tags)]
-        n_tags_values = 1 + n_tags // 3
-        all_tags_values = ['value%s' % random.randint(0, i)
-                           for i in range(n_tags_values)]
-        pt = partial(point, 'serie', timestamp='2015-03-30T16:16:37Z')
+        all_tag2_equal_v1 = list(rsp[None, {'tag2': 'v1'}])
+
+        self.assertEqual(
+            [{'value': 0, 'time': '2015-03-30T16:16:37Z'},
+             {'value': 10, 'time': '2015-03-30T16:16:37Z'}],
+            all_tag2_equal_v1,
+        )
+
+    def test_query_multiple_series(self):
+        pt = partial(point, 'serie1', timestamp='2015-03-30T16:16:37Z')
         pts = [
-            pt(value=random.randint(0, 100))
-            for _ in range(n_pts)
+            pt(tags={'tag1': 'value1', 'tag2': 'v1'}, value=0),
         ]
-        for pt in pts:
-            tags = pt['tags'] = {}
-            for tag in all_tags:
-                tags[tag] = random.choice(all_tags_values)
-
         self.cli.write_points(pts)
-        time.sleep(1)
 
-        # Influxd, when queried with a "group by tag1(, tag2, ..)" and as far
-        # as we currently see, always returns the tags (alphabetically-)
-        # ordered by their name in the json response..
-        # That might not always be the case so here we will also be
-        # asserting that behavior.
-        expected_ordered_tags = tuple(sorted(all_tags))
+        pt = partial(point, 'serie2', timestamp='1970-03-30T16:16:37Z')
+        pts = [
+            pt(tags={'tag1': 'value1', 'tag2': 'v1'},
+               value=0, data1=33, data2="bla"),
+        ]
+        self.cli.write_points(pts)
 
-        # try all the possible orders of tags for the group by in the query:
-        for tags in itertools.permutations(all_tags):
-            query = ('SELECT * FROM serie '
-                     'GROUP BY %s' % ','.join(tags))
-            rsp = self.cli.query(query)
-            # and verify that, for each "serie_key" in the response,
-            # the tags names are ordered as we expect it:
-            for serie_key in rsp:
-                # first also asserts that the serie key is a 2-tuple:
-                self.assertTrue(isinstance(serie_key, tuple))
-                self.assertEqual(2, len(serie_key))
-                # also assert that the first component is an str instance:
-                self.assertIsInstance(serie_key[0], type(b''.decode()))
-                self.assertIsInstance(serie_key[1], tuple)
-                # also assert that the number of items in the second component
-                # is the number of tags requested in the group by actually,
-                # and that each one has correct format/type/..
-                self.assertEqual(n_tags, len(serie_key[1]))
-                for tag_data in serie_key[1]:
-                    self.assertIsInstance(tag_data, tuple)
-                    self.assertEqual(2, len(tag_data))
-                    tag_name = tag_data[0]
-                    self.assertIsInstance(tag_name, type(b''.decode()))
-                # then check the tags order:
-                rsp_tags = tuple(t[0] for t in serie_key[1])
-                self.assertEqual(expected_ordered_tags, rsp_tags)
 
 ############################################################################
 
@@ -673,7 +657,6 @@ class UdpTests(ManyTestCasesWithServerMixin,
 
         self.assertEqual(
             # this is dummy_points :
-            {'cpu_load_short': [
-                {'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]},
-            rsp
+            [{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}],
+            list(rsp['cpu_load_short'])
         )

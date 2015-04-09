@@ -8,6 +8,7 @@ import socket
 import requests
 import requests.exceptions
 
+from influxdb.resultset import ResultSet
 
 try:
     xrange
@@ -109,7 +110,7 @@ class InfluxDBClient(object):
     # if one doesn't care in that, then it can simply change its client
     # instance 'keep_json_response_order' attribute value (to a falsy one).
     # This will then eventually help for performance considerations.
-    _keep_json_response_order = True
+    _keep_json_response_order = False
     # NB: For "group by" query type :
     # This setting is actually necessary in order to have a consistent and
     # reproducible rsp format if you "group by" on more than 1 tag.
@@ -121,33 +122,6 @@ class InfluxDBClient(object):
     @keep_json_response_order.setter
     def keep_json_response_order(self, new_value):
         self._keep_json_response_order = new_value
-
-    @staticmethod
-    def format_query_response(response):
-        """Returns a list of items from a query response"""
-        series = {}
-        if 'results' in response:
-            for result in response['results']:
-                if 'series' in result:
-                    for row in result['series']:
-                        items = []
-                        if 'name' in row:
-                            name = row['name']
-                            tags = row.get('tags', None)
-                            if tags:
-                                name = (row['name'], tuple(tags.items()))
-                            assert name not in series
-                            series[name] = items
-                        else:
-                            series = items  # Special case for system queries.
-                        if 'columns' in row and 'values' in row:
-                            columns = row['columns']
-                            for value in row['values']:
-                                item = {}
-                                for cur_col, field in enumerate(value):
-                                    item[columns[cur_col]] = field
-                                items.append(item)
-        return series
 
     def switch_database(self, database):
         """
@@ -234,15 +208,16 @@ class InfluxDBClient(object):
               query,
               params={},
               expected_response_code=200,
-              database=None,
-              raw=False):
+              database=None):
         """
         Query data
 
         :param params: Additional parameters to be passed to requests.
         :param database: Database to query, default to None.
         :param expected_response_code: Expected response code. Defaults to 200.
-        :param raw: Wether or not to return the raw influxdb response.
+
+        :rtype : ResultSet
+
         """
 
         params['q'] = query
@@ -261,8 +236,7 @@ class InfluxDBClient(object):
             json_kw.update(object_pairs_hook=OrderedDict)
         data = response.json(**json_kw)
 
-        return (data if raw
-                else self.format_query_response(data))
+        return ResultSet(data)
 
     def write_points(self,
                      points,
@@ -327,8 +301,7 @@ class InfluxDBClient(object):
         """
         Get the list of databases
         """
-        rsp = self.query("SHOW DATABASES")
-        return [db['name'] for db in rsp['databases']]
+        return list(self.query("SHOW DATABASES")['databases'])
 
     def create_database(self, dbname):
         """
@@ -368,21 +341,31 @@ class InfluxDBClient(object):
         """
         Get the list of retention policies
         """
-        return self.query(
+        rsp = self.query(
             "SHOW RETENTION POLICIES %s" % (database or self._database)
         )
+        return list(rsp['results'])
 
     def get_list_series(self, database=None):
         """
         Get the list of series
         """
-        return self.query("SHOW SERIES", database=database)
+        rsp = self.query("SHOW SERIES", database=database)
+        series = []
+        for serie in rsp.items():
+            series.append(
+                {
+                    "name": serie[0][0],
+                    "tags": list(serie[1])
+                }
+            )
+        return series
 
     def get_list_users(self):
         """
         Get the list of users
         """
-        return self.query("SHOW USERS")
+        return list(self.query("SHOW USERS"))
 
     def delete_series(self, name, database=None):
         database = database or self._database

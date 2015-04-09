@@ -265,12 +265,11 @@ class TestInfluxDBClient(unittest.TestCase):
                 "http://localhost:8086/query",
                 text=example_response
             )
-            self.assertDictEqual(
-                self.cli.query('select * from foo'),
-                {'cpu_load_short':
-                    [{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}],
-                 'sdfsdfsdf':
-                    [{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]}
+            rs = self.cli.query('select * from foo')
+
+            self.assertListEqual(
+                list(rs['cpu_load_short']),
+                [{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]
             )
 
     @unittest.skip('Not implemented for 0.9')
@@ -349,14 +348,19 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.drop_database('old_db')
 
     def test_get_list_database(self):
-        data = {'results': [{'series': [
-            {'name': 'databases', 'columns': ['name'],
-             'values': [['mydb'], ['myotherdb']]}]}]}
+        data = {'results': [
+            {'series': [
+                {'name': 'databases',
+                 'values': [
+                     ['new_db_1'],
+                     ['new_db_2']],
+                 'columns': ['name']}]}
+        ]}
 
         with _mocked_session(self.cli, 'get', 200, json.dumps(data)):
             self.assertListEqual(
                 self.cli.get_list_database(),
-                ['mydb', 'myotherdb']
+                [{'name': 'new_db_1'}, {'name': 'new_db_2'}]
             )
 
     @raises(Exception)
@@ -367,8 +371,9 @@ class TestInfluxDBClient(unittest.TestCase):
 
     def test_get_list_series(self):
         example_response = \
-            '{"results": [{"series": [{"values": [["fsfdsdf", "24h0m0s", 2]],'\
-            ' "columns": ["name", "duration", "replicaN"]}]}]}'
+            '{"results": [{"series": [{"name": "cpu_load_short", "columns": ' \
+            '["_id", "host", "region"], "values": ' \
+            '[[1, "server01", "us-west"]]}]}]}'
 
         with requests_mock.Mocker() as m:
             m.register_uri(
@@ -376,10 +381,13 @@ class TestInfluxDBClient(unittest.TestCase):
                 "http://localhost:8086/query",
                 text=example_response
             )
+
             self.assertListEqual(
                 self.cli.get_list_series(),
-                [{'duration': '24h0m0s',
-                  'name': 'fsfdsdf', 'replicaN': 2}]
+                [{'name': 'cpu_load_short',
+                  'tags': [
+                      {'host': 'server01', '_id': 1, 'region': 'us-west'}
+                  ]}]
             )
 
     def test_create_retention_policy_default(self):
