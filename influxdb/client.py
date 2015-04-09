@@ -243,6 +243,7 @@ class InfluxDBClient(object):
                      time_precision=None,
                      database=None,
                      retention_policy=None,
+                     tags=None,
                      ):
         """
         Write to multiple time series names.
@@ -258,13 +259,15 @@ class InfluxDBClient(object):
         return self._write_points(points=points,
                                   time_precision=time_precision,
                                   database=database,
-                                  retention_policy=retention_policy)
+                                  retention_policy=retention_policy,
+                                  tags=tags)
 
     def _write_points(self,
                       points,
                       time_precision,
                       database,
-                      retention_policy):
+                      retention_policy,
+                      tags):
         if time_precision not in ['n', 'u', 'ms', 's', 'm', 'h', None]:
             raise ValueError(
                 "Invalid time precision is given. "
@@ -284,6 +287,9 @@ class InfluxDBClient(object):
 
         if retention_policy:
             data['retentionPolicy'] = retention_policy
+
+        if tags:
+            data['tags'] = tags
 
         data['database'] = database or self._database
 

@@ -161,6 +161,30 @@ class TestInfluxDBClient(unittest.TestCase):
                 json.loads(m.last_request.body)
             )
 
+    def test_write_points_toplevel_attributes(self):
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/write"
+            )
+
+            cli = InfluxDBClient(database='db')
+            cli.write_points(
+                self.dummy_points,
+                database='testdb',
+                tags={"tag": "hello"},
+                retention_policy="somepolicy"
+            )
+            self.assertDictEqual(
+                {
+                    "database": "testdb",
+                    "tags": {"tag": "hello"},
+                    "points": self.dummy_points,
+                    "retentionPolicy": "somepolicy"
+                },
+                json.loads(m.last_request.body)
+            )
+
     @unittest.skip('Not implemented for 0.9')
     def test_write_points_batch(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
