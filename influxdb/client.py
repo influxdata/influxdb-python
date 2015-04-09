@@ -117,12 +117,12 @@ class InfluxDBClient(object):
         also be passed to this function.
 
         Examples:
-            >>> cli = InfluxDBClient.from_DSN('influxdb://username:password@
-            localhost:8086/databasename', timeout=5)
+            >>> cli = InfluxDBClient.from_DSN('influxdb://username:password@\
+localhost:8086/databasename', timeout=5)
             >>> type(cli)
             <class 'influxdb.client.InfluxDBClient'>
             >>> cli = InfluxDBClient.from_DSN('udp+influxdb://username:pass@\
-            localhost:8086/databasename', timeout=5, udp_port=159)
+localhost:8086/databasename', timeout=5, udp_port=159)
             >>> print('{0._baseurl} - {0.use_udp} {0.udp_port}'.format(cli))
             http://localhost:8086 - True 159
 
