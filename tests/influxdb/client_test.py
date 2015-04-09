@@ -103,6 +103,24 @@ class TestInfluxDBClient(unittest.TestCase):
         )
         assert cli._baseurl == 'https://host:8086'
 
+    def test_dsn(self):
+        cli = InfluxDBClient.from_DSN('influxdb://usr:pwd@host:1886/db')
+        assert cli._baseurl == 'http://host:1886'
+        assert cli._username == 'usr'
+        assert cli._password == 'pwd'
+        assert cli._database == 'db'
+        assert cli.use_udp is False
+
+        cli = InfluxDBClient.from_DSN('udp+influxdb://usr:pwd@host:1886/db')
+        assert cli.use_udp is True
+
+        cli = InfluxDBClient.from_DSN('https+influxdb://usr:pwd@host:1886/db')
+        assert cli._baseurl == 'https://host:1886'
+
+        cli = InfluxDBClient.from_DSN('https+influxdb://usr:pwd@host:1886/db',
+                                      **{'ssl': False})
+        assert cli._baseurl == 'http://host:1886'
+
     def test_switch_database(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
         cli.switch_database('another_database')
