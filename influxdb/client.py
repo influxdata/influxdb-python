@@ -110,7 +110,7 @@ class InfluxDBClient(object):
     @staticmethod
     def from_DSN(dsn, **kwargs):
         """
-        Returns an instance of InfluxDBClient from the provided data source 
+        Returns an instance of InfluxDBClient from the provided data source
         name.
         :param dsn: data source name
         :type dsn: string
@@ -138,7 +138,7 @@ class InfluxDBClient(object):
             elif modifier == 'https':
                 init_args['ssl'] = True
             else:
-                raise ValueError('Unknown scheme modifier "{}".'.format(modifier))
+                raise ValueError('Unknown modifier "{}".'.format(modifier))
 
         if conn_params.hostname:
             init_args['host'] = conn_params.hostname
