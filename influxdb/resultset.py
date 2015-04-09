@@ -27,9 +27,13 @@ class ResultSet(object):
             tags = key[1]
             if not isinstance(tags, dict) and tags is not None:
                 raise TypeError('tags should be a dict')
+        elif isinstance(key, dict):
+            name = None
+            tags = key
         else:
             name = key
             tags = None
+
         # TODO(aviau): Fix for python 3.2
         # if not isinstance(name, (str, bytes, type(None))) \
         #        and not isinstance(name, type("".decode("utf-8"))):

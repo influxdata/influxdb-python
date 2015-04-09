@@ -22,14 +22,14 @@ class TestResultSet(unittest.TestCase):
                                       "region": "us-west"},
                              "columns": ["time", "value"],
                             "values": [
-                                ["2015-01-29T21:51:28.968422294Z", 0.64]
+                                ["2015-01-29T21:51:28.968422294Z", 0.65]
                              ]},
                             {"name": "other_serie",
                              "tags": {"host": "server01",
                                       "region": "us-west"},
                              "columns": ["time", "value"],
                             "values": [
-                                ["2015-01-29T21:51:28.968422294Z", 0.64]
+                                ["2015-01-29T21:51:28.968422294Z", 0.66]
                              ]}]}
             ]
         }
@@ -40,11 +40,20 @@ class TestResultSet(unittest.TestCase):
             list(self.rs['cpu_load_short']),
             [
                 {'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'},
-                {'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'}
+                {'value': 0.65, 'time': '2015-01-29T21:51:28.968422294Z'}
             ]
         )
 
     def test_filter_by_tags(self):
+        self.assertEqual(
+            list(self.rs[{"host": "server01"}]),
+            [
+                {'time': '2015-01-29T21:51:28.968422294Z', 'value': 0.64},
+                {'time': '2015-01-29T21:51:28.968422294Z', 'value': 0.66}
+            ]
+        )
+
+    def test_filter_by_name_and_tags(self):
         self.assertEqual(
             list(self.rs[('cpu_load_short', {"host": "server01"})]),
             [{'time': '2015-01-29T21:51:28.968422294Z', 'value': 0.64}]
@@ -54,7 +63,7 @@ class TestResultSet(unittest.TestCase):
             list(self.rs[('cpu_load_short', {"region": "us-west"})]),
             [
                 {'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'},
-                {'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'}
+                {'value': 0.65, 'time': '2015-01-29T21:51:28.968422294Z'}
             ]
         )
 
@@ -89,12 +98,12 @@ class TestResultSet(unittest.TestCase):
                 (
                     ('cpu_load_short',
                      {'host': 'server02', 'region': 'us-west'}),
-                    [{'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'}]
+                    [{'value': 0.65, 'time': '2015-01-29T21:51:28.968422294Z'}]
                 ),
                 (
                     ('other_serie',
                      {'host': 'server01', 'region': 'us-west'}),
-                    [{'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'}]
+                    [{'value': 0.66, 'time': '2015-01-29T21:51:28.968422294Z'}]
                 )
             ]
         )
