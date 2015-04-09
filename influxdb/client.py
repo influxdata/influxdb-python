@@ -132,8 +132,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :type **kwargs: dict
         :note: parameters provided in **kwargs may override dsn parameters.
         :note: when using "udp+influxdb" the specified port (if any) will be
-        used for the TCP connection; specify the udp port with the additional
-        udp_port parameter (cf. examples).
+                  used for the TCP connection; specify the udp port with the
+                  additional udp_port parameter (cf. examples).
         :raise ValueError: if the provided DSN has any unexpected value.
         """
         dsn = dsn.lower()
