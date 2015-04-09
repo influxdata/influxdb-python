@@ -64,3 +64,12 @@ These clients are initiated in the same way as the
 .. autoclass:: influxdb.SeriesHelper
     :members:
     :undoc-members:
+
+-----------------------
+:class:`ResultSet`
+-----------------------
+
+.. currentmodule:: influxdb.ResultSet
+.. autoclass:: influxdb.resultset.ResultSet
+    :members:
+    :undoc-members:
