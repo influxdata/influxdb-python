@@ -110,12 +110,28 @@ class InfluxDBClient(object):
     def from_DSN(dsn, **kwargs):
         """
         Returns an instance of InfluxDBClient from the provided data source
-        name.
+        name. Supported schemes are "influxdb", "https+influxdb",
+        "udp+influxdb". Parameters for the InfluxDBClient constructor may be
+        also be passed to this function.
+
+        Examples:
+            >>> cli = InfluxDBClient.from_DSN('influxdb://username:password@\
+            ... localhost:8086/databasename', timeout=5)
+            >>> type(cli)
+            <class 'influxdb.client.InfluxDBClient'>
+            >>> cli = InfluxDBClient.from_DSN('udp+influxdb://username:pass@\
+            ... localhost:8086/databasename', timeout=5, udp_port=159)
+            >>> print('{0._baseurl} - {0.use_udp} {0.udp_port}'.format(cli))
+            http://localhost:8086 - True 159
+
         :param dsn: data source name
         :type dsn: string
         :param **kwargs: additional parameters for InfluxDBClient.
         :type **kwargs: dict
         :note: parameters provided in **kwargs may override dsn parameters.
+        :note: when using "udp+influxdb" the specified port (if any) will be
+        used for the TCP connection; specify the udp port with the additional
+        udp_port parameter (cf. examples).
         :raise ValueError: if the provided DSN has any unexpected value.
         """
         dsn = dsn.lower()
