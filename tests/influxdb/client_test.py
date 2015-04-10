@@ -26,7 +26,8 @@ from mock import patch
 import warnings
 import mock
 
-from influxdb import InfluxDBClient
+from influxdb import InfluxDBClient, InfluxDBClusterClient
+from influxdb.client import InfluxDBServerError
 
 
 def _build_response_object(status_code=200, content=""):
@@ -534,3 +535,97 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with self.assertRaises(requests.exceptions.ConnectionError):
             cli.write_points(self.dummy_points)
+
+
+class FakeClient(InfluxDBClient):
+    fail = False
+
+    def query(self,
+              query,
+              params={},
+              expected_response_code=200,
+              database=None):
+        if query == 'Fail':
+            raise Exception("Fail")
+
+        if self.fail:
+            raise Exception("Fail")
+        else:
+            return "Success"
+
+
+class TestInfluxDBClusterClient(unittest.TestCase):
+
+    def setUp(self):
+        # By default, raise exceptions on warnings
+        warnings.simplefilter('error', FutureWarning)
+
+        self.hosts = [('host1', 8086), ('host2', 8086), ('host3', 8086)]
+
+    def test_init(self):
+        cluster = InfluxDBClusterClient(hosts=self.hosts,
+                                        username='username',
+                                        password='password',
+                                        database='database',
+                                        shuffle=False,
+                                        client_base_class=FakeClient)
+        assert len(cluster.clients) == 3
+        assert len(cluster.bad_clients) == 0
+        for idx, client in enumerate(cluster.clients):
+            assert client._host == self.hosts[idx][0]
+            assert client._port == self.hosts[idx][1]
+
+    def test_one_server_fails(self):
+        cluster = InfluxDBClusterClient(hosts=self.hosts,
+                                        database='database',
+                                        shuffle=False,
+                                        client_base_class=FakeClient)
+        cluster.clients[0].fail = True
+        assert cluster.query('') == 'Success'
+        assert len(cluster.clients) == 2
+        assert len(cluster.bad_clients) == 1
+
+    def test_two_servers_fail(self):
+        cluster = InfluxDBClusterClient(hosts=self.hosts,
+                                        database='database',
+                                        shuffle=False,
+                                        client_base_class=FakeClient)
+        cluster.clients[0].fail = True
+        cluster.clients[1].fail = True
+        assert cluster.query('') == 'Success'
+        assert len(cluster.clients) == 1
+        assert len(cluster.bad_clients) == 2
+
+    def test_all_fail(self):
+        cluster = InfluxDBClusterClient(hosts=self.hosts,
+                                        database='database',
+                                        shuffle=True,
+                                        client_base_class=FakeClient)
+        try:
+            cluster.query('Fail')
+        except InfluxDBServerError:
+            pass
+        assert len(cluster.clients) == 0
+        assert len(cluster.bad_clients) == 3
+
+    def test_all_good(self):
+        cluster = InfluxDBClusterClient(hosts=self.hosts,
+                                        database='database',
+                                        shuffle=True,
+                                        client_base_class=FakeClient)
+        assert cluster.query('') == 'Success'
+        assert len(cluster.clients) == 3
+        assert len(cluster.bad_clients) == 0
+
+    def test_recovery(self):
+        cluster = InfluxDBClusterClient(hosts=self.hosts,
+                                        database='database',
+                                        shuffle=True,
+                                        client_base_class=FakeClient)
+        try:
+            cluster.query('Fail')
+        except InfluxDBServerError:
+            pass
+        assert cluster.query('') == 'Success'
+        assert len(cluster.clients) == 1
+        assert len(cluster.bad_clients) == 2
