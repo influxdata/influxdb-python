@@ -321,9 +321,9 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :param points: A list of dicts.
         :param time_precision: [Optional, default None] Either 's', 'm', 'ms'
             or 'u'.
-        :param database The database to write the points to. Defaults to
+        :param database: The database to write the points to. Defaults to
             the client's current db.
-        :param retention_policy The retention policy for the points.
+        :param retention_policy: The retention policy for the points.
         """
         # TODO: re-implement chunks.
         return self._write_points(points=points,

@@ -1,3 +1,6 @@
+
+.. _resultset:
+
 ================================
 Query response object: ResultSet
 ================================

@@ -69,6 +69,8 @@ These clients are initiated in the same way as the
 :class:`ResultSet`
 -----------------------
 
+See the :ref:`resultset` page for more information.
+
 .. currentmodule:: influxdb.ResultSet
 .. autoclass:: influxdb.resultset.ResultSet
     :members:

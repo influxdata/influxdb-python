@@ -98,6 +98,9 @@ class ResultSet(object):
         return len(self.keys())
 
     def keys(self):
+        """
+        :return: List of keys. Keys are tuples (serie_name, tags)
+        """
         keys = []
         for serie in self._get_series():
             keys.append(
@@ -106,6 +109,9 @@ class ResultSet(object):
         return keys
 
     def items(self):
+        """
+        :return: List of tuples, (key, generator)
+        """
         items = []
         for serie in self._get_series():
             serie_key = (serie.get('name', 'results'), serie.get('tags', None))
@@ -116,6 +122,12 @@ class ResultSet(object):
 
     @staticmethod
     def point_from_cols_vals(cols, vals):
+        """ Creates a dict from columns and values lists
+
+        :param cols: List of columns
+        :param vals: List of values
+        :return: Dict where keys are columns.
+        """
         point = {}
         for col_index, col_name in enumerate(cols):
             point[col_name] = vals[col_index]
