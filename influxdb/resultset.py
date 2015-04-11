@@ -11,10 +11,13 @@ class ResultSet(object):
 
     def __getitem__(self, key):
         """
-        :param key: Either a serie name or a 2-tuple(serie_name, tags_dict)
-                    If the given serie name is None then any serie (matching
-                    the eventual given tags) will be given its points one
-                    after the other.
+        :param key: Either a serie name, or a tags_dict, or
+                    a 2-tuple(serie_name, tags_dict).
+                    If the serie name is None (or not given) then any serie
+                    matching the eventual given tags will be given its points
+                    one after the other.
+                    To get the points of every serie in this resultset then
+                    you have to provide None as key.
         :return: A generator yielding `Point`s matching the given key.
         NB:
         The order in which the points are yielded is actually undefined but
@@ -34,10 +37,8 @@ class ResultSet(object):
             name = key
             tags = None
 
-        # TODO(aviau): Fix for python 3.2
-        # if not isinstance(name, (str, bytes, type(None))) \
-        #        and not isinstance(name, type("".decode("utf-8"))):
-        #    raise TypeError('serie_name must be an str or None')
+        if not isinstance(name, (bytes, type(b''.decode()), type(None))):
+            raise TypeError('serie_name must be an str or None')
 
         for serie in self._get_series():
             serie_name = serie.get('name', 'results')
