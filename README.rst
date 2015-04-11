@@ -122,7 +122,7 @@ Here's a basic example (for more see the examples directory)::
 
     >>> client.write_points(json_body)
 
-    >>> result = client.query('select column_one from foo;')
+    >>> result = client.query('select value from cpu_load_short;')
 
     >>> print("Result: {0}".format(result))
 
