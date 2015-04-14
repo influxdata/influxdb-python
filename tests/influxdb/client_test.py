@@ -97,41 +97,41 @@ class TestInfluxDBClient(unittest.TestCase):
 
     def test_scheme(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
-        assert cli._baseurl == 'http://host:8086'
+        self.assertEqual('http://host:8086', cli._baseurl)
 
         cli = InfluxDBClient(
             'host', 8086, 'username', 'password', 'database', ssl=True
         )
-        assert cli._baseurl == 'https://host:8086'
+        self.assertEqual('https://host:8086', cli._baseurl)
 
     def test_dsn(self):
         cli = InfluxDBClient.from_DSN('influxdb://usr:pwd@host:1886/db')
-        assert cli._baseurl == 'http://host:1886'
-        assert cli._username == 'usr'
-        assert cli._password == 'pwd'
-        assert cli._database == 'db'
-        assert cli.use_udp is False
+        self.assertEqual('http://host:1886', cli._baseurl)
+        self.assertEqual('usr', cli._username)
+        self.assertEqual('pwd', cli._password)
+        self.assertEqual('db', cli._database)
+        self.assertFalse(cli.use_udp)
 
         cli = InfluxDBClient.from_DSN('udp+influxdb://usr:pwd@host:1886/db')
-        assert cli.use_udp is True
+        self.assertTrue(cli.use_udp)
 
         cli = InfluxDBClient.from_DSN('https+influxdb://usr:pwd@host:1886/db')
-        assert cli._baseurl == 'https://host:1886'
+        self.assertEqual('https://host:1886', cli._baseurl)
 
         cli = InfluxDBClient.from_DSN('https+influxdb://usr:pwd@host:1886/db',
                                       **{'ssl': False})
-        assert cli._baseurl == 'http://host:1886'
+        self.assertEqual('http://host:1886', cli._baseurl)
 
     def test_switch_database(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
         cli.switch_database('another_database')
-        assert cli._database == 'another_database'
+        self.assertEqual('another_database', cli._database)
 
     def test_switch_user(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
         cli.switch_user('another_username', 'another_password')
-        assert cli._username == 'another_username'
-        assert cli._password == 'another_password'
+        self.assertEqual('another_username', cli._username)
+        self.assertEqual('another_password', cli._password)
 
     def test_write(self):
         with requests_mock.Mocker() as m:
@@ -208,10 +208,8 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_write_points_batch(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
         with _mocked_session(cli, 'post', 200, self.dummy_points):
-            assert cli.write_points(
-                data=self.dummy_points,
-                batch_size=2
-            ) is True
+            self.assertTrue(cli.write_points(data=self.dummy_points,
+                                             batch_size=2))
 
     def test_write_points_udp(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -569,11 +567,11 @@ class TestInfluxDBClusterClient(unittest.TestCase):
                                         database='database',
                                         shuffle=False,
                                         client_base_class=FakeClient)
-        assert len(cluster.clients) == 3
-        assert len(cluster.bad_clients) == 0
+        self.assertEqual(3, len(cluster.clients))
+        self.assertEqual(0, len(cluster.bad_clients))
         for idx, client in enumerate(cluster.clients):
-            assert client._host == self.hosts[idx][0]
-            assert client._port == self.hosts[idx][1]
+            self.assertEqual(self.hosts[idx][0], client._host)
+            self.assertEqual(self.hosts[idx][1], client._port)
 
     def test_one_server_fails(self):
         cluster = InfluxDBClusterClient(hosts=self.hosts,
@@ -581,9 +579,9 @@ class TestInfluxDBClusterClient(unittest.TestCase):
                                         shuffle=False,
                                         client_base_class=FakeClient)
         cluster.clients[0].fail = True
-        assert cluster.query('') == 'Success'
-        assert len(cluster.clients) == 2
-        assert len(cluster.bad_clients) == 1
+        self.assertEqual('Success', cluster.query(''))
+        self.assertEqual(2, len(cluster.clients))
+        self.assertEqual(1, len(cluster.bad_clients))
 
     def test_two_servers_fail(self):
         cluster = InfluxDBClusterClient(hosts=self.hosts,
@@ -592,40 +590,36 @@ class TestInfluxDBClusterClient(unittest.TestCase):
                                         client_base_class=FakeClient)
         cluster.clients[0].fail = True
         cluster.clients[1].fail = True
-        assert cluster.query('') == 'Success'
-        assert len(cluster.clients) == 1
-        assert len(cluster.bad_clients) == 2
+        self.assertEqual('Success', cluster.query(''))
+        self.assertEqual(1, len(cluster.clients))
+        self.assertEqual(2, len(cluster.bad_clients))
 
     def test_all_fail(self):
         cluster = InfluxDBClusterClient(hosts=self.hosts,
                                         database='database',
                                         shuffle=True,
                                         client_base_class=FakeClient)
-        try:
+        with self.assertRaises(InfluxDBServerError):
             cluster.query('Fail')
-        except InfluxDBServerError:
-            pass
-        assert len(cluster.clients) == 0
-        assert len(cluster.bad_clients) == 3
+        self.assertEqual(0, len(cluster.clients))
+        self.assertEqual(3, len(cluster.bad_clients))
 
     def test_all_good(self):
         cluster = InfluxDBClusterClient(hosts=self.hosts,
                                         database='database',
                                         shuffle=True,
                                         client_base_class=FakeClient)
-        assert cluster.query('') == 'Success'
-        assert len(cluster.clients) == 3
-        assert len(cluster.bad_clients) == 0
+        self.assertEqual('Success', cluster.query(''))
+        self.assertEqual(3, len(cluster.clients))
+        self.assertEqual(0, len(cluster.bad_clients))
 
     def test_recovery(self):
         cluster = InfluxDBClusterClient(hosts=self.hosts,
                                         database='database',
                                         shuffle=True,
                                         client_base_class=FakeClient)
-        try:
+        with self.assertRaises(InfluxDBServerError):
             cluster.query('Fail')
-        except InfluxDBServerError:
-            pass
-        assert cluster.query('') == 'Success'
-        assert len(cluster.clients) == 1
-        assert len(cluster.bad_clients) == 2
+        self.assertEqual('Success', cluster.query(''))
+        self.assertEqual(1, len(cluster.clients))
+        self.assertEqual(2, len(cluster.bad_clients))

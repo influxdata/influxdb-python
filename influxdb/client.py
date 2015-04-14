@@ -3,6 +3,7 @@
 Python client for InfluxDB
 """
 from collections import OrderedDict
+from functools import wraps
 import json
 import socket
 import random
@@ -481,12 +482,11 @@ class InfluxDBClusterClient(object):
                  use_udp=False,
                  udp_port=4444,
                  shuffle=True,
-                 client_base_class=InfluxDBClient,
+                 client_base_class=InfluxDBClient,  # For simpler test code
                  ):
         self.clients = []
         self.bad_clients = []   # Corresponding server has failures in history
         self.shuffle = shuffle  # if true, queries will hit servers evenly
-        self.client_base_class = client_base_class  # For simpler test code
         for h in hosts:
             self.clients.append(client_base_class(host=h[0], port=h[1],
                                                   username=username,
@@ -500,13 +500,14 @@ class InfluxDBClusterClient(object):
         for method in dir(client_base_class):
             if method.startswith('_'):
                 continue
-            if not callable(getattr(client_base_class, method)):
+            orig_func = getattr(client_base_class, method)
+            if not callable(orig_func):
                 continue
-            setattr(self, method, self._make_func(method))
+            setattr(self, method, self._make_func(orig_func))
 
-    def _make_func(self, func_name):
-        orig_func = getattr(self.client_base_class, func_name)
+    def _make_func(self, orig_func):
 
+        @wraps(orig_func)
         def func(*args, **kwargs):
             if self.shuffle:
                 random.shuffle(self.clients)
@@ -521,21 +522,14 @@ class InfluxDBClusterClient(object):
                 except Exception as e:
                     # Errors that might caused by server failure, try another
                     bad_client = True
+                    if c in self.clients:
+                        self.clients.remove(c)
+                        self.bad_clients.append(c)
                 finally:
-                    if bad_client:
-                        if c not in self.bad_clients:
-                            self.bad_clients.append(c)
-                        for idx, val in enumerate(self.clients):
-                            if val == c:
-                                del self.clients[idx]
-                                break
-                    else:
-                        if c not in self.clients:
-                            self.clients.append(c)
-                        for idx, val in enumerate(self.bad_clients):
-                            if val == c:
-                                del self.bad_clients[idx]
-                                break
+                    if not bad_client and c in self.bad_clients:
+                        self.bad_clients.remove(c)
+                        self.clients.append(c)
+
             raise InfluxDBServerError("InfluxDB: no viable server!")
 
         return func
