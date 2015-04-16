@@ -65,7 +65,12 @@ class ResultSet(object):
                         )
 
     def __repr__(self):
-        return str(self.raw)
+        items = []
+
+        for item in self.items():
+            items.append("'%s': %s" % (item[0], list(item[1])))
+
+        return "ResultSet({%s})" % ", ".join(items)
 
     def __iter__(self):
         """ Iterating a ResultSet will yield one dict instance per serie result.
