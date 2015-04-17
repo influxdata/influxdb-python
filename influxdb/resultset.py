@@ -9,6 +9,15 @@ class ResultSet(object):
     def __init__(self, series):
         self.raw = series
 
+    @property
+    def raw(self):
+        """Raw JSON from InfluxDB"""
+        return self.raw
+
+    @raw.setter
+    def raw(self, value):
+        self.raw = value
+
     def __getitem__(self, key):
         """
         :param key: Either a serie name, or a tags_dict, or
