@@ -7,16 +7,16 @@ class ResultSet(object):
     """A wrapper around series results """
 
     def __init__(self, series):
-        self.raw = series
+        self._raw = series
 
     @property
     def raw(self):
         """Raw JSON from InfluxDB"""
-        return self.raw
+        return self._raw
 
     @raw.setter
     def raw(self, value):
-        self.raw = value
+        self._raw = value
 
     def __getitem__(self, key):
         """
