@@ -313,15 +313,15 @@ class SimpleTests(SingleTestCaseWithServerMixin,
         with self.assertRaises(InfluxDBClientError) as ctx:
             self.cli.drop_database('db')
         self.assertEqual(500, ctx.exception.code)
-        self.assertEqual('{"results":[{"error":"database not found"}]}',
-                         ctx.exception.content)
+        self.assertIn('{"results":[{"error":"database not found: db',
+                      ctx.exception.content)
 
     def test_query_fail(self):
         with self.assertRaises(InfluxDBClientError) as ctx:
             self.cli.query('select column_one from foo')
-        self.assertEqual(
-            ('500: {"results":[{"error":"database not found: db"}]}',),
-            ctx.exception.args)
+        self.assertEqual(500, ctx.exception.code)
+        self.assertIn('{"results":[{"error":"database not found: db',
+                      ctx.exception.content)
 
 ############################################################################
 
