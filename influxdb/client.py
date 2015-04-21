@@ -441,7 +441,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         """
         Get the list of users
         """
-        return list(self.query("SHOW USERS"))
+        return list(self.query("SHOW USERS")["results"])
 
     def delete_series(self, name, database=None):
         database = database or self._database
