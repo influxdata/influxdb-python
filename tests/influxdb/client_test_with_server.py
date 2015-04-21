@@ -536,6 +536,19 @@ class CommonTests(ManyTestCasesWithServerMixin,
             rsp
         )
 
+    def test_get_list_users_empty(self):
+        rsp = self.cli.get_list_users()
+        self.assertEqual([], rsp)
+
+    def test_get_list_users_non_empty(self):
+        self.cli.query("CREATE USER test WITH PASSWORD 'test'")
+        rsp = self.cli.get_list_users()
+
+        self.assertEqual(
+            [{'user': 'test', 'admin': False}],
+            rsp
+        )
+
     def test_default_retention_policy(self):
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
