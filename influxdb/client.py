@@ -443,6 +443,18 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         """
         return list(self.query("SHOW USERS")["results"])
 
+    def create_user(self, username, password):
+        """
+        Create a new user
+
+        :param username: the new username to create
+        :type username: string
+        :param password: the password for the new user
+        :type password: string
+        """
+        text = "CREATE USER {} WITH PASSWORD '{}'".format(username, password)
+        self.query(text)
+
     def delete_series(self, name, database=None):
         database = database or self._database
         self.query('DROP SERIES \"%s\"' % name, database=database)
