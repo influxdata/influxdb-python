@@ -355,6 +355,27 @@ class SimpleTests(SingleTestCaseWithServerMixin,
         rsp = list(self.cli.query("SHOW USERS")['results'])
         self.assertEqual(rsp, [])
 
+    def test_drop_user(self):
+        self.cli.query("CREATE USER test WITH PASSWORD 'test'")
+        self.cli.drop_user('test')
+        users = list(self.cli.query("SHOW USERS")['results'])
+        self.assertEqual(users, [])
+
+    def test_drop_user_nonexisting(self):
+        with self.assertRaises(InfluxDBClientError) as ctx:
+            self.cli.drop_user('test')
+        self.assertEqual(500, ctx.exception.code)
+        self.assertIn('{"results":[{"error":"user not found"}]}',
+                      ctx.exception.content)
+
+    def test_drop_user_invalid(self):
+        with self.assertRaises(InfluxDBClientError) as ctx:
+            self.cli.drop_user('very invalid')
+        self.assertEqual(400, ctx.exception.code)
+        self.assertIn('{"error":"error parsing query: '
+                      'found invalid, expected',
+                      ctx.exception.content)
+
 
 ############################################################################
 
