@@ -18,7 +18,7 @@ try:
 except NameError:
     xrange = range
 
-if version_info.major == 3:
+if version_info[0] == 3:
     from urllib.parse import urlparse
 else:
     from urlparse import urlparse
@@ -469,6 +469,9 @@ class InfluxDBClusterClient(object):
     :param hosts: A list of hosts, where a host should be in format
                   (address, port)
                   e.g. [('127.0.0.1', 8086), ('127.0.0.1', 9096)]
+    :param shuffle: If true, queries will hit servers evenly(randomly)
+    :param client_base_class: In order to support different clients,
+                              default to InfluxDBClient
     """
 
     def __init__(self,
@@ -482,11 +485,11 @@ class InfluxDBClusterClient(object):
                  use_udp=False,
                  udp_port=4444,
                  shuffle=True,
-                 client_base_class=InfluxDBClient,  # For simpler test code
+                 client_base_class=InfluxDBClient,
                  ):
         self.clients = []
         self.bad_clients = []   # Corresponding server has failures in history
-        self.shuffle = shuffle  # if true, queries will hit servers evenly
+        self.shuffle = shuffle
         for h in hosts:
             self.clients.append(client_base_class(host=h[0], port=h[1],
                                                   username=username,
@@ -504,6 +507,40 @@ class InfluxDBClusterClient(object):
             if not callable(orig_func):
                 continue
             setattr(self, method, self._make_func(orig_func))
+
+    @staticmethod
+    def from_DSN(dsn, client_base_class=InfluxDBClient,
+                 shuffle=True, **kwargs):
+        """
+        Same as InfluxDBClient.from_DSN, and supports multiple servers.
+
+        Example DSN:
+            influxdb://usr:pwd@host1:8086,usr:pwd@host2:8086/db_name
+            udp+influxdb://usr:pwd@host1:8086,usr:pwd@host2:8086/db_name
+            https+influxdb://usr:pwd@host1:8086,usr:pwd@host2:8086/db_name
+
+        :param shuffle: If true, queries will hit servers evenly(randomly)
+        :param client_base_class: In order to support different clients,
+                                  default to InfluxDBClient
+        """
+        dsn = dsn.lower()
+        conn_params = urlparse(dsn)
+        netlocs = conn_params.netloc.split(',')
+        cluster_client = InfluxDBClusterClient(
+            hosts=[],
+            client_base_class=client_base_class,
+            shuffle=shuffle,
+            **kwargs)
+        for netloc in netlocs:
+            single_dsn = '%(scheme)s://%(netloc)s%(path)s' % (
+                {'scheme': conn_params.scheme,
+                 'netloc': netloc,
+                 'path': conn_params.path}
+            )
+            cluster_client.clients.append(client_base_class.from_DSN(
+                single_dsn,
+                **kwargs))
+        return cluster_client
 
     def _make_func(self, orig_func):
 
