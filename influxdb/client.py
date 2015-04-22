@@ -455,6 +455,16 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         text = "CREATE USER {} WITH PASSWORD '{}'".format(username, password)
         self.query(text)
 
+    def drop_user(self, username):
+        """
+        Drop an user
+
+        :param username: the username to drop
+        :type username: string
+        """
+        text = "DROP USER {}".format(username)
+        self.query(text)
+
     def delete_series(self, name, database=None):
         database = database or self._database
         self.query('DROP SERIES \"%s\"' % name, database=database)
