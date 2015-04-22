@@ -534,3 +534,34 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with self.assertRaises(requests.exceptions.ConnectionError):
             cli.write_points(self.dummy_points)
+
+    def test_get_list_users(self):
+        example_response = (
+            '{"results":[{"series":[{"columns":["user","admin"],'
+            '"values":[["test",false]]}]}]}'
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+
+            self.assertListEqual(
+                self.cli.get_list_users(),
+                [{'user': 'test', 'admin': False}]
+            )
+
+    def test_get_list_users_empty(self):
+        example_response = (
+            '{"results":[{"series":[{"columns":["user","admin"]}]}]}'
+        )
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+
+            self.assertListEqual(self.cli.get_list_users(), [])
