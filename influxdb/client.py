@@ -465,6 +465,18 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         text = "DROP USER {}".format(username)
         self.query(text)
 
+    def set_user_password(self, username, password):
+        """
+        Change the password of an existing user
+
+        :param username: the username who's password is being changed
+        :type username: string
+        :param password: the new password for the user
+        :type password: string
+        """
+        text = "SET PASSWORD FOR {} = '{}'".format(username, password)
+        self.query(text)
+
     def delete_series(self, name, database=None):
         database = database or self._database
         self.query('DROP SERIES \"%s\"' % name, database=database)
