@@ -323,6 +323,60 @@ class SimpleTests(SingleTestCaseWithServerMixin,
         self.assertIn('{"results":[{"error":"database not found: db',
                       ctx.exception.content)
 
+    def test_create_user(self):
+        self.cli.create_user('test_user', 'secret_password')
+        rsp = list(self.cli.query("SHOW USERS")['results'])
+        self.assertIn({'user': 'test_user', 'admin': False},
+                      rsp)
+
+    def test_create_user_blank_password(self):
+        self.cli.create_user('test_user', '')
+        rsp = list(self.cli.query("SHOW USERS")['results'])
+        self.assertIn({'user': 'test_user', 'admin': False},
+                      rsp)
+
+    def test_create_user_blank_username(self):
+        with self.assertRaises(InfluxDBClientError) as ctx:
+            self.cli.create_user('', 'secret_password')
+        self.assertEqual(400, ctx.exception.code)
+        self.assertIn('{"error":"error parsing query: '
+                      'found WITH, expected identifier',
+                      ctx.exception.content)
+        rsp = list(self.cli.query("SHOW USERS")['results'])
+        self.assertEqual(rsp, [])
+
+    def test_create_user_invalid_username(self):
+        with self.assertRaises(InfluxDBClientError) as ctx:
+            self.cli.create_user('very invalid', 'secret_password')
+        self.assertEqual(400, ctx.exception.code)
+        self.assertIn('{"error":"error parsing query: '
+                      'found invalid, expected WITH',
+                      ctx.exception.content)
+        rsp = list(self.cli.query("SHOW USERS")['results'])
+        self.assertEqual(rsp, [])
+
+    def test_drop_user(self):
+        self.cli.query("CREATE USER test WITH PASSWORD 'test'")
+        self.cli.drop_user('test')
+        users = list(self.cli.query("SHOW USERS")['results'])
+        self.assertEqual(users, [])
+
+    def test_drop_user_nonexisting(self):
+        with self.assertRaises(InfluxDBClientError) as ctx:
+            self.cli.drop_user('test')
+        self.assertEqual(500, ctx.exception.code)
+        self.assertIn('{"results":[{"error":"user not found"}]}',
+                      ctx.exception.content)
+
+    def test_drop_user_invalid(self):
+        with self.assertRaises(InfluxDBClientError) as ctx:
+            self.cli.drop_user('very invalid')
+        self.assertEqual(400, ctx.exception.code)
+        self.assertIn('{"error":"error parsing query: '
+                      'found invalid, expected',
+                      ctx.exception.content)
+
+
 ############################################################################
 
 
