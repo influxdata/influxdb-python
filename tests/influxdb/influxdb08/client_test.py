@@ -336,8 +336,8 @@ class TestInfluxDBClient(unittest.TestCase):
         cli = InfluxDBClient(database='db')
         example_object = {
             'points': [
-                [1415206212980, 10001, u'unicode-ω'],
-                [1415197271586, 10001, u'more-unicode-ﾉ']
+                [1415206212980, 10001, 'unicode-\xcf\x89'.decode('utf-8')],
+                [1415197271586, 10001, 'more-unicode-\xcf\x90'.decode('utf-8')]
             ],
             'name': 'foo',
             'columns': [
