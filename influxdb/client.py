@@ -16,7 +16,7 @@ try:
 except NameError:
     xrange = range
 
-if version_info.major == 3:
+if version_info[0] == 3:
     from urllib.parse import urlparse
 else:
     from urlparse import urlparse
@@ -441,7 +441,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         """
         Get the list of users
         """
-        return list(self.query("SHOW USERS"))
+        return list(self.query("SHOW USERS")["results"])
 
     def delete_series(self, name, database=None):
         database = database or self._database

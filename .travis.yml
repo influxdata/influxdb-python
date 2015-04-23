@@ -17,14 +17,5 @@ script:
     - travis_wait tox -e $TOX_ENV
 after_success:
     - if [ "$TOX_ENV" == "coverage" ] ; then coveralls; fi
-deploy:
-  provider: pypi
-  user: errplane
-  password:
-    secure: C20cSqrCtd7Ng2oxSy9YSQS72aeqMjrRaZTYKIIF4eSR4JzCawasFhof6Pq/mUqx6fJCBTZ7yMUqfK22JAQ2iUoUnBF04IHASR3iwqjdCRbXGtzX1J9Bw//6iCHBE5fgGEHQc8Mw5wKDIy5RvbjiR9ADCW/cIlpVSF9QzH/RA24=
-  on:
-    tags: true
-    all_branches: true
-    repo: influxdb/influxdb-python
 notifications:
     email: false
