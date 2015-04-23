@@ -3,11 +3,22 @@
 DataFrame client for InfluxDB
 """
 import math
-import warnings
+
+import pandas as pd
 
 from .client import InfluxDBClient
 
-import pandas as pd
+
+def _pandas_time_unit(time_precision):
+    unit = time_precision
+    if time_precision == 'm':
+        unit = 'ms'
+    elif time_precision == 'u':
+        unit = 'us'
+    elif time_precision == 'n':
+        unit = 'ns'
+    assert unit in ('s', 'ms', 'us', 'ns')
+    return unit
 
 
 class DataFrameClient(InfluxDBClient):
@@ -19,13 +30,18 @@ class DataFrameClient(InfluxDBClient):
 
     EPOCH = pd.Timestamp('1970-01-01 00:00:00.000+00:00')
 
-    def write_points(self, data, *args, **kwargs):
+    def write_points(self,
+                     data,
+                     time_precision=None,
+                     database=None,
+                     retention_policy=None,
+                     tags=None, **kwargs):
         """
         Write to multiple time series names.
 
-        :param data: A dictionary mapping series names to pandas DataFrames
-        :param time_precision: [Optional, default 's'] Either 's', 'm', 'ms'
-            or 'u'.
+        :param data: A dictionary mapping series to pandas DataFrames
+        :param time_precision: [Optional, default 's'] Either 's', 'ms', 'u'
+            or 'n'.
         :param batch_size: [Optional] Value to write the points in batches
             instead of all at one time. Useful for when doing data dumps from
             one database to another or when doing a massive write operation
@@ -42,31 +58,19 @@ class DataFrameClient(InfluxDBClient):
                 for batch in range(number_batches):
                     start_index = batch * batch_size
                     end_index = (batch + 1) * batch_size
-                    data = [self._convert_dataframe_to_json(
-                        name=key,
+                    data = self._convert_dataframe_to_json(
+                        key=key,
                         dataframe=data_frame.ix[start_index:end_index].copy(),
-                        time_precision=time_precision)]
-                    super(DataFrameClient, self).write_points(data,
-                                                              *args, **kwargs)
+                        time_precision=time_precision)
+                    super(DataFrameClient, self).write_points(data, **kwargs)
             return True
         else:
-            data = [self._convert_dataframe_to_json(
-                name=key, dataframe=dataframe, time_precision=time_precision)
-                for key, dataframe in data.items()]
-            return super(DataFrameClient, self).write_points(data,
-                                                             *args, **kwargs)
-
-    def write_points_with_precision(self, data, time_precision='s'):
-        """
-        DEPRECATED. Write to multiple time series names
-
-        """
-        warnings.warn(
-            "write_points_with_precision is deprecated, and will be removed "
-            "in future versions. Please use "
-            "``DataFrameClient.write_points(time_precision='..')`` instead.",
-            FutureWarning)
-        return self.write_points(data, time_precision='s')
+            for key, data_frame in data.items():
+                data = self._convert_dataframe_to_json(
+                    key=key, dataframe=data_frame,
+                    time_precision=time_precision)
+                super(DataFrameClient, self).write_points(data, **kwargs)
+            return True
 
     def query(self, query, time_precision='s', chunked=False, database=None):
         """
@@ -80,29 +84,38 @@ class DataFrameClient(InfluxDBClient):
         """
         results = super(DataFrameClient, self).query(query, database=database)
         if len(results) > 0:
-            return self._to_dataframe(results, time_precision)
+            return self._to_dataframe(results.raw, time_precision)
         else:
-            return results
+            return {}
+
+    def get_list_series(self, database=None):
+        """
+        Get the list of series, in DataFrame
+
+        """
+        results = super(DataFrameClient, self)\
+            .query("SHOW SERIES", database=database)
+        return dict(
+            (s['name'], pd.DataFrame(s['values'], columns=s['columns'])) for
+            s in results.raw['results'][0]['series']
+        )
 
     def _to_dataframe(self, json_result, time_precision):
-        dataframe = pd.DataFrame(data=json_result['points'],
-                                 columns=json_result['columns'])
-        if 'sequence_number' in dataframe:
-            dataframe.sort(['time', 'sequence_number'], inplace=True)
-        else:
-            dataframe.sort(['time'], inplace=True)
-        pandas_time_unit = time_precision
-        if time_precision == 'm':
-            pandas_time_unit = 'ms'
-        elif time_precision == 'u':
-            pandas_time_unit = 'us'
-        dataframe.index = pd.to_datetime(list(dataframe['time']),
-                                         unit=pandas_time_unit,
-                                         utc=True)
-        del dataframe['time']
-        return dataframe
 
-    def _convert_dataframe_to_json(self, dataframe, name, time_precision='s'):
+        result = {}
+        series = json_result['results'][0]['series']
+        for s in series:
+            tags = s.get('tags')
+            key = (s['name'], tuple(tags.items()) if tags else None)
+            df = pd.DataFrame(s['values'], columns=s['columns'])
+            df.time = pd.to_datetime(
+                df.time, unit=_pandas_time_unit(time_precision), utc=True)
+            df.set_index(['time'], inplace=True)
+            result[key] = df
+        return result
+
+    def _convert_dataframe_to_json(self, key, dataframe, time_precision='s'):
+
         if not isinstance(dataframe, pd.DataFrame):
             raise TypeError('Must be DataFrame, but type was: {}.'
                             .format(type(dataframe)))
@@ -110,21 +123,31 @@ class DataFrameClient(InfluxDBClient):
                 isinstance(dataframe.index, pd.tseries.index.DatetimeIndex)):
             raise TypeError('Must be DataFrame with DatetimeIndex or \
                             PeriodIndex.')
+
         dataframe.index = dataframe.index.to_datetime()
         if dataframe.index.tzinfo is None:
             dataframe.index = dataframe.index.tz_localize('UTC')
-        dataframe['time'] = [self._datetime_to_epoch(dt, time_precision)
-                             for dt in dataframe.index]
-        data = {'name': name,
-                'columns': [str(column) for column in dataframe.columns],
-                'points': list([list(x) for x in dataframe.values])}
-        return data
+
+        # Convert column to strings
+        dataframe.columns = dataframe.columns.astype('str')
+
+        name, tags = key
+        points = [
+            {'name': name,
+             'tags': dict(tags) if tags else {},
+             'fields': rec,
+             'timestamp': ts.isoformat()
+             }
+            for ts, rec in zip(dataframe.index, dataframe.to_dict('record'))]
+        return points
 
     def _datetime_to_epoch(self, datetime, time_precision='s'):
         seconds = (datetime - self.EPOCH).total_seconds()
         if time_precision == 's':
             return seconds
-        elif time_precision == 'm' or time_precision == 'ms':
-            return seconds * 1000
+        elif time_precision == 'ms':
+            return seconds * 10 ** 3
         elif time_precision == 'u':
-            return seconds * 1000000
+            return seconds * 10 ** 6
+        elif time_precision == 'n':
+            return seconds * 10 ** 9
