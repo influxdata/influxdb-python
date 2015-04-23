@@ -32,22 +32,22 @@ class TestDataFrameClient(unittest.TestCase):
                                  columns=["column_one", "column_two",
                                           "column_three"])
         expected = {
-            u'database': u'db',
-            u'points': [
-                {u'timestamp': u'1970-01-01T00:00:00+00:00',
-                 u'fields': {
-                     u'column_two': 1,
-                     u'column_three': 1.0,
-                     u'column_one': u'1'},
-                 u'tags': {},
-                 u'name': u'foo'},
-                {u'timestamp': u'1970-01-01T01:00:00+00:00',
-                 u'fields': {
-                     u'column_two': 2,
-                     u'column_three': 2.0,
-                     u'column_one': u'2'},
-                 u'tags': {},
-                 u'name': u'foo'}]
+            'database': 'db',
+            'points': [
+                {'timestamp': '1970-01-01T00:00:00+00:00',
+                 'fields': {
+                     'column_two': 1,
+                     'column_three': 1.0,
+                     'column_one': '1'},
+                 'tags': {},
+                 'name': 'foo'},
+                {'timestamp': '1970-01-01T01:00:00+00:00',
+                 'fields': {
+                     'column_two': 2,
+                     'column_three': 2.0,
+                     'column_one': '2'},
+                 'tags': {},
+                 'name': 'foo'}]
         }
 
         with requests_mock.Mocker() as m:
@@ -80,22 +80,22 @@ class TestDataFrameClient(unittest.TestCase):
                                  index=[now, now + timedelta(hours=1)])
 
         expected = {
-            u'database': u'db',
-            u'points': [
-                {u'fields': {
-                    u'0': u'1',
-                    u'1': 1,
-                    u'2': 1.0},
-                 u'tags': {u'hello': u'there'},
-                 u'timestamp': u'1970-01-01T00:00:00+00:00',
-                 u'name': u'foo'},
-                {u'fields': {
-                    u'0': u'2',
-                    u'1': 2,
-                    u'2': 2.0},
-                 u'tags': {u'hello': u'there'},
-                 u'timestamp': u'1970-01-01T01:00:00+00:00',
-                 u'name': u'foo'}],
+            'database': 'db',
+            'points': [
+                {'fields': {
+                    '0': '1',
+                    '1': 1,
+                    '2': 1.0},
+                 'tags': {'hello': 'there'},
+                 'timestamp': '1970-01-01T00:00:00+00:00',
+                 'name': 'foo'},
+                {'fields': {
+                    '0': '2',
+                    '1': 2,
+                    '2': 2.0},
+                 'tags': {'hello': 'there'},
+                 'timestamp': '1970-01-01T01:00:00+00:00',
+                 'name': 'foo'}],
         }
 
         with requests_mock.Mocker() as m:
@@ -114,22 +114,22 @@ class TestDataFrameClient(unittest.TestCase):
                                  columns=["column_one", "column_two",
                                           "column_three"])
         expected = {
-            u'points': [
-                {u'name': u'foo',
-                 u'tags': {},
-                 u'fields': {
-                     u'column_one': u'1',
-                     u'column_two': 1,
-                     u'column_three': 1.0},
-                 u'timestamp': u'1970-01-01T00:00:00+00:00'},
-                {u'name': u'foo',
-                 u'tags': {},
-                 u'fields': {
-                     u'column_one': u'2',
-                     u'column_two': 2,
-                     u'column_three': 2.0},
-                 u'timestamp': u'1970-01-02T00:00:00+00:00'}],
-            u'database': u'db',
+            'points': [
+                {'name': 'foo',
+                 'tags': {},
+                 'fields': {
+                     'column_one': '1',
+                     'column_two': 1,
+                     'column_three': 1.0},
+                 'timestamp': '1970-01-01T00:00:00+00:00'},
+                {'name': 'foo',
+                 'tags': {},
+                 'fields': {
+                     'column_one': '2',
+                     'column_two': 2,
+                     'column_three': 2.0},
+                 'timestamp': '1970-01-02T00:00:00+00:00'}],
+            'database': 'db',
         }
 
         with requests_mock.Mocker() as m:
@@ -153,22 +153,22 @@ class TestDataFrameClient(unittest.TestCase):
                            "http://localhost:8086/write")
 
             points = {
-                u'database': u'db',
-                u'points': [
-                    {u'timestamp': u'1970-01-01T00:00:00+00:00',
-                     u'fields': {
-                         u'column_one': u'1',
-                         u'column_three': 1.0,
-                         u'column_two': 1},
-                     u'tags': {},
-                     u'name': u'foo'},
-                    {u'timestamp': u'1970-01-01T01:00:00+00:00',
-                     u'fields': {
-                         u'column_one': u'2',
-                         u'column_three': 2.0,
-                         u'column_two': 2},
-                     u'tags': {},
-                     u'name': u'foo'}]
+                'database': 'db',
+                'points': [
+                    {'timestamp': '1970-01-01T00:00:00+00:00',
+                     'fields': {
+                         'column_one': '1',
+                         'column_three': 1.0,
+                         'column_two': 1},
+                     'tags': {},
+                     'name': 'foo'},
+                    {'timestamp': '1970-01-01T01:00:00+00:00',
+                     'fields': {
+                         'column_one': '2',
+                         'column_three': 2.0,
+                         'column_two': 2},
+                     'tags': {},
+                     'name': 'foo'}]
             }
 
             cli = DataFrameClient(database='db')
@@ -258,28 +258,28 @@ class TestDataFrameClient(unittest.TestCase):
 
     def test_list_series(self):
         response = {
-            u'results': [
-                {u'series': [
+            'results': [
+                {'series': [
                     {
-                        u'columns': [u'host'],
-                        u'name': u'cpu',
-                        u'values': [
-                            [u'server01']]
+                        'columns': ['host'],
+                        'name': 'cpu',
+                        'values': [
+                            ['server01']]
                     },
                     {
-                        u'columns': [
-                            u'host',
-                            u'region'
+                        'columns': [
+                            'host',
+                            'region'
                         ],
-                        u'name': u'network',
-                        u'values': [
+                        'name': 'network',
+                        'values': [
                             [
-                                u'server01',
-                                u'us-west'
+                                'server01',
+                                'us-west'
                             ],
                             [
-                                u'server01',
-                                u'us-east'
+                                'server01',
+                                'us-east'
                             ]
                         ]
                     }
