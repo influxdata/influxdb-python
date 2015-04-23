@@ -30,12 +30,8 @@ class DataFrameClient(InfluxDBClient):
 
     EPOCH = pd.Timestamp('1970-01-01 00:00:00.000+00:00')
 
-    def write_points(self,
-                     data,
-                     time_precision=None,
-                     database=None,
-                     retention_policy=None,
-                     tags=None, **kwargs):
+    def write_points(self, data, time_precision=None, database=None,
+                     retention_policy=None, tags=None, batch_size=None):
         """
         Write to multiple time series names.
 
@@ -48,10 +44,7 @@ class DataFrameClient(InfluxDBClient):
         :type batch_size: int
         """
 
-        batch_size = kwargs.get('batch_size')
-        time_precision = kwargs.get('time_precision', 's')
         if batch_size:
-            kwargs.pop('batch_size')  # don't hand over to InfluxDBClient
             for key, data_frame in data.items():
                 number_batches = int(math.ceil(
                     len(data_frame) / float(batch_size)))
@@ -61,30 +54,30 @@ class DataFrameClient(InfluxDBClient):
                     data = self._convert_dataframe_to_json(
                         key=key,
                         dataframe=data_frame.ix[start_index:end_index].copy(),
-                        time_precision=time_precision)
-                    super(DataFrameClient, self).write_points(data, **kwargs)
+                    )
+                    super(DataFrameClient, self).write_points(
+                        data, time_precision, database, retention_policy, tags)
             return True
         else:
             for key, data_frame in data.items():
                 data = self._convert_dataframe_to_json(
                     key=key, dataframe=data_frame,
-                    time_precision=time_precision)
-                super(DataFrameClient, self).write_points(data, **kwargs)
+                )
+                super(DataFrameClient, self).write_points(
+                    data, time_precision, database, retention_policy, tags)
             return True
 
-    def query(self, query, time_precision='s', chunked=False, database=None):
+    def query(self, query, chunked=False, database=None):
         """
         Quering data into a DataFrame.
 
-        :param time_precision: [Optional, default 's'] Either 's', 'm', 'ms'
-            or 'u'.
         :param chunked: [Optional, default=False] True if the data shall be
             retrieved in chunks, False otherwise.
 
         """
         results = super(DataFrameClient, self).query(query, database=database)
         if len(results) > 0:
-            return self._to_dataframe(results.raw, time_precision)
+            return self._to_dataframe(results.raw)
         else:
             return {}
 
@@ -95,26 +88,29 @@ class DataFrameClient(InfluxDBClient):
         """
         results = super(DataFrameClient, self)\
             .query("SHOW SERIES", database=database)
-        return dict(
-            (s['name'], pd.DataFrame(s['values'], columns=s['columns'])) for
-            s in results.raw['results'][0]['series']
-        )
+        if len(results):
+            return dict(
+                (s['name'], pd.DataFrame(s['values'], columns=s['columns'])) for
+                s in results.raw['results'][0]['series']
+            )
+        else:
+            return {}
 
-    def _to_dataframe(self, json_result, time_precision):
-
+    def _to_dataframe(self, json_result):
         result = {}
         series = json_result['results'][0]['series']
         for s in series:
             tags = s.get('tags')
             key = (s['name'], tuple(tags.items()) if tags else None)
             df = pd.DataFrame(s['values'], columns=s['columns'])
-            df.time = pd.to_datetime(
-                df.time, unit=_pandas_time_unit(time_precision), utc=True)
+            df.time = pd.to_datetime(df.time)
             df.set_index(['time'], inplace=True)
+            df.index = df.index.tz_localize('UTC')
+            df.index.name = None
             result[key] = df
         return result
 
-    def _convert_dataframe_to_json(self, key, dataframe, time_precision='s'):
+    def _convert_dataframe_to_json(self, key, dataframe):
 
         if not isinstance(dataframe, pd.DataFrame):
             raise TypeError('Must be DataFrame, but type was: {}.'

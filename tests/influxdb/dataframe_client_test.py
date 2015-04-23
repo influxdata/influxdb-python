@@ -175,12 +175,15 @@ class TestDataFrameClient(unittest.TestCase):
             key = ("foo", None)
 
             cli.write_points({key: dataframe}, time_precision='s')
+            points.update(precision='s')
             self.assertEqual(json.loads(m.last_request.body), points)
 
             cli.write_points({key: dataframe}, time_precision='m')
+            points.update(precision='m')
             self.assertEqual(json.loads(m.last_request.body), points)
 
             cli.write_points({key: dataframe}, time_precision='u')
+            points.update(precision='u')
             self.assertEqual(json.loads(m.last_request.body), points)
 
     @raises(TypeError)
@@ -232,13 +235,13 @@ class TestDataFrameClient(unittest.TestCase):
         pd1 = pd.DataFrame(
             [[23422]], columns=['value'],
             index=pd.to_datetime(["2009-11-10T23:00:00Z"]))
-        pd1.index.name = 'time'
+        pd1.index = pd1.index.tz_localize('UTC')
         pd2 = pd.DataFrame(
             [[23422], [23422], [23422]], columns=['value'],
             index=pd.to_datetime(["2009-11-10T23:00:00Z",
                                   "2009-11-10T23:00:00Z",
                                   "2009-11-10T23:00:00Z"]))
-        pd2.index.name = 'time'
+        pd2.index = pd2.index.tz_localize('UTC')
         expected = {
             ('network', (('direction', ''),)): pd1,
             ('network', (('direction', 'in'),)): pd2
