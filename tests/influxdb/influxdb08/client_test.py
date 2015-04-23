@@ -332,6 +332,35 @@ class TestInfluxDBClient(unittest.TestCase):
                 [example_object, example_object]
             )
 
+    def test_query_chunked_unicode(self):
+        cli = InfluxDBClient(database='db')
+        example_object = {
+            'points': [
+                [1415206212980, 10001, u'unicode-ω'],
+                [1415197271586, 10001, u'more-unicode-ﾉ']
+            ],
+            'name': 'foo',
+            'columns': [
+                'time',
+                'sequence_number',
+                'val'
+            ]
+        }
+        example_response = \
+            json.dumps(example_object) + json.dumps(example_object)
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/db/db/series",
+                text=example_response
+            )
+
+            self.assertListEqual(
+                cli.query('select * from foo', chunked=True),
+                [example_object, example_object]
+            )
+
     @raises(Exception)
     def test_query_fail(self):
         with _mocked_session('get', 401):
