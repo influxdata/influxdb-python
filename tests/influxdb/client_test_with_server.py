@@ -471,7 +471,9 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
         assert_frame_equal(
             rsp[('cpu_load_short', None)],
-            dummy_pointDF.values()[0]
+            dummy_pointDF[
+                ('cpu_load_short',
+                 (('host', 'server01'), ('region', 'us-west')))]
         )
 
     def test_write_multiple_points_different_series(self):

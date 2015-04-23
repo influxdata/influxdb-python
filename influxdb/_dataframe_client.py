@@ -90,8 +90,8 @@ class DataFrameClient(InfluxDBClient):
             .query("SHOW SERIES", database=database)
         if len(results):
             return dict(
-                (s['name'], pd.DataFrame(s['values'], columns=s['columns'])) for
-                s in results.raw['results'][0]['series']
+                (s['name'], pd.DataFrame(s['values'], columns=s['columns']))
+                for s in results.raw['results'][0]['series']
             )
         else:
             return {}
@@ -126,6 +126,9 @@ class DataFrameClient(InfluxDBClient):
 
         # Convert column to strings
         dataframe.columns = dataframe.columns.astype('str')
+
+        # Convert dtype for json serialization
+        dataframe = dataframe.astype('object')
 
         name, tags = key
         points = [
