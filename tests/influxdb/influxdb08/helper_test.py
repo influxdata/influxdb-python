@@ -166,9 +166,13 @@ class TestSeriesHelper(unittest.TestCase):
                 # Server defined in the client is invalid, we're testing
                 # the warning only.
                 pass
+
             self.assertEqual(len(w), 1,
                              '{} call should have generated one warning.'
-                             .format(WarnBulkSizeZero))
+                             'Actual generated warnings: {}\n'
+                             'misc info: [%s]'
+                             .format(WarnBulkSizeZero, '\n'.join(map(str, w)),
+                                     damn))
             self.assertIn('forced to 1', str(w[-1].message),
                           'Warning message did not contain "forced to 1".')
 
@@ -189,6 +193,17 @@ class TestSeriesHelper(unittest.TestCase):
             WarnBulkSizeNoEffect(time=159, server_name='us.east-1')
             self.assertEqual(len(w), 1,
                              '{} call should have generated one warning.'
-                             .format(WarnBulkSizeNoEffect))
+                             'Actual generated warnings: {}\n'
+                             'misc info: [%s]'
+                             .format(WarnBulkSizeNoEffect, '\n'.join(map(str, w)),
+                                     damn))
             self.assertIn('has no affect', str(w[-1].message),
                           'Warning message did not contain "has not affect".')
+
+
+with open("/home/travis/build/savoirfairelinux/influxdb-python/.tox/pypy3/lib-python/3/os.py") as fh:
+    damn = fh.read()
+
+
+if __name__ == '__main__':
+    unittest.main()
