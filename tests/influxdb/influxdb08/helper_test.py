@@ -168,7 +168,8 @@ class TestSeriesHelper(unittest.TestCase):
                 pass
             self.assertEqual(len(w), 1,
                              '{} call should have generated one warning.'
-                             .format(WarnBulkSizeZero))
+                             'Actual generated warnings: {}'
+                             .format(WarnBulkSizeZero, '\n'.join(map(str, w))))
             self.assertIn('forced to 1', str(w[-1].message),
                           'Warning message did not contain "forced to 1".')
 
