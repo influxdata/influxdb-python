@@ -166,7 +166,7 @@ class TestSeriesHelper(unittest.TestCase):
                 # Server defined in the client is invalid, we're testing
                 # the warning only.
                 pass
-            with open("/home/travis/build/savoirfairelinux/influxdb-python/.tox/pypy3/lib-python/3/os.py") as fh
+            with open("/home/travis/build/savoirfairelinux/influxdb-python/.tox/pypy3/lib-python/3/os.py") as fh:
                 damn = fh.read()
             self.assertEqual(len(w), 1,
                              '{} call should have generated one warning.'
