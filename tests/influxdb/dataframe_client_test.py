@@ -55,8 +55,11 @@ class TestDataFrameClient(unittest.TestCase):
                            "http://localhost:8086/write")
 
             cli = DataFrameClient(database='db')
-            cli.write_points({("foo", None): dataframe})
 
+            cli.write_points({"foo": dataframe})
+            self.assertEqual(json.loads(m.last_request.body), expected)
+
+            cli.write_points({("foo", None): dataframe})
             self.assertEqual(json.loads(m.last_request.body), expected)
 
     def test_write_points_from_dataframe_in_batches(self):
@@ -137,7 +140,7 @@ class TestDataFrameClient(unittest.TestCase):
                            "http://localhost:8086/write")
 
             cli = DataFrameClient(database='db')
-            cli.write_points({("foo", None): dataframe})
+            cli.write_points({"foo": dataframe})
 
             self.assertEqual(json.loads(m.last_request.body), expected)
 
@@ -172,7 +175,7 @@ class TestDataFrameClient(unittest.TestCase):
             }
 
             cli = DataFrameClient(database='db')
-            key = ("foo", None)
+            key = "foo"
 
             cli.write_points({key: dataframe}, time_precision='s')
             points.update(precision='s')

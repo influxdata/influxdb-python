@@ -473,10 +473,21 @@ class CommonTests(ManyTestCasesWithServerMixin,
         """ same as test_write_check_read() but with write_points \o/ """
         self.test_write_points_DF()
         time.sleep(1)  # same as test_write_check_read()
-        rsp = self.cliDF.query('SELECT * FROM cpu_load_short')
 
+        rsp = self.cliDF.query('SELECT * FROM cpu_load_short')
         assert_frame_equal(
-            rsp[('cpu_load_short', None)],
+            rsp['cpu_load_short'],
+            dummy_pointDF[
+                ('cpu_load_short',
+                 (('host', 'server01'), ('region', 'us-west')))]
+        )
+
+        # Query with Tags
+        rsp = self.cliDF.query(
+            "SELECT * FROM cpu_load_short GROUP BY *")
+        assert_frame_equal(
+            rsp[('cpu_load_short',
+                 (('host', 'server01'), ('region', 'us-west')))],
             dummy_pointDF[
                 ('cpu_load_short',
                  (('host', 'server01'), ('region', 'us-west')))]
@@ -507,7 +518,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         rsp = self.cliDF.query('SELECT * FROM cpu_load_short')
 
         assert_frame_equal(
-            rsp[('cpu_load_short', None)],
+            rsp['cpu_load_short'],
             dummy_pointsDF[
                 ('cpu_load_short', (('host', 'server01'),
                                     ('region', 'us-west')))
@@ -516,7 +527,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
         rsp = self.cliDF.query('SELECT * FROM memory')
         assert_frame_equal(
-            rsp[('memory', None)],
+            rsp['memory'],
             dummy_pointsDF[
                 ('memory', (('host', 'server01'),
                             ('region', 'us-west')))

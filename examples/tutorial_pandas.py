@@ -22,6 +22,9 @@ def main(host='localhost', port=8086):
     print("Write DataFrame")
     client.write_points({'demo': df})
 
+    print("Write DataFrame with Tags")
+    client.write_points({('demo', (('k1', 'v1'), ('k2', 'v2'))): df})
+
     print("Read DataFrame")
     client.query("select * from demo")
 

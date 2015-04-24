@@ -101,7 +101,10 @@ class DataFrameClient(InfluxDBClient):
         series = json_result['results'][0]['series']
         for s in series:
             tags = s.get('tags')
-            key = (s['name'], tuple(tags.items()) if tags else None)
+            if tags is None:
+                key = s['name']
+            else:
+                key = (s['name'], tuple(sorted(tags.items())))
             df = pd.DataFrame(s['values'], columns=s['columns'])
             df.time = pd.to_datetime(df.time)
             df.set_index(['time'], inplace=True)
@@ -130,7 +133,11 @@ class DataFrameClient(InfluxDBClient):
         # Convert dtype for json serialization
         dataframe = dataframe.astype('object')
 
-        name, tags = key
+        if isinstance(key, str):
+            name = key
+            tags = None
+        else:
+            name, tags = key
         points = [
             {'name': name,
              'tags': dict(tags) if tags else {},
