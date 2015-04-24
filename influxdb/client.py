@@ -3,8 +3,10 @@
 Python client for InfluxDB
 """
 from collections import OrderedDict
+from functools import wraps
 import json
 import socket
+import random
 import requests
 import requests.exceptions
 from sys import version_info
@@ -31,6 +33,12 @@ class InfluxDBClientError(Exception):
             "{0}: {1}".format(code, content))
         self.content = content
         self.code = code
+
+
+class InfluxDBServerError(Exception):
+    """Raised when server error occurs"""
+    def __init__(self, content):
+        super(InfluxDBServerError, self).__init__(content)
 
 
 class InfluxDBClient(object):
@@ -485,3 +493,114 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         data = json.dumps(packet)
         byte = data.encode('utf-8')
         self.udp_socket.sendto(byte, (self._host, self.udp_port))
+
+
+class InfluxDBClusterClient(object):
+    """
+    The ``InfluxDBClusterClient`` is the client for connecting to a cluster of
+    InfluxDB Servers. It basically is a proxy to multiple ``InfluxDBClient``s.
+
+    :param hosts: A list of hosts, where a host should be in format
+                  (address, port)
+                  e.g. [('127.0.0.1', 8086), ('127.0.0.1', 9096)]
+    :param shuffle: If true, queries will hit servers evenly(randomly)
+    :param client_base_class: In order to support different clients,
+                              default to InfluxDBClient
+    """
+
+    def __init__(self,
+                 hosts=[('localhost', 8086)],
+                 username='root',
+                 password='root',
+                 database=None,
+                 ssl=False,
+                 verify_ssl=False,
+                 timeout=None,
+                 use_udp=False,
+                 udp_port=4444,
+                 shuffle=True,
+                 client_base_class=InfluxDBClient,
+                 ):
+        self.clients = []
+        self.bad_clients = []   # Corresponding server has failures in history
+        self.shuffle = shuffle
+        for h in hosts:
+            self.clients.append(client_base_class(host=h[0], port=h[1],
+                                                  username=username,
+                                                  password=password,
+                                                  database=database,
+                                                  ssl=ssl,
+                                                  verify_ssl=verify_ssl,
+                                                  timeout=timeout,
+                                                  use_udp=use_udp,
+                                                  udp_port=udp_port))
+        for method in dir(client_base_class):
+            if method.startswith('_'):
+                continue
+            orig_func = getattr(client_base_class, method)
+            if not callable(orig_func):
+                continue
+            setattr(self, method, self._make_func(orig_func))
+
+    @staticmethod
+    def from_DSN(dsn, client_base_class=InfluxDBClient,
+                 shuffle=True, **kwargs):
+        """
+        Same as InfluxDBClient.from_DSN, and supports multiple servers.
+
+        Example DSN:
+            influxdb://usr:pwd@host1:8086,usr:pwd@host2:8086/db_name
+            udp+influxdb://usr:pwd@host1:8086,usr:pwd@host2:8086/db_name
+            https+influxdb://usr:pwd@host1:8086,usr:pwd@host2:8086/db_name
+
+        :param shuffle: If true, queries will hit servers evenly(randomly)
+        :param client_base_class: In order to support different clients,
+                                  default to InfluxDBClient
+        """
+        dsn = dsn.lower()
+        conn_params = urlparse(dsn)
+        netlocs = conn_params.netloc.split(',')
+        cluster_client = InfluxDBClusterClient(
+            hosts=[],
+            client_base_class=client_base_class,
+            shuffle=shuffle,
+            **kwargs)
+        for netloc in netlocs:
+            single_dsn = '%(scheme)s://%(netloc)s%(path)s' % (
+                {'scheme': conn_params.scheme,
+                 'netloc': netloc,
+                 'path': conn_params.path}
+            )
+            cluster_client.clients.append(client_base_class.from_DSN(
+                single_dsn,
+                **kwargs))
+        return cluster_client
+
+    def _make_func(self, orig_func):
+
+        @wraps(orig_func)
+        def func(*args, **kwargs):
+            if self.shuffle:
+                random.shuffle(self.clients)
+            clients = self.clients + self.bad_clients
+            for c in clients:
+                bad_client = False
+                try:
+                    return orig_func(c, *args, **kwargs)
+                except InfluxDBClientError as e:
+                    # Errors caused by user's requests, re-raise
+                    raise e
+                except Exception as e:
+                    # Errors that might caused by server failure, try another
+                    bad_client = True
+                    if c in self.clients:
+                        self.clients.remove(c)
+                        self.bad_clients.append(c)
+                finally:
+                    if not bad_client and c in self.bad_clients:
+                        self.bad_clients.remove(c)
+                        self.clients.append(c)
+
+            raise InfluxDBServerError("InfluxDB: no viable server!")
+
+        return func
