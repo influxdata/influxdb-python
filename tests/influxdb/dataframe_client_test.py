@@ -305,6 +305,23 @@ class TestDataFrameClient(unittest.TestCase):
             assert_frame_equal(series['cpu'], expected['cpu'])
             assert_frame_equal(series['network'], expected['network'])
 
+    def test_get_list_database(self):
+        data = {'results': [
+            {'series': [
+                {'name': 'databases',
+                 'values': [
+                     ['new_db_1'],
+                     ['new_db_2']],
+                 'columns': ['name']}]}
+        ]}
+
+        cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
+        with _mocked_session(cli, 'get', 200, json.dumps(data)):
+            self.assertListEqual(
+                cli.get_list_database(),
+                [{'name': 'new_db_1'}, {'name': 'new_db_2'}]
+            )
+
     def test_datetime_to_epoch(self):
         timestamp = pd.Timestamp('2013-01-01 00:00:00.000+00:00')
         cli = DataFrameClient('host', 8086, 'username', 'password', 'db')

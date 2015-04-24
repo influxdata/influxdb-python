@@ -76,10 +76,13 @@ class DataFrameClient(InfluxDBClient):
 
         """
         results = super(DataFrameClient, self).query(query, database=database)
-        if len(results) > 0:
-            return self._to_dataframe(results.raw)
+        if query.upper().startswith("SELECT"):
+            if len(results) > 0:
+                return self._to_dataframe(results.raw)
+            else:
+                return {}
         else:
-            return {}
+            return results
 
     def get_list_series(self, database=None):
         """
