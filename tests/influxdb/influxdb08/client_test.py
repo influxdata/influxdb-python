@@ -17,6 +17,16 @@ import mock
 from influxdb.influxdb08 import InfluxDBClient
 from influxdb.influxdb08.client import session
 
+import sys
+if sys.version < '3':
+    import codecs
+
+    def u(x):
+        return codecs.unicode_escape_decode(x)[0]
+else:
+    def u(x):
+        return x
+
 
 def _build_response_object(status_code=200, content=""):
     resp = requests.Response()
@@ -336,8 +346,8 @@ class TestInfluxDBClient(unittest.TestCase):
         cli = InfluxDBClient(database='db')
         example_object = {
             'points': [
-                [1415206212980, 10001, 'unicode-\xcf\x89'.decode('utf-8')],
-                [1415197271586, 10001, 'more-unicode-\xcf\x90'.decode('utf-8')]
+                [1415206212980, 10001, u('unicode-\xcf\x89')],
+                [1415197271586, 10001, u('more-unicode-\xcf\x90')]
             ],
             'name': 'foo',
             'columns': [
