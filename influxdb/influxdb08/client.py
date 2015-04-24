@@ -16,7 +16,7 @@ try:
 except NameError:
     xrange = range
 
-if version_info.major == 3:
+if version_info[0] == 3:
     from urllib.parse import urlparse
 else:
     from urlparse import urlparse
