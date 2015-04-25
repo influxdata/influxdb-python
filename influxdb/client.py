@@ -322,23 +322,49 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                      database=None,
                      retention_policy=None,
                      tags=None,
+                     batch_size=None,
                      ):
         """
         Write to multiple time series names.
 
-        :param points: A list of dicts.
+        :param points: the list of points to be written in the database
+        :type points: list of dictionaries, each dictionary represents a point
         :param time_precision: [Optional, default None] Either 's', 'm', 'ms'
             or 'u'.
+        :type time_precision: string
         :param database: The database to write the points to. Defaults to
             the client's current db.
+        :type database: string
+        :param tags: a set of key-value pairs associated with each point. Both
+            keys and values must be strings. These are shared tags and will be
+            merged with point-specific tags.
+        :type tags: dictionary
         :param retention_policy: The retention policy for the points.
+        :type retention_policy: string
+        :param batch_size: [Optional] Value to write the points in batches
+            instead of all at one time. Useful for when doing data dumps from
+            one database to another or when doing a massive write operation
+        :type batch_size: int
         """
-        # TODO: re-implement chunks.
-        return self._write_points(points=points,
-                                  time_precision=time_precision,
-                                  database=database,
-                                  retention_policy=retention_policy,
-                                  tags=tags)
+
+        if batch_size and batch_size > 0:
+            for batch in self._batches(points, batch_size):
+                self._write_points(points=batch,
+                                   time_precision=time_precision,
+                                   database=database,
+                                   retention_policy=retention_policy,
+                                   tags=tags)
+            return True
+        else:
+            return self._write_points(points=points,
+                                      time_precision=time_precision,
+                                      database=database,
+                                      retention_policy=retention_policy,
+                                      tags=tags)
+
+    def _batches(self, iterable, size):
+        for i in xrange(0, len(iterable), size):
+            yield iterable[i:i + size]
 
     def _write_points(self,
                       points,
