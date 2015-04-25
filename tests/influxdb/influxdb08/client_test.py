@@ -186,12 +186,46 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
     def test_write_points_batch(self):
-        with _mocked_session('post', 200, self.dummy_points):
-            cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            assert cli.write_points(
-                data=self.dummy_points,
-                batch_size=2
-            ) is True
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/db/db/series")
+            cli = InfluxDBClient('localhost', 8086,
+                                 'username', 'password', 'db')
+            cli.write_points(data=self.dummy_points, batch_size=2)
+        self.assertEqual(1, m.call_count)
+
+    def test_write_points_batch_invalid_size(self):
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/db/db/series")
+            cli = InfluxDBClient('localhost', 8086,
+                                 'username', 'password', 'db')
+            cli.write_points(data=self.dummy_points, batch_size=-2)
+        self.assertEqual(1, m.call_count)
+
+    def test_write_points_batch_multiple_series(self):
+        dummy_points = [
+            {"points": [["1", 1, 1.0], ["2", 2, 2.0], ["3", 3, 3.0],
+                        ["4", 4, 4.0], ["5", 5, 5.0]],
+             "name": "foo",
+             "columns": ["val1", "val2", "val3"]},
+            {"points": [["1", 1, 1.0], ["2", 2, 2.0], ["3", 3, 3.0],
+                        ["4", 4, 4.0], ["5", 5, 5.0], ["6", 6, 6.0],
+                        ["7", 7, 7.0], ["8", 8, 8.0]],
+             "name": "bar",
+             "columns": ["val1", "val2", "val3"]},
+        ]
+        expected_last_body = [{'points': [['7', 7, 7.0], ['8', 8, 8.0]],
+                               'name': 'bar',
+                               'columns': ['val1', 'val2', 'val3']}]
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/db/db/series")
+            cli = InfluxDBClient('localhost', 8086,
+                                 'username', 'password', 'db')
+            cli.write_points(data=dummy_points, batch_size=3)
+        self.assertEqual(m.call_count, 5)
+        self.assertEqual(expected_last_body, m.request_history[4].json())
 
     def test_write_points_udp(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
