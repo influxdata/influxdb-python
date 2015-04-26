@@ -291,11 +291,11 @@ class InfluxDBClient(object):
                 yield l[i:i + n]
 
         batch_size = kwargs.get('batch_size')
-        if batch_size:
+        if batch_size and batch_size > 0:
             for item in data:
                 name = item.get('name')
                 columns = item.get('columns')
-                point_list = item.get('points')
+                point_list = item.get('points', [])
 
                 for batch in list_chunks(point_list, batch_size):
                     item = [{
@@ -306,10 +306,10 @@ class InfluxDBClient(object):
                     self._write_points(
                         data=item,
                         time_precision=time_precision)
-
-                return True
-
-        return self._write_points(data=data, time_precision=time_precision)
+            return True
+        else:
+            return self._write_points(data=data,
+                                      time_precision=time_precision)
 
     def write_points_with_precision(self, data, time_precision='s'):
         """
