@@ -2,7 +2,7 @@
 """
 Python client for InfluxDB
 """
-from collections import OrderedDict
+
 from functools import wraps
 import json
 import socket
@@ -180,27 +180,6 @@ localhost:8086/databasename', timeout=5, udp_port=159)
 
         return InfluxDBClient(**init_args)
 
-    #
-    # By default we keep the "order" of the json responses:
-    # more clearly: any dict contained in the json response will have
-    # its key-value items order kept as in the raw answer, thanks to
-    # `collections.OrderedDict`.
-    # if one doesn't care in that, then it can simply change its client
-    # instance 'keep_json_response_order' attribute value (to a falsy one).
-    # This will then eventually help for performance considerations.
-    _keep_json_response_order = False
-    # NB: For "group by" query type :
-    # This setting is actually necessary in order to have a consistent and
-    # reproducible rsp format if you "group by" on more than 1 tag.
-
-    @property
-    def keep_json_response_order(self):
-        return self._keep_json_response_order
-
-    @keep_json_response_order.setter
-    def keep_json_response_order(self, new_value):
-        self._keep_json_response_order = new_value
-
     def switch_database(self, database):
         """
         switch_database()
@@ -309,10 +288,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             expected_response_code=expected_response_code
         )
 
-        json_kw = {}
-        if self.keep_json_response_order:
-            json_kw.update(object_pairs_hook=OrderedDict)
-        data = response.json(**json_kw)
+        data = response.json()
 
         return ResultSet(data)
 
