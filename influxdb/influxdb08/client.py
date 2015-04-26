@@ -448,7 +448,13 @@ class InfluxDBClient(object):
         )
 
         if chunked:
-            return list(chunked_json.loads(response.content.decode()))
+            decoded = {}
+            try:
+                decoded = chunked_json.loads(response.content.decode())
+            except UnicodeDecodeError:
+                decoded = chunked_json.loads(response.content.decode('utf-8'))
+            finally:
+                return list(decoded)
         else:
             return response.json()
 

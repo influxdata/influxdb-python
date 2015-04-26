@@ -17,6 +17,16 @@ import mock
 from influxdb.influxdb08 import InfluxDBClient
 from influxdb.influxdb08.client import session
 
+import sys
+if sys.version < '3':
+    import codecs
+
+    def u(x):
+        return codecs.unicode_escape_decode(x)[0]
+else:
+    def u(x):
+        return x
+
 
 def _build_response_object(status_code=200, content=""):
     resp = requests.Response()
@@ -343,6 +353,35 @@ class TestInfluxDBClient(unittest.TestCase):
                 [1415206228241, 20001, 788],
                 [1415206212980, 10001, 555],
                 [1415197271586, 10001, 23]
+            ],
+            'name': 'foo',
+            'columns': [
+                'time',
+                'sequence_number',
+                'val'
+            ]
+        }
+        example_response = \
+            json.dumps(example_object) + json.dumps(example_object)
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/db/db/series",
+                text=example_response
+            )
+
+            self.assertListEqual(
+                cli.query('select * from foo', chunked=True),
+                [example_object, example_object]
+            )
+
+    def test_query_chunked_unicode(self):
+        cli = InfluxDBClient(database='db')
+        example_object = {
+            'points': [
+                [1415206212980, 10001, u('unicode-\xcf\x89')],
+                [1415197271586, 10001, u('more-unicode-\xcf\x90')]
             ],
             'name': 'foo',
             'columns': [
