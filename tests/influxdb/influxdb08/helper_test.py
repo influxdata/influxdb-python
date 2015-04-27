@@ -158,19 +158,26 @@ class TestSeriesHelper(unittest.TestCase):
                 bulk_size = 0
                 autocommit = True
 
-        with warnings.catch_warnings(record=True) as w:
+        with warnings.catch_warnings(record=True) as rec_warnings:
             warnings.simplefilter("always")
-            try:
+            # Server defined in the client is invalid, we're testing
+            # the warning only.
+            with self.assertRaises(ConnectionError):
                 WarnBulkSizeZero(time=159, server_name='us.east-1')
-            except ConnectionError:
-                # Server defined in the client is invalid, we're testing
-                # the warning only.
-                pass
-            self.assertEqual(len(w), 1,
-                             '{} call should have generated one warning.'
-                             .format(WarnBulkSizeZero))
-            self.assertIn('forced to 1', str(w[-1].message),
-                          'Warning message did not contain "forced to 1".')
+
+        self.assertGreaterEqual(
+            len(rec_warnings), 1,
+            '{} call should have generated one warning.'
+            'Actual generated warnings: {}'.format(
+                WarnBulkSizeZero, '\n'.join(map(str, rec_warnings))))
+
+        expected_msg = (
+            'Definition of bulk_size in WarnBulkSizeZero forced to 1, '
+            'was less than 1.')
+
+        self.assertIn(expected_msg, list(w.message.args[0]
+                                         for w in rec_warnings),
+                      'Warning message did not contain "forced to 1".')
 
     def testWarnBulkSizeNoEffect(self):
         """
@@ -184,11 +191,24 @@ class TestSeriesHelper(unittest.TestCase):
                 bulk_size = 5
                 autocommit = False
 
-        with warnings.catch_warnings(record=True) as w:
+        with warnings.catch_warnings(record=True) as rec_warnings:
             warnings.simplefilter("always")
             WarnBulkSizeNoEffect(time=159, server_name='us.east-1')
-            self.assertEqual(len(w), 1,
-                             '{} call should have generated one warning.'
-                             .format(WarnBulkSizeNoEffect))
-            self.assertIn('has no affect', str(w[-1].message),
-                          'Warning message did not contain "has not affect".')
+
+        self.assertGreaterEqual(
+            len(rec_warnings), 1,
+            '{} call should have generated one warning.'
+            'Actual generated warnings: {}'.format(
+                WarnBulkSizeNoEffect, '\n'.join(map(str, rec_warnings))))
+
+        expected_msg = (
+            'Definition of bulk_size in WarnBulkSizeNoEffect has no affect '
+            'because autocommit is false.')
+
+        self.assertIn(expected_msg, list(w.message.args[0]
+                                         for w in rec_warnings),
+                      'Warning message did not contain the expected_msg.')
+
+
+if __name__ == '__main__':
+    unittest.main()
