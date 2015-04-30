@@ -78,7 +78,7 @@ class DataFrameClient(InfluxDBClient):
         results = super(DataFrameClient, self).query(query, database=database)
         if query.upper().startswith("SELECT"):
             if len(results) > 0:
-                return self._to_dataframe(results.raw)
+                return self._to_dataframe(results)
             else:
                 return {}
         else:
@@ -93,24 +93,22 @@ class DataFrameClient(InfluxDBClient):
             .query("SHOW SERIES", database=database)
         if len(results):
             return dict(
-                (s['name'], pd.DataFrame(s['values'], columns=s['columns']))
-                for s in results.raw['results'][0]['series']
+                (key[0], pd.DataFrame(data)) for key, data in results.items()
             )
         else:
             return {}
 
-    def _to_dataframe(self, json_result):
+    def _to_dataframe(self, rs):
         result = {}
-        series = json_result['results'][0]['series']
-        for s in series:
-            tags = s.get('tags')
+        for key, data in rs.items():
+            name, tags = key
             if tags is None:
-                key = s['name']
+                key = name
             else:
-                key = (s['name'], tuple(sorted(tags.items())))
-            df = pd.DataFrame(s['values'], columns=s['columns'])
+                key = (name, tuple(sorted(tags.items())))
+            df = pd.DataFrame(data)
             df.time = pd.to_datetime(df.time)
-            df.set_index(['time'], inplace=True)
+            df.set_index('time', inplace=True)
             df.index = df.index.tz_localize('UTC')
             df.index.name = None
             result[key] = df
