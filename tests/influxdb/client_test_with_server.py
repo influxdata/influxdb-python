@@ -534,12 +534,28 @@ class CommonTests(ManyTestCasesWithServerMixin,
             ]
         )
 
-    @unittest.skip('Not implemented for 0.9')
     def test_write_points_batch(self):
-        self.cli.write_points(
-            points=dummy_point * 3,
-            batch_size=2
-        )
+        dummy_points = [
+            {"name": "cpu_usage", "tags": {"unit": "percent"},
+             "timestamp": "2009-11-10T23:00:00Z", "fields": {"value": 12.34}},
+            {"name": "network", "tags": {"direction": "in"},
+             "timestamp": "2009-11-10T23:00:00Z", "fields": {"value": 123.00}},
+            {"name": "network", "tags": {"direction": "out"},
+             "timestamp": "2009-11-10T23:00:00Z", "fields": {"value": 12.00}}
+        ]
+        self.cli.write_points(points=dummy_points,
+                              tags={"host": "server01",
+                                    "region": "us-west"},
+                              batch_size=2)
+        time.sleep(5)
+        net_in = self.cli.query("SELECT value FROM network "
+                                "WHERE direction='in'").raw['results'][0]
+        net_out = self.cli.query("SELECT value FROM network "
+                                 "WHERE direction='out'").raw['results'][0]
+        cpu = self.cli.query("SELECT value FROM cpu_usage").raw['results'][0]
+        self.assertIn(123, net_in['series'][0]['values'][0])
+        self.assertIn(12, net_out['series'][0]['values'][0])
+        self.assertIn(12.34, cpu['series'][0]['values'][0])
 
     def test_write_points_with_precision(self):
         ''' check that points written with an explicit precision have

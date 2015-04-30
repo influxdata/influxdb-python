@@ -204,12 +204,33 @@ class TestInfluxDBClient(unittest.TestCase):
                 json.loads(m.last_request.body)
             )
 
-    @unittest.skip('Not implemented for 0.9')
     def test_write_points_batch(self):
-        cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-        with _mocked_session(cli, 'post', 200, self.dummy_points):
-            self.assertTrue(cli.write_points(data=self.dummy_points,
-                                             batch_size=2))
+        dummy_points = [
+            {"name": "cpu_usage", "tags": {"unit": "percent"},
+             "timestamp": "2009-11-10T23:00:00Z", "fields": {"value": 12.34}},
+            {"name": "network", "tags": {"direction": "in"},
+             "timestamp": "2009-11-10T23:00:00Z", "fields": {"value": 123.00}},
+            {"name": "network", "tags": {"direction": "out"},
+             "timestamp": "2009-11-10T23:00:00Z", "fields": {"value": 12.00}}
+        ]
+        expected_last_body = {"tags": {"host": "server01",
+                                       "region": "us-west"},
+                              "database": "db",
+                              "points": [{"name": "network",
+                                          "tags": {"direction": "out"},
+                                          "timestamp": "2009-11-10T23:00:00Z",
+                                          "fields": {"value": 12.00}}]}
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write")
+            cli = InfluxDBClient(database='db')
+            cli.write_points(points=dummy_points,
+                             database='db',
+                             tags={"host": "server01",
+                                   "region": "us-west"},
+                             batch_size=2)
+        self.assertEqual(m.call_count, 2)
+        self.assertEqual(expected_last_body, m.last_request.json())
 
     def test_write_points_udp(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

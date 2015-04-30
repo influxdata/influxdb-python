@@ -2,7 +2,7 @@
 """
 Python client for InfluxDB
 """
-from collections import OrderedDict
+
 from functools import wraps
 import json
 import socket
@@ -180,27 +180,6 @@ localhost:8086/databasename', timeout=5, udp_port=159)
 
         return InfluxDBClient(**init_args)
 
-    #
-    # By default we keep the "order" of the json responses:
-    # more clearly: any dict contained in the json response will have
-    # its key-value items order kept as in the raw answer, thanks to
-    # `collections.OrderedDict`.
-    # if one doesn't care in that, then it can simply change its client
-    # instance 'keep_json_response_order' attribute value (to a falsy one).
-    # This will then eventually help for performance considerations.
-    _keep_json_response_order = False
-    # NB: For "group by" query type :
-    # This setting is actually necessary in order to have a consistent and
-    # reproducible rsp format if you "group by" on more than 1 tag.
-
-    @property
-    def keep_json_response_order(self):
-        return self._keep_json_response_order
-
-    @keep_json_response_order.setter
-    def keep_json_response_order(self, new_value):
-        self._keep_json_response_order = new_value
-
     def switch_database(self, database):
         """
         switch_database()
@@ -309,10 +288,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             expected_response_code=expected_response_code
         )
 
-        json_kw = {}
-        if self.keep_json_response_order:
-            json_kw.update(object_pairs_hook=OrderedDict)
-        data = response.json(**json_kw)
+        data = response.json()
 
         return ResultSet(data)
 
@@ -322,23 +298,49 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                      database=None,
                      retention_policy=None,
                      tags=None,
+                     batch_size=None,
                      ):
         """
         Write to multiple time series names.
 
-        :param points: A list of dicts.
+        :param points: the list of points to be written in the database
+        :type points: list of dictionaries, each dictionary represents a point
         :param time_precision: [Optional, default None] Either 's', 'm', 'ms'
             or 'u'.
+        :type time_precision: string
         :param database: The database to write the points to. Defaults to
             the client's current db.
+        :type database: string
+        :param tags: a set of key-value pairs associated with each point. Both
+            keys and values must be strings. These are shared tags and will be
+            merged with point-specific tags.
+        :type tags: dictionary
         :param retention_policy: The retention policy for the points.
+        :type retention_policy: string
+        :param batch_size: [Optional] Value to write the points in batches
+            instead of all at one time. Useful for when doing data dumps from
+            one database to another or when doing a massive write operation
+        :type batch_size: int
         """
-        # TODO: re-implement chunks.
-        return self._write_points(points=points,
-                                  time_precision=time_precision,
-                                  database=database,
-                                  retention_policy=retention_policy,
-                                  tags=tags)
+
+        if batch_size and batch_size > 0:
+            for batch in self._batches(points, batch_size):
+                self._write_points(points=batch,
+                                   time_precision=time_precision,
+                                   database=database,
+                                   retention_policy=retention_policy,
+                                   tags=tags)
+            return True
+        else:
+            return self._write_points(points=points,
+                                      time_precision=time_precision,
+                                      database=database,
+                                      retention_policy=retention_policy,
+                                      tags=tags)
+
+    def _batches(self, iterable, size):
+        for i in xrange(0, len(iterable), size):
+            yield iterable[i:i + size]
 
     def _write_points(self,
                       points,

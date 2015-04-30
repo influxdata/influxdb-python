@@ -3,6 +3,7 @@ import argparse
 from influxdb import InfluxDBClient
 import math
 import datetime
+import time
 
 
 USER = 'root'
@@ -15,28 +16,34 @@ def main(host='localhost', port=8086):
     main function to generate the sin wave
     """
     now = datetime.datetime.today()
-    data = [{
-        'name':    "foobar",
-        'columns': ["time", "value"],
-        'points':  []
-    }]
+    points = []
 
     for angle in range(0, 360):
         y = 10 + math.sin(math.radians(angle)) * 10
-        point = [int(now.strftime('%s')) + angle, y]
-        data[0]['points'].append(point)
+
+        point = {
+            "name": 'foobar',
+            "timestamp": int(now.strftime('%s')) + angle,
+            "fields": {
+                "value": y
+            }
+        }
+        points.append(point)
 
     client = InfluxDBClient(host, port, USER, PASSWORD, DBNAME)
 
     print("Create database: " + DBNAME)
     client.create_database(DBNAME)
+    client.switch_database(DBNAME)
 
     #Write points
-    client.write_points(data)
+    client.write_points(points)
 
-    query = 'SELECT time, value FROM foobar GROUP BY value, time(1s)'
+    time.sleep(3)
+
+    query = 'SELECT * FROM foobar'
     print("Queying data: " + query)
-    result = client.query(query)
+    result = client.query(query, database=DBNAME)
     print("Result: {0}".format(result))
 
     """
@@ -46,11 +53,11 @@ def main(host='localhost', port=8086):
 
     Then run the following query:
 
-        SELECT time, value FROM foobar  GROUP BY value, time(1s)
+        SELECT * from foobar
     """
 
     print("Delete database: " + DBNAME)
-    client.delete_database(DBNAME)
+    client.drop_database(DBNAME)
 
 
 def parse_args():
