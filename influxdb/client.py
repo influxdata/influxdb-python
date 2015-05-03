@@ -144,7 +144,6 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                   additional udp_port parameter (cf. examples).
         :raise ValueError: if the provided DSN has any unexpected value.
         """
-        dsn = dsn.lower()
 
         init_args = {}
         conn_params = urlparse(dsn)
@@ -559,7 +558,6 @@ class InfluxDBClusterClient(object):
         :param client_base_class: In order to support different clients,
                                   default to InfluxDBClient
         """
-        dsn = dsn.lower()
         conn_params = urlparse(dsn)
         netlocs = conn_params.netloc.split(',')
         cluster_client = InfluxDBClusterClient(

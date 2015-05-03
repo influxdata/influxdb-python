@@ -727,3 +727,8 @@ class TestInfluxDBClusterClient(unittest.TestCase):
             'https+influxdb://usr:pwd@host:8086/db',
             **{'ssl': False})
         self.assertEqual('http://host:8086', cli.clients[0]._baseurl)
+
+    def test_dsn_password_caps(self):
+        cli = InfluxDBClusterClient.from_DSN(
+            'https+influxdb://usr:pWd@host:8086/db')
+        self.assertEqual('pWd', cli.clients[0]._password)
