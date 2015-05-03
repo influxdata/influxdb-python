@@ -45,9 +45,19 @@ These clients are initiated in the same way as the
     :members:
     :undoc-members:
 
------------------------
+------------------------------
+:class:`InfluxDBClusterClient`
+------------------------------
+
+
+.. currentmodule:: influxdb.InfluxDBClusterClient
+.. autoclass:: influxdb.InfluxDBClusterClient
+    :members:
+    :undoc-members:
+
+------------------------
 :class:`DataFrameClient`
------------------------
+------------------------
 
 
 .. currentmodule:: influxdb.DataFrameClient

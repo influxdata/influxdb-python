@@ -25,7 +25,7 @@ else:
 
 
 class InfluxDBClientError(Exception):
-    """Raised when an error occurs in the request"""
+    """Raised when an error occurs in the request."""
     def __init__(self, content, code):
         if isinstance(content, type(b'')):
             content = content.decode('UTF-8', errors='replace')
@@ -36,39 +36,38 @@ class InfluxDBClientError(Exception):
 
 
 class InfluxDBServerError(Exception):
-    """Raised when server error occurs"""
+    """Raised when a server error occurs."""
     def __init__(self, content):
         super(InfluxDBServerError, self).__init__(content)
 
 
 class InfluxDBClient(object):
-
-    """
-    The ``InfluxDBClient`` object holds information necessary to connect
-    to InfluxDB. Requests can be made to InfluxDB directly through the client.
+    """The :class:`~.InfluxDBClient` object holds information necessary to
+    connect to InfluxDB. Requests can be made to InfluxDB directly through
+    the client.
 
     :param host: hostname to connect to InfluxDB, defaults to 'localhost'
-    :type host: string
-    :param port: port to connect to InfluxDB, defaults to 'localhost'
+    :type host: str
+    :param port: port to connect to InfluxDB, defaults to 8086
     :type port: int
     :param username: user to connect, defaults to 'root'
-    :type username: string
+    :type username: str
     :param password: password of the user, defaults to 'root'
-    :type password: string
-    :param database: database name to connect to, defaults is None
-    :type database: string
-    :param ssl: use https instead of http to connect to InfluxDB, defaults is
+    :type password: str
+    :param database: database name to connect to, defaults to None
+    :type database: str
+    :param ssl: use https instead of http to connect to InfluxDB, defaults to
         False
-    :type ssl: boolean
-    :param verify_ssl: verify SSL certificates for HTTPS requests, defaults is
+    :type ssl: bool
+    :param verify_ssl: verify SSL certificates for HTTPS requests, defaults to
         False
-    :type verify_ssl: boolean
+    :type verify_ssl: bool
     :param timeout: number of seconds Requests will wait for your client to
         establish a connection, defaults to None
     :type timeout: int
-    :param use_udp: use UDP to connect to InfluxDB, defaults is False
+    :param use_udp: use UDP to connect to InfluxDB, defaults to False
     :type use_udp: int
-    :param udp_port: UDP port to connect to InfluxDB, defaults is 4444
+    :param udp_port: UDP port to connect to InfluxDB, defaults to 4444
     :type udp_port: int
     """
 
@@ -84,9 +83,7 @@ class InfluxDBClient(object):
                  use_udp=False,
                  udp_port=4444,
                  ):
-        """
-        Construct a new InfluxDBClient object.
-        """
+        """Construct a new InfluxDBClient object."""
         self._host = host
         self._port = port
         self._username = username
@@ -118,31 +115,32 @@ class InfluxDBClient(object):
 
     @staticmethod
     def from_DSN(dsn, **kwargs):
-        """
-        Returns an instance of InfluxDBClient from the provided data source
-        name. Supported schemes are "influxdb", "https+influxdb",
-        "udp+influxdb". Parameters for the InfluxDBClient constructor may be
-        also be passed to this function.
-
-        Examples:
-            >>> cli = InfluxDBClient.from_DSN('influxdb://username:password@\
-localhost:8086/databasename', timeout=5)
-            >>> type(cli)
-            <class 'influxdb.client.InfluxDBClient'>
-            >>> cli = InfluxDBClient.from_DSN('udp+influxdb://username:pass@\
-localhost:8086/databasename', timeout=5, udp_port=159)
-            >>> print('{0._baseurl} - {0.use_udp} {0.udp_port}'.format(cli))
-            http://localhost:8086 - True 159
+        """Return an instance of :class:`~.InfluxDBClient` from the provided
+        data source name. Supported schemes are "influxdb", "https+influxdb"
+        and "udp+influxdb". Parameters for the :class:`~.InfluxDBClient`
+        constructor may also be passed to this method.
 
         :param dsn: data source name
         :type dsn: string
-        :param **kwargs: additional parameters for InfluxDBClient.
-        :type **kwargs: dict
-        :note: parameters provided in **kwargs may override dsn parameters.
-        :note: when using "udp+influxdb" the specified port (if any) will be
-                  used for the TCP connection; specify the udp port with the
-                  additional udp_port parameter (cf. examples).
-        :raise ValueError: if the provided DSN has any unexpected value.
+        :param kwargs: additional parameters for `InfluxDBClient`
+        :type kwargs: dict
+        :raises ValueError: if the provided DSN has any unexpected values
+
+        :Example:
+
+        >>> cli = InfluxDBClient.from_DSN('influxdb://username:password@\
+localhost:8086/databasename', timeout=5)
+        >>> type(cli)
+        <class 'influxdb.client.InfluxDBClient'>
+        >>> cli = InfluxDBClient.from_DSN('udp+influxdb://username:pass@\
+localhost:8086/databasename', timeout=5, udp_port=159)
+        >>> print('{0._baseurl} - {0.use_udp} {0.udp_port}'.format(cli))
+        http://localhost:8086 - True 159
+
+        .. note:: parameters provided in `**kwargs` may override dsn parameters
+        .. note:: when using "udp+influxdb" the specified port (if any) will
+            be used for the TCP connection; specify the UDP port with the
+            additional `udp_port` parameter (cf. examples).
         """
         dsn = dsn.lower()
 
@@ -181,34 +179,43 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         return InfluxDBClient(**init_args)
 
     def switch_database(self, database):
-        """
-        switch_database()
+        """Change the client's database.
 
-        Change client database.
-
-        :param database: the new database name to switch to
-        :type database: string
+        :param database: the name of the database to switch to
+        :type database: str
         """
         self._database = database
 
     def switch_user(self, username, password):
-        """
-        switch_user()
+        """Change the client's username.
 
-        Change client username.
-
-        :param username: the new username to switch to
-        :type username: string
-        :param password: the new password to switch to
-        :type password: string
+        :param username: the username to switch to
+        :type username: str
+        :param password: the password for the username
+        :type password: str
         """
         self._username = username
         self._password = password
 
     def request(self, url, method='GET', params=None, data=None,
                 expected_response_code=200):
-        """
-        Make a http request to API
+        """Make a HTTP request to the InfluxDB API.
+
+        :param url: the path of the HTTP request, e.g. write, query, etc.
+        :type url: str
+        :param method: the HTTP method for the request, defaults to GET
+        :type method: str
+        :param params: additional parameters for the request, defaults to None
+        :type params: dict
+        :param data: the data of the request, defaults to None
+        :type data: str
+        :param expected_response_code: the expected response code of
+            the request, defaults to 200
+        :type expected_response_code: int
+        :returns: the response from the request
+        :rtype: :class:`requests.Response`
+        :raises InfluxDBClientError: if the response code is not the
+            same as `expected_response_code`
         """
         url = "{0}/{1}".format(self._baseurl, url)
 
@@ -251,7 +258,18 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             raise InfluxDBClientError(response.content, response.status_code)
 
     def write(self, data, params=None, expected_response_code=200):
-        """ Write to influxdb """
+        """Write data to InfluxDB.
+
+        :param data: the data to be written
+        :type data: dict
+        :param params: additional parameters for the request, defaults to None
+        :type params: dict
+        :param expected_response_code: the expected response code of the write
+            operation, defaults to 200
+        :type expected_response_code: int
+        :returns: True, if the write operation is successful
+        :rtype: bool
+        """
         self.request(
             url="write",
             method='POST',
@@ -266,17 +284,20 @@ localhost:8086/databasename', timeout=5, udp_port=159)
               params={},
               expected_response_code=200,
               database=None):
+        """Send a query to InfluxDB.
+
+        :param query: the actual query string
+        :type query: str
+        :param params: additional parameters for the request, defaults to {}
+        :type params: dict
+        :param expected_response_code: the expected status code of response,
+            defaults to 200
+        :type expected_response_code: int
+        :param database: database to query, defaults to None
+        :type database: str
+        :returns: the queried data
+        :rtype: :class:`~.ResultSet`
         """
-        Query data
-
-        :param params: Additional parameters to be passed to requests.
-        :param database: Database to query, default to None.
-        :param expected_response_code: Expected response code. Defaults to 200.
-
-        :rtype : ResultSet
-
-        """
-
         params['q'] = query
         params['db'] = database or self._database
 
@@ -300,27 +321,32 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                      tags=None,
                      batch_size=None,
                      ):
-        """
-        Write to multiple time series names.
+        """Write to multiple time series names.
 
         :param points: the list of points to be written in the database
         :type points: list of dictionaries, each dictionary represents a point
-        :param time_precision: [Optional, default None] Either 's', 'm', 'ms'
-            or 'u'.
-        :type time_precision: string
-        :param database: The database to write the points to. Defaults to
-            the client's current db.
-        :type database: string
+        :param time_precision: Either 's', 'm', 'ms' or 'u', defaults to None
+        :type time_precision: str
+        :param database: the database to write the points to. Defaults to
+            the client's current database
+        :type database: str
         :param tags: a set of key-value pairs associated with each point. Both
             keys and values must be strings. These are shared tags and will be
-            merged with point-specific tags.
-        :type tags: dictionary
-        :param retention_policy: The retention policy for the points.
-        :type retention_policy: string
-        :param batch_size: [Optional] Value to write the points in batches
+            merged with point-specific tags, defaults to None
+        :type tags: dict
+        :param retention_policy: the retention policy for the points. Defaults
+            to None
+        :type retention_policy: str
+        :param batch_size: value to write the points in batches
             instead of all at one time. Useful for when doing data dumps from
-            one database to another or when doing a massive write operation
+            one database to another or when doing a massive write operation,
+            defaults to None
         :type batch_size: int
+        :returns: True, if the operation is successful
+        :rtype: bool
+
+        .. note:: if no retention policy is specified, the default retention
+            policy for the database is used
         """
 
         if batch_size and batch_size > 0:
@@ -384,35 +410,56 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         return True
 
     def get_list_database(self):
-        """
-        Get the list of databases
+        """Get the list of databases in InfluxDB.
+
+        :returns: all databases in InfluxDB
+        :rtype: list of dictionaries
+
+        :Example:
+
+        >>> dbs = client.get_list_database()
+        >>> dbs
+        [{u'name': u'db1'}, {u'name': u'db2'}, {u'name': u'db3'}]
         """
         return list(self.query("SHOW DATABASES")['databases'])
 
     def create_database(self, dbname):
-        """
-        Create a new database
+        """Create a new database in InfluxDB.
+
+        :param dbname: the name of the database to create
+        :type dbname: str
         """
         self.query("CREATE DATABASE %s" % dbname)
 
     def drop_database(self, dbname):
-        """
-        Create a new database
+        """Drop a database from InfluxDB.
+
+        :param dbname: the name of the database to drop
+        :type dbname: str
         """
         self.query("DROP DATABASE %s" % dbname)
 
-    def create_retention_policy(
-            self, name, duration,
-            replication, database=None, default=False):
-        """
-        Create a retention policy
+    def create_retention_policy(self, name, duration, replication,
+                                database=None, default=False):
+        """Create a retention policy for a database.
 
-        :param duration: The duration. Ex: '1d'
-        :param replication: The replication.
-        :param database: The database. Defaults to current database
-        :param default: (bool) Wether or not to set the policy as default
+        :param name: the name of the new retention policy
+        :type name: str
+        :param duration: the duration of the new retention policy.
+            Durations such as 1h, 90m, 12h, 7d, and 4w, are all supported
+            and mean 1 hour, 90 minutes, 12 hours, 7 day, and 4 weeks,
+            respectively. For infinite retention – meaning the data will
+            never be deleted – use 'INF' for duration.
+            The minimum retention period is 1 hour.
+        :type duration: str
+        :param replication: the replication of the retention policy
+        :type replication: str
+        :param database: the database for which the retention policy is
+            created. Defaults to current client's database
+        :type database: str
+        :param default: whether or not to set the policy as default
+        :type default: bool
         """
-
         query_string = \
             "CREATE RETENTION POLICY %s ON %s " \
             "DURATION %s REPLICATION %s" % \
@@ -424,8 +471,22 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         self.query(query_string)
 
     def get_list_retention_policies(self, database=None):
-        """
-        Get the list of retention policies
+        """Get the list of retention policies for a database.
+
+        :param database: the name of the database, defaults to the client's
+            current database
+        :type database: str
+        :returns: all retention policies for the database
+        :rtype: list of dictionaries
+
+        :Example:
+
+        >>> ret_policies = client.get_list_retention_policies('my_db')
+        >>> ret_policies
+        [{u'default': True,
+          u'duration': u'0',
+          u'name': u'default',
+          u'replicaN': 1}]
         """
         rsp = self.query(
             "SHOW RETENTION POLICIES %s" % (database or self._database)
@@ -433,8 +494,22 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         return list(rsp['results'])
 
     def get_list_series(self, database=None):
-        """
-        Get the list of series
+        """Get the list of series for a database.
+
+        :param database: the name of the database, defaults to the client's
+            current database
+        :type database: str
+        :returns: all series in the specified database
+        :rtype: list of dictionaries
+
+        :Example:
+
+        >>> series = client.get_list_series('my_database')
+        >>> series
+        [{'name': u'cpu_usage',
+          'tags': [{u'_id': 1,
+                    u'host': u'server01',
+                    u'region': u'us-west'}]}]
         """
         rsp = self.query("SHOW SERIES", database=database)
         series = []
@@ -448,66 +523,91 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         return series
 
     def get_list_users(self):
-        """
-        Get the list of users
+        """Get the list of all users in InfluxDB.
+
+        :returns: all users in InfluxDB
+        :rtype: list of dictionaries
+
+        :Example:
+
+        >>> users = client.get_list_users()
+        >>> users
+        [{u'admin': True, u'user': u'user1'},
+         {u'admin': False, u'user': u'user2'},
+         {u'admin': False, u'user': u'user3'}]
         """
         return list(self.query("SHOW USERS")["results"])
 
     def create_user(self, username, password):
-        """
-        Create a new user
+        """Create a new user in InfluxDB
 
         :param username: the new username to create
-        :type username: string
+        :type username: str
         :param password: the password for the new user
-        :type password: string
+        :type password: str
         """
         text = "CREATE USER {} WITH PASSWORD '{}'".format(username, password)
         self.query(text)
 
     def drop_user(self, username):
-        """
-        Drop an user
+        """Drop an user from InfluxDB.
 
         :param username: the username to drop
-        :type username: string
+        :type username: str
         """
         text = "DROP USER {}".format(username)
         self.query(text)
 
     def set_user_password(self, username, password):
-        """
-        Change the password of an existing user
+        """Change the password of an existing user.
 
         :param username: the username who's password is being changed
-        :type username: string
+        :type username: str
         :param password: the new password for the user
-        :type password: string
+        :type password: str
         """
         text = "SET PASSWORD FOR {} = '{}'".format(username, password)
         self.query(text)
 
     def delete_series(self, name, database=None):
+        """Delete series from a database.
+
+        :param name: the name of the series to be deleted
+        :type name: str
+        :param database: the database from which the series should be
+            deleted, defaults to client's current database
+        :type database: str
+        """
         database = database or self._database
         self.query('DROP SERIES \"%s\"' % name, database=database)
 
     def send_packet(self, packet):
+        """Send an UDP packet.
+
+        :param packet: the packet to be sent
+        :type packet: dict
+        """
         data = json.dumps(packet)
         byte = data.encode('utf-8')
         self.udp_socket.sendto(byte, (self._host, self.udp_port))
 
 
 class InfluxDBClusterClient(object):
-    """
-    The ``InfluxDBClusterClient`` is the client for connecting to a cluster of
-    InfluxDB Servers. It basically is a proxy to multiple ``InfluxDBClient``s.
+    """The :class:`~.InfluxDBClusterClient` is the client for connecting
+    to a cluster of InfluxDB servers. It's basically a proxy to multiple
+    InfluxDBClients.
 
-    :param hosts: A list of hosts, where a host should be in format
-                  (address, port)
-                  e.g. [('127.0.0.1', 8086), ('127.0.0.1', 9096)]
-    :param shuffle: If true, queries will hit servers evenly(randomly)
-    :param client_base_class: In order to support different clients,
-                              default to InfluxDBClient
+    :param hosts: all hosts to be included in the cluster, each of which
+        should be in the format (address, port),
+        e.g. [('127.0.0.1', 8086), ('127.0.0.1', 9096)]. Defaults to
+        [('localhost', 8086)]
+    :type hosts: list of tuples
+    :param shuffle: whether the queries should hit servers evenly(randomly),
+        defaults to True
+    :type shuffle: bool
+    :param client_base_class: the base class for all clients in the cluster.
+        This parameter is used to enable the support of different client
+        types. Defaults to :class:`~.InfluxDBClient`
     """
 
     def __init__(self,
@@ -547,17 +647,25 @@ class InfluxDBClusterClient(object):
     @staticmethod
     def from_DSN(dsn, client_base_class=InfluxDBClient,
                  shuffle=True, **kwargs):
-        """
-        Same as InfluxDBClient.from_DSN, and supports multiple servers.
+        """Same as :meth:`~.InfluxDBClient.from_DSN`, but supports
+        multiple servers.
 
-        Example DSN:
-            influxdb://usr:pwd@host1:8086,usr:pwd@host2:8086/db_name
-            udp+influxdb://usr:pwd@host1:8086,usr:pwd@host2:8086/db_name
-            https+influxdb://usr:pwd@host1:8086,usr:pwd@host2:8086/db_name
+        :param shuffle: whether the queries should hit servers
+            evenly(randomly), defaults to True
+        :type shuffle: bool
+        :param client_base_class: the base class for all clients in the
+            cluster. This parameter is used to enable the support of
+            different client types. Defaults to :class:`~.InfluxDBClient`
 
-        :param shuffle: If true, queries will hit servers evenly(randomly)
-        :param client_base_class: In order to support different clients,
-                                  default to InfluxDBClient
+        :Example:
+
+        >>> cluster = InfluxDBClusterClient.from_DSN('influxdb://usr:pwd\
+@host1:8086,usr:pwd@host2:8086/db_name', timeout=5)
+        >>> type(cluster)
+        <class 'influxdb.client.InfluxDBClusterClient'>
+        >>> cluster.clients
+        [<influxdb.client.InfluxDBClient at 0x7feb480295d0>,
+         <influxdb.client.InfluxDBClient at 0x7feb438ec950>]
         """
         dsn = dsn.lower()
         conn_params = urlparse(dsn)
