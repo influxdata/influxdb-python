@@ -658,6 +658,22 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                                              username)
         self.query(text)
 
+    def revoke_privilege(self, privilege, database, username):
+        """Revoke a privilege on a database from an user.
+
+        :param privilege: the privilege to revoke, one of 'read', 'write'
+            or 'all'. The string is case-insensitive
+        :type privilege: str
+        :param database: the database to revoke the privilege on
+        :type database: str
+        :param username: the username to revoke the privilege from
+        :type username: str
+        """
+        text = "REVOKE {} ON {} FROM {}".format(privilege,
+                                                database,
+                                                username)
+        self.query(text)
+
     def send_packet(self, packet):
         """Send an UDP packet.
 

@@ -690,6 +690,28 @@ class TestInfluxDBClient(unittest.TestCase):
         with _mocked_session(cli, 'get', 400):
             self.cli.grant_privilege('', 'testdb', 'test')
 
+    def test_revoke_privilege(self):
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.cli.revoke_privilege('read', 'testdb', 'test')
+
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'revoke read on testdb from test'
+            )
+
+    @raises(Exception)
+    def test_revoke_privilege_invalid(self):
+        cli = InfluxDBClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'get', 400):
+            self.cli.revoke_privilege('', 'testdb', 'test')
+
 
 class FakeClient(InfluxDBClient):
     fail = False
