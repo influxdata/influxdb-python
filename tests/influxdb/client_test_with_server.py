@@ -407,6 +407,21 @@ class SimpleTests(SingleTestCaseWithServerMixin,
         self.assertIn('{"error":"error parsing query: ',
                       ctx.exception.content)
 
+    def test_grant_privilege(self):
+        self.cli.create_user('test', 'test')
+        self.cli.create_database('testdb')
+        self.cli.grant_privilege('all', 'testdb', 'test')
+        # TODO: when supported by InfluxDB, check if privileges are granted
+
+    def test_grant_privilege_invalid(self):
+        self.cli.create_user('test', 'test')
+        self.cli.create_database('testdb')
+        with self.assertRaises(InfluxDBClientError) as ctx:
+            self.cli.grant_privilege('', 'testdb', 'test')
+        self.assertEqual(400, ctx.exception.code)
+        self.assertIn('{"error":"error parsing query: ',
+                      ctx.exception.content)
+
 
 ############################################################################
 

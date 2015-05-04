@@ -642,6 +642,22 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         text = "REVOKE ALL PRIVILEGES FROM {}".format(username)
         self.query(text)
 
+    def grant_privilege(self, privilege, database, username):
+        """Grant a privilege on a database to an user.
+
+        :param privilege: the privilege to grant, one of 'read', 'write'
+            or 'all'. The string is case-insensitive
+        :type privilege: str
+        :param database: the database to grant the privilege on
+        :type database: str
+        :param username: the username to grant the privilege to
+        :type username: str
+        """
+        text = "GRANT {} ON {} TO {}".format(privilege,
+                                             database,
+                                             username)
+        self.query(text)
+
     def send_packet(self, packet):
         """Send an UDP packet.
 
