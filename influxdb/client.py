@@ -630,6 +630,18 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         text = "GRANT ALL PRIVILEGES TO {}".format(username)
         self.query(text)
 
+    def revoke_admin_privileges(self, username):
+        """Revoke cluster administration privileges from an user.
+
+        :param username: the username to revoke privileges from
+        :type username: str
+
+        .. note:: Only a cluster administrator can create/ drop databases
+            and manage users.
+        """
+        text = "REVOKE ALL PRIVILEGES FROM {}".format(username)
+        self.query(text)
+
     def send_packet(self, packet):
         """Send an UDP packet.
 
