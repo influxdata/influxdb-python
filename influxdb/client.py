@@ -618,6 +618,18 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         database = database or self._database
         self.query('DROP SERIES \"%s\"' % name, database=database)
 
+    def grant_admin_privileges(self, username):
+        """Grant cluster administration privileges to an user.
+
+        :param username: the username to grant privileges to
+        :type username: str
+
+        .. note:: Only a cluster administrator can create/ drop databases
+            and manage users.
+        """
+        text = "GRANT ALL PRIVILEGES TO {}".format(username)
+        self.query(text)
+
     def send_packet(self, packet):
         """Send an UDP packet.
 

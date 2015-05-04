@@ -624,6 +624,28 @@ class TestInfluxDBClient(unittest.TestCase):
 
             self.assertListEqual(self.cli.get_list_users(), [])
 
+    def test_grant_admin_privileges(self):
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.cli.grant_admin_privileges('test')
+
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'grant all privileges to test'
+            )
+
+    @raises(Exception)
+    def test_grant_admin_privileges_invalid(self):
+        cli = InfluxDBClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'get', 400):
+            self.cli.grant_admin_privileges('')
+
 
 class FakeClient(InfluxDBClient):
     fail = False

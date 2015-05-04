@@ -376,6 +376,21 @@ class SimpleTests(SingleTestCaseWithServerMixin,
                       'found invalid, expected',
                       ctx.exception.content)
 
+    def test_grant_admin_privileges(self):
+        self.cli.create_user('test', 'test')
+        self.assertEqual([{'user': 'test', 'admin': False}],
+                         self.cli.get_list_users())
+        self.cli.grant_admin_privileges('test')
+        self.assertEqual([{'user': 'test', 'admin': True}],
+                         self.cli.get_list_users())
+
+    def test_grant_admin_privileges_invalid(self):
+        with self.assertRaises(InfluxDBClientError) as ctx:
+            self.cli.grant_admin_privileges('')
+        self.assertEqual(400, ctx.exception.code)
+        self.assertIn('{"error":"error parsing query: ',
+                      ctx.exception.content)
+
 
 ############################################################################
 
