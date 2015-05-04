@@ -732,3 +732,13 @@ class TestInfluxDBClusterClient(unittest.TestCase):
         cli = InfluxDBClusterClient.from_DSN(
             'https+influxdb://usr:pWd@host:8086/db')
         self.assertEqual('pWd', cli.clients[0]._password)
+
+    def test_dsn_mixed_scheme_case(self):
+        cli = InfluxDBClusterClient.from_DSN(
+            'hTTps+inFLUxdb://usr:pWd@host:8086/db')
+        self.assertEqual('pWd', cli.clients[0]._password)
+        self.assertEqual('https://host:8086', cli.clients[0]._baseurl)
+
+        cli = InfluxDBClusterClient.from_DSN(
+            'uDP+influxdb://usr:pwd@host1:8086,usr:pwd@host2:8086/db')
+        self.assertTrue(cli.clients[0].use_udp)
