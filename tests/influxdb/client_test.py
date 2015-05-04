@@ -490,6 +490,44 @@ class TestInfluxDBClient(unittest.TestCase):
                 'db duration 1d replication 4'
             )
 
+    def test_alter_retention_policy(self):
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            # Test alter duration
+            self.cli.alter_retention_policy('somename', 'db',
+                                            duration='4d')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'alter retention policy somename on db duration 4d'
+            )
+            # Test alter replication
+            self.cli.alter_retention_policy('somename', 'db',
+                                            replication=4)
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'alter retention policy somename on db replication 4'
+            )
+
+            # Test alter default
+            self.cli.alter_retention_policy('somename', 'db',
+                                            default=True)
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'alter retention policy somename on db default'
+            )
+
+    @raises(Exception)
+    def test_alter_retention_policy_invalid(self):
+        cli = InfluxDBClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'get', 400):
+            self.cli.alter_retention_policy('somename', 'db')
+
     def test_get_list_retention_policies(self):
         example_response = \
             '{"results": [{"series": [{"values": [["fsfdsdf", "24h0m0s", 2]],'\

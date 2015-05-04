@@ -657,6 +657,61 @@ class CommonTests(ManyTestCasesWithServerMixin,
             rsp
         )
 
+    def test_alter_retention_policy(self):
+        self.cli.create_retention_policy('somename', '1d', 1)
+
+        # Test alter duration
+        self.cli.alter_retention_policy('somename', 'db',
+                                        duration='4d')
+        rsp = self.cli.get_list_retention_policies()
+        self.assertEqual(
+            [{'duration': '0', 'default': True,
+              'replicaN': 1, 'name': 'default'},
+             {'duration': '96h0m0s', 'default': False,
+              'replicaN': 1, 'name': 'somename'}],
+            rsp
+        )
+
+        # Test alter replication
+        self.cli.alter_retention_policy('somename', 'db',
+                                        replication=4)
+        rsp = self.cli.get_list_retention_policies()
+        self.assertEqual(
+            [{'duration': '0', 'default': True,
+              'replicaN': 1, 'name': 'default'},
+             {'duration': '96h0m0s', 'default': False,
+              'replicaN': 4, 'name': 'somename'}],
+            rsp
+        )
+
+        # Test alter default
+        self.cli.alter_retention_policy('somename', 'db',
+                                        default=True)
+        rsp = self.cli.get_list_retention_policies()
+        self.assertEqual(
+            [{'duration': '0', 'default': False,
+              'replicaN': 1, 'name': 'default'},
+             {'duration': '96h0m0s', 'default': True,
+              'replicaN': 4, 'name': 'somename'}],
+            rsp
+        )
+
+    def test_alter_retention_policy_invalid(self):
+        self.cli.create_retention_policy('somename', '1d', 1)
+        with self.assertRaises(InfluxDBClientError) as ctx:
+            self.cli.alter_retention_policy('somename', 'db')
+        self.assertEqual(400, ctx.exception.code)
+        self.assertIn('{"error":"error parsing query: ',
+                      ctx.exception.content)
+        rsp = self.cli.get_list_retention_policies()
+        self.assertEqual(
+            [{'duration': '0', 'default': True,
+              'replicaN': 1, 'name': 'default'},
+             {'duration': '24h0m0s', 'default': False,
+              'replicaN': 1, 'name': 'somename'}],
+            rsp
+        )
+
     def test_issue_143(self):
         pt = partial(point, 'a_serie_name', timestamp='2015-03-30T16:16:37Z')
         pts = [

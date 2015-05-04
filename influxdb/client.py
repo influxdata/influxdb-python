@@ -470,6 +470,43 @@ localhost:8086/databasename', timeout=5, udp_port=159)
 
         self.query(query_string)
 
+    def alter_retention_policy(self, name, database=None,
+                               duration=None, replication=None, default=None):
+        """Mofidy an existing retention policy for a database.
+
+        :param name: the name of the retention policy to modify
+        :type name: str
+        :param database: the database for which the retention policy is
+            modified. Defaults to current client's database
+        :type database: str
+        :param duration: the new duration of the existing retention policy.
+            Durations such as 1h, 90m, 12h, 7d, and 4w, are all supported
+            and mean 1 hour, 90 minutes, 12 hours, 7 day, and 4 weeks,
+            respectively. For infinite retention – meaning the data will
+            never be deleted – use 'INF' for duration.
+            The minimum retention period is 1 hour.
+        :type duration: str
+        :param replication: the new replication of the existing
+            retention policy
+        :type replication: str
+        :param default: whether or not to set the modified policy as default
+        :type default: bool
+
+        .. note:: at least one of duration, replication, or default flag
+            should be set. Otherwise the operation will fail.
+        """
+        query_string = (
+            "ALTER RETENTION POLICY {} ON {}"
+        ).format(name, database or self._database)
+        if duration:
+            query_string += " DURATION {}".format(duration)
+        if replication:
+            query_string += " REPLICATION {}".format(replication)
+        if default is True:
+            query_string += " DEFAULT"
+
+        self.query(query_string)
+
     def get_list_retention_policies(self, database=None):
         """Get the list of retention policies for a database.
 
