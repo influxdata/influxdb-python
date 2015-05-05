@@ -142,7 +142,6 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             be used for the TCP connection; specify the UDP port with the
             additional `udp_port` parameter (cf. examples).
         """
-        dsn = dsn.lower()
 
         init_args = {}
         conn_params = urlparse(dsn)
@@ -760,7 +759,6 @@ class InfluxDBClusterClient(object):
         [<influxdb.client.InfluxDBClient at 0x7feb480295d0>,
          <influxdb.client.InfluxDBClient at 0x7feb438ec950>]
         """
-        dsn = dsn.lower()
         conn_params = urlparse(dsn)
         netlocs = conn_params.netloc.split(',')
         cluster_client = InfluxDBClusterClient(
