@@ -470,6 +470,43 @@ localhost:8086/databasename', timeout=5, udp_port=159)
 
         self.query(query_string)
 
+    def alter_retention_policy(self, name, database=None,
+                               duration=None, replication=None, default=None):
+        """Mofidy an existing retention policy for a database.
+
+        :param name: the name of the retention policy to modify
+        :type name: str
+        :param database: the database for which the retention policy is
+            modified. Defaults to current client's database
+        :type database: str
+        :param duration: the new duration of the existing retention policy.
+            Durations such as 1h, 90m, 12h, 7d, and 4w, are all supported
+            and mean 1 hour, 90 minutes, 12 hours, 7 day, and 4 weeks,
+            respectively. For infinite retention – meaning the data will
+            never be deleted – use 'INF' for duration.
+            The minimum retention period is 1 hour.
+        :type duration: str
+        :param replication: the new replication of the existing
+            retention policy
+        :type replication: str
+        :param default: whether or not to set the modified policy as default
+        :type default: bool
+
+        .. note:: at least one of duration, replication, or default flag
+            should be set. Otherwise the operation will fail.
+        """
+        query_string = (
+            "ALTER RETENTION POLICY {} ON {}"
+        ).format(name, database or self._database)
+        if duration:
+            query_string += " DURATION {}".format(duration)
+        if replication:
+            query_string += " REPLICATION {}".format(replication)
+        if default is True:
+            query_string += " DEFAULT"
+
+        self.query(query_string)
+
     def get_list_retention_policies(self, database=None):
         """Get the list of retention policies for a database.
 
@@ -580,6 +617,62 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         """
         database = database or self._database
         self.query('DROP SERIES \"%s\"' % name, database=database)
+
+    def grant_admin_privileges(self, username):
+        """Grant cluster administration privileges to an user.
+
+        :param username: the username to grant privileges to
+        :type username: str
+
+        .. note:: Only a cluster administrator can create/ drop databases
+            and manage users.
+        """
+        text = "GRANT ALL PRIVILEGES TO {}".format(username)
+        self.query(text)
+
+    def revoke_admin_privileges(self, username):
+        """Revoke cluster administration privileges from an user.
+
+        :param username: the username to revoke privileges from
+        :type username: str
+
+        .. note:: Only a cluster administrator can create/ drop databases
+            and manage users.
+        """
+        text = "REVOKE ALL PRIVILEGES FROM {}".format(username)
+        self.query(text)
+
+    def grant_privilege(self, privilege, database, username):
+        """Grant a privilege on a database to an user.
+
+        :param privilege: the privilege to grant, one of 'read', 'write'
+            or 'all'. The string is case-insensitive
+        :type privilege: str
+        :param database: the database to grant the privilege on
+        :type database: str
+        :param username: the username to grant the privilege to
+        :type username: str
+        """
+        text = "GRANT {} ON {} TO {}".format(privilege,
+                                             database,
+                                             username)
+        self.query(text)
+
+    def revoke_privilege(self, privilege, database, username):
+        """Revoke a privilege on a database from an user.
+
+        :param privilege: the privilege to revoke, one of 'read', 'write'
+            or 'all'. The string is case-insensitive
+        :type privilege: str
+        :param database: the database to revoke the privilege on
+        :type database: str
+        :param username: the username to revoke the privilege from
+        :type username: str
+        """
+        text = "REVOKE {} ON {} FROM {}".format(privilege,
+                                                database,
+                                                username)
+        self.query(text)
 
     def send_packet(self, packet):
         """Send an UDP packet.

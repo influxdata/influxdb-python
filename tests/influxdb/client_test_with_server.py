@@ -376,6 +376,67 @@ class SimpleTests(SingleTestCaseWithServerMixin,
                       'found invalid, expected',
                       ctx.exception.content)
 
+    def test_grant_admin_privileges(self):
+        self.cli.create_user('test', 'test')
+        self.assertEqual([{'user': 'test', 'admin': False}],
+                         self.cli.get_list_users())
+        self.cli.grant_admin_privileges('test')
+        self.assertEqual([{'user': 'test', 'admin': True}],
+                         self.cli.get_list_users())
+
+    def test_grant_admin_privileges_invalid(self):
+        with self.assertRaises(InfluxDBClientError) as ctx:
+            self.cli.grant_admin_privileges('')
+        self.assertEqual(400, ctx.exception.code)
+        self.assertIn('{"error":"error parsing query: ',
+                      ctx.exception.content)
+
+    def test_revoke_admin_privileges(self):
+        self.cli.create_user('test', 'test')
+        self.cli.grant_admin_privileges('test')
+        self.assertEqual([{'user': 'test', 'admin': True}],
+                         self.cli.get_list_users())
+        self.cli.revoke_admin_privileges('test')
+        self.assertEqual([{'user': 'test', 'admin': False}],
+                         self.cli.get_list_users())
+
+    def test_revoke_admin_privileges_invalid(self):
+        with self.assertRaises(InfluxDBClientError) as ctx:
+            self.cli.revoke_admin_privileges('')
+        self.assertEqual(400, ctx.exception.code)
+        self.assertIn('{"error":"error parsing query: ',
+                      ctx.exception.content)
+
+    def test_grant_privilege(self):
+        self.cli.create_user('test', 'test')
+        self.cli.create_database('testdb')
+        self.cli.grant_privilege('all', 'testdb', 'test')
+        # TODO: when supported by InfluxDB, check if privileges are granted
+
+    def test_grant_privilege_invalid(self):
+        self.cli.create_user('test', 'test')
+        self.cli.create_database('testdb')
+        with self.assertRaises(InfluxDBClientError) as ctx:
+            self.cli.grant_privilege('', 'testdb', 'test')
+        self.assertEqual(400, ctx.exception.code)
+        self.assertIn('{"error":"error parsing query: ',
+                      ctx.exception.content)
+
+    def test_revoke_privilege(self):
+        self.cli.create_user('test', 'test')
+        self.cli.create_database('testdb')
+        self.cli.revoke_privilege('all', 'testdb', 'test')
+        # TODO: when supported by InfluxDB, check if privileges are revoked
+
+    def test_revoke_privilege_invalid(self):
+        self.cli.create_user('test', 'test')
+        self.cli.create_database('testdb')
+        with self.assertRaises(InfluxDBClientError) as ctx:
+            self.cli.revoke_privilege('', 'testdb', 'test')
+        self.assertEqual(400, ctx.exception.code)
+        self.assertIn('{"error":"error parsing query: ',
+                      ctx.exception.content)
+
 
 ############################################################################
 
@@ -654,6 +715,61 @@ class CommonTests(ManyTestCasesWithServerMixin,
               'replicaN': 1, 'name': 'default'},
              {'duration': '24h0m0s', 'default': False,
               'replicaN': 4, 'name': 'somename'}],
+            rsp
+        )
+
+    def test_alter_retention_policy(self):
+        self.cli.create_retention_policy('somename', '1d', 1)
+
+        # Test alter duration
+        self.cli.alter_retention_policy('somename', 'db',
+                                        duration='4d')
+        rsp = self.cli.get_list_retention_policies()
+        self.assertEqual(
+            [{'duration': '0', 'default': True,
+              'replicaN': 1, 'name': 'default'},
+             {'duration': '96h0m0s', 'default': False,
+              'replicaN': 1, 'name': 'somename'}],
+            rsp
+        )
+
+        # Test alter replication
+        self.cli.alter_retention_policy('somename', 'db',
+                                        replication=4)
+        rsp = self.cli.get_list_retention_policies()
+        self.assertEqual(
+            [{'duration': '0', 'default': True,
+              'replicaN': 1, 'name': 'default'},
+             {'duration': '96h0m0s', 'default': False,
+              'replicaN': 4, 'name': 'somename'}],
+            rsp
+        )
+
+        # Test alter default
+        self.cli.alter_retention_policy('somename', 'db',
+                                        default=True)
+        rsp = self.cli.get_list_retention_policies()
+        self.assertEqual(
+            [{'duration': '0', 'default': False,
+              'replicaN': 1, 'name': 'default'},
+             {'duration': '96h0m0s', 'default': True,
+              'replicaN': 4, 'name': 'somename'}],
+            rsp
+        )
+
+    def test_alter_retention_policy_invalid(self):
+        self.cli.create_retention_policy('somename', '1d', 1)
+        with self.assertRaises(InfluxDBClientError) as ctx:
+            self.cli.alter_retention_policy('somename', 'db')
+        self.assertEqual(400, ctx.exception.code)
+        self.assertIn('{"error":"error parsing query: ',
+                      ctx.exception.content)
+        rsp = self.cli.get_list_retention_policies()
+        self.assertEqual(
+            [{'duration': '0', 'default': True,
+              'replicaN': 1, 'name': 'default'},
+             {'duration': '24h0m0s', 'default': False,
+              'replicaN': 1, 'name': 'somename'}],
             rsp
         )
 
