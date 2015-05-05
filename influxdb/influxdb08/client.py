@@ -273,9 +273,23 @@ class InfluxDBClient(object):
 
     def write_points(self, data, time_precision='s', *args, **kwargs):
         """
-        Write to multiple time series names.
+        Write to multiple time series names. An example data blob is:
 
-        :param data: A list of dicts.
+        data = [
+            {
+                "points": [
+                    [
+                        12
+                    ]
+                ], 
+                "name": "cpu_load_short", 
+                "columns": [
+                    "value"
+                ]
+            }
+        ]
+
+        :param data: A list of dicts in InfluxDB 0.8.x data format.
         :param time_precision: [Optional, default 's'] Either 's', 'm', 'ms'
             or 'u'.
         :param batch_size: [Optional] Value to write the points in batches
