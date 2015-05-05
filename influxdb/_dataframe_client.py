@@ -30,41 +30,43 @@ class DataFrameClient(InfluxDBClient):
 
     EPOCH = pd.Timestamp('1970-01-01 00:00:00.000+00:00')
 
-    def write_points(self, data, time_precision=None, database=None,
-                     retention_policy=None, tags=None, batch_size=None):
+    def write_points(self, dataframe, measurement, tags=None,
+                     time_precision=None, database=None, retention_policy=None,
+                     batch_size=None):
         """
         Write to multiple time series names.
 
-        :param data: A dictionary mapping series to pandas DataFrames
+        :param dataframe: data points in a DataFrame
+        :param measurement: name of measurement
+        :param tags: dictionary of tags, with string key-values
         :param time_precision: [Optional, default 's'] Either 's', 'ms', 'u'
             or 'n'.
         :param batch_size: [Optional] Value to write the points in batches
             instead of all at one time. Useful for when doing data dumps from
             one database to another or when doing a massive write operation
         :type batch_size: int
-        """
 
+        """
         if batch_size:
-            for key, data_frame in data.items():
-                number_batches = int(math.ceil(
-                    len(data_frame) / float(batch_size)))
-                for batch in range(number_batches):
-                    start_index = batch * batch_size
-                    end_index = (batch + 1) * batch_size
-                    data = self._convert_dataframe_to_json(
-                        key=key,
-                        dataframe=data_frame.ix[start_index:end_index].copy(),
-                    )
-                    super(DataFrameClient, self).write_points(
-                        data, time_precision, database, retention_policy, tags)
-            return True
-        else:
-            for key, data_frame in data.items():
-                data = self._convert_dataframe_to_json(
-                    key=key, dataframe=data_frame,
+            number_batches = int(math.ceil(
+                len(dataframe) / float(batch_size)))
+            for batch in range(number_batches):
+                start_index = batch * batch_size
+                end_index = (batch + 1) * batch_size
+                points = self._convert_dataframe_to_json(
+                    dataframe.ix[start_index:end_index].copy(),
+                    measurement,
+                    tags
                 )
                 super(DataFrameClient, self).write_points(
-                    data, time_precision, database, retention_policy, tags)
+                    points, time_precision, database, retention_policy)
+            return True
+        else:
+            points = self._convert_dataframe_to_json(
+                dataframe, measurement, tags
+            )
+            super(DataFrameClient, self).write_points(
+                points, time_precision, database, retention_policy)
             return True
 
     def query(self, query, chunked=False, database=None):
@@ -114,7 +116,7 @@ class DataFrameClient(InfluxDBClient):
             result[key] = df
         return result
 
-    def _convert_dataframe_to_json(self, key, dataframe):
+    def _convert_dataframe_to_json(self, dataframe, measurement, tags=None):
 
         if not isinstance(dataframe, pd.DataFrame):
             raise TypeError('Must be DataFrame, but type was: {}.'
@@ -134,14 +136,9 @@ class DataFrameClient(InfluxDBClient):
         # Convert dtype for json serialization
         dataframe = dataframe.astype('object')
 
-        if isinstance(key, str):
-            name = key
-            tags = None
-        else:
-            name, tags = key
         points = [
-            {'name': name,
-             'tags': dict(tags) if tags else {},
+            {'name': measurement,
+             'tags': tags if tags else {},
              'fields': rec,
              'timestamp': ts.isoformat()
              }

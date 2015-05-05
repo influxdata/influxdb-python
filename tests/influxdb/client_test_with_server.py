@@ -117,22 +117,27 @@ dummy_points = [  # some dummy points
 
 if not using_pypy:
     dummy_pointDF = {
-        ("cpu_load_short", (("host", "server01"), ("region", "us-west"))):
-        pd.DataFrame(
+        "measurement": "cpu_load_short",
+        "tags": {"host": "server01",
+                 "region": "us-west"},
+        "dataframe": pd.DataFrame(
             [[0.64]], columns=['value'],
             index=pd.to_datetime(["2009-11-10T23:00:00Z"]))
     }
-    dummy_pointsDF = {
-        ("cpu_load_short", (("host", "server01"), ("region", "us-west"))):
-        pd.DataFrame(
+    dummy_pointsDF = [{
+        "measurement": "cpu_load_short",
+        "tags": {"host": "server01", "region": "us-west"},
+        "dataframe": pd.DataFrame(
             [[0.64]], columns=['value'],
             index=pd.to_datetime(["2009-11-10T23:00:00Z"])),
-        ("memory", (("host", "server01"), ("region", "us-west"))):
-        pd.DataFrame(
+    }, {
+        "measurement": "memory",
+        "tags": {"host": "server01", "region": "us-west"},
+        "dataframe": pd.DataFrame(
             [[33]], columns=['value'],
             index=pd.to_datetime(["2009-11-10T23:01:35Z"])
         )
-    }
+    }]
 
 
 dummy_point_without_timestamp = [
@@ -507,7 +512,14 @@ class CommonTests(ManyTestCasesWithServerMixin,
     @skipIfPYpy
     def test_write_points_DF(self):
         """ same as test_write() but with write_points \o/ """
-        self.assertIs(True, self.cliDF.write_points(dummy_pointDF))
+        self.assertIs(
+            True,
+            self.cliDF.write_points(
+                dummy_pointDF['dataframe'],
+                dummy_pointDF['measurement'],
+                dummy_pointDF['tags']
+            )
+        )
 
     def test_write_points_check_read(self):
         """ same as test_write_check_read() but with write_points \o/ """
@@ -538,9 +550,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         rsp = self.cliDF.query('SELECT * FROM cpu_load_short')
         assert_frame_equal(
             rsp['cpu_load_short'],
-            dummy_pointDF[
-                ('cpu_load_short',
-                 (('host', 'server01'), ('region', 'us-west')))]
+            dummy_pointDF['dataframe']
         )
 
         # Query with Tags
@@ -549,9 +559,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         assert_frame_equal(
             rsp[('cpu_load_short',
                  (('host', 'server01'), ('region', 'us-west')))],
-            dummy_pointDF[
-                ('cpu_load_short',
-                 (('host', 'server01'), ('region', 'us-west')))]
+            dummy_pointDF['dataframe']
         )
 
     def test_write_multiple_points_different_series(self):
@@ -574,25 +582,24 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
     @skipIfPYpy
     def test_write_multiple_points_different_series_DF(self):
-        self.assertIs(True, self.cliDF.write_points(dummy_pointsDF))
+        for i in range(2):
+            self.assertIs(
+                True, self.cliDF.write_points(
+                    dummy_pointsDF[i]['dataframe'],
+                    dummy_pointsDF[i]['measurement'],
+                    dummy_pointsDF[i]['tags']))
         time.sleep(1)
         rsp = self.cliDF.query('SELECT * FROM cpu_load_short')
 
         assert_frame_equal(
             rsp['cpu_load_short'],
-            dummy_pointsDF[
-                ('cpu_load_short', (('host', 'server01'),
-                                    ('region', 'us-west')))
-            ]
+            dummy_pointsDF[0]['dataframe']
         )
 
         rsp = self.cliDF.query('SELECT * FROM memory')
         assert_frame_equal(
             rsp['memory'],
-            dummy_pointsDF[
-                ('memory', (('host', 'server01'),
-                            ('region', 'us-west')))
-            ]
+            dummy_pointsDF[1]['dataframe']
         )
 
     def test_write_points_batch(self):

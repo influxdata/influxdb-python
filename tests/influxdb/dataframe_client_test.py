@@ -56,10 +56,10 @@ class TestDataFrameClient(unittest.TestCase):
 
             cli = DataFrameClient(database='db')
 
-            cli.write_points({"foo": dataframe})
+            cli.write_points(dataframe, 'foo')
             self.assertEqual(json.loads(m.last_request.body), expected)
 
-            cli.write_points({("foo", None): dataframe})
+            cli.write_points(dataframe, 'foo', tags=None)
             self.assertEqual(json.loads(m.last_request.body), expected)
 
     def test_write_points_from_dataframe_in_batches(self):
@@ -73,8 +73,7 @@ class TestDataFrameClient(unittest.TestCase):
                            "http://localhost:8086/write")
 
             cli = DataFrameClient(database='db')
-            assert cli.write_points({("foo", None): dataframe},
-                                    batch_size=1) is True
+            assert cli.write_points(dataframe, "foo", batch_size=1) is True
 
     def test_write_points_from_dataframe_with_numeric_column_names(self):
         now = pd.Timestamp('1970-01-01 00:00+00:00')
@@ -106,7 +105,7 @@ class TestDataFrameClient(unittest.TestCase):
                            "http://localhost:8086/write")
 
             cli = DataFrameClient(database='db')
-            cli.write_points({("foo", (('hello', 'there'),)): dataframe})
+            cli.write_points(dataframe, "foo", {"hello": "there"})
 
             self.assertEqual(json.loads(m.last_request.body), expected)
 
@@ -140,7 +139,7 @@ class TestDataFrameClient(unittest.TestCase):
                            "http://localhost:8086/write")
 
             cli = DataFrameClient(database='db')
-            cli.write_points({"foo": dataframe})
+            cli.write_points(dataframe, "foo")
 
             self.assertEqual(json.loads(m.last_request.body), expected)
 
@@ -175,17 +174,17 @@ class TestDataFrameClient(unittest.TestCase):
             }
 
             cli = DataFrameClient(database='db')
-            key = "foo"
+            measurement = "foo"
 
-            cli.write_points({key: dataframe}, time_precision='s')
+            cli.write_points(dataframe, measurement, time_precision='s')
             points.update(precision='s')
             self.assertEqual(json.loads(m.last_request.body), points)
 
-            cli.write_points({key: dataframe}, time_precision='m')
+            cli.write_points(dataframe, measurement, time_precision='m')
             points.update(precision='m')
             self.assertEqual(json.loads(m.last_request.body), points)
 
-            cli.write_points({key: dataframe}, time_precision='u')
+            cli.write_points(dataframe, measurement, time_precision='u')
             points.update(precision='u')
             self.assertEqual(json.loads(m.last_request.body), points)
 
@@ -200,7 +199,7 @@ class TestDataFrameClient(unittest.TestCase):
                            "http://localhost:8086/db/db/series")
 
             cli = DataFrameClient(database='db')
-            cli.write_points({"foo": dataframe})
+            cli.write_points(dataframe, "foo")
 
     @raises(TypeError)
     def test_write_points_from_dataframe_fails_with_series(self):
@@ -213,7 +212,7 @@ class TestDataFrameClient(unittest.TestCase):
                            "http://localhost:8086/db/db/series")
 
             cli = DataFrameClient(database='db')
-            cli.write_points({"foo": dataframe})
+            cli.write_points(dataframe, "foo")
 
     def test_query_into_dataframe(self):
         data = {
