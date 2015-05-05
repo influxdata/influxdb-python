@@ -490,6 +490,44 @@ class TestInfluxDBClient(unittest.TestCase):
                 'db duration 1d replication 4'
             )
 
+    def test_alter_retention_policy(self):
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            # Test alter duration
+            self.cli.alter_retention_policy('somename', 'db',
+                                            duration='4d')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'alter retention policy somename on db duration 4d'
+            )
+            # Test alter replication
+            self.cli.alter_retention_policy('somename', 'db',
+                                            replication=4)
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'alter retention policy somename on db replication 4'
+            )
+
+            # Test alter default
+            self.cli.alter_retention_policy('somename', 'db',
+                                            default=True)
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'alter retention policy somename on db default'
+            )
+
+    @raises(Exception)
+    def test_alter_retention_policy_invalid(self):
+        cli = InfluxDBClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'get', 400):
+            self.cli.alter_retention_policy('somename', 'db')
+
     def test_get_list_retention_policies(self):
         example_response = \
             '{"results": [{"series": [{"values": [["fsfdsdf", "24h0m0s", 2]],'\
@@ -585,6 +623,94 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
             self.assertListEqual(self.cli.get_list_users(), [])
+
+    def test_grant_admin_privileges(self):
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.cli.grant_admin_privileges('test')
+
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'grant all privileges to test'
+            )
+
+    @raises(Exception)
+    def test_grant_admin_privileges_invalid(self):
+        cli = InfluxDBClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'get', 400):
+            self.cli.grant_admin_privileges('')
+
+    def test_revoke_admin_privileges(self):
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.cli.revoke_admin_privileges('test')
+
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'revoke all privileges from test'
+            )
+
+    @raises(Exception)
+    def test_revoke_admin_privileges_invalid(self):
+        cli = InfluxDBClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'get', 400):
+            self.cli.revoke_admin_privileges('')
+
+    def test_grant_privilege(self):
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.cli.grant_privilege('read', 'testdb', 'test')
+
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'grant read on testdb to test'
+            )
+
+    @raises(Exception)
+    def test_grant_privilege_invalid(self):
+        cli = InfluxDBClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'get', 400):
+            self.cli.grant_privilege('', 'testdb', 'test')
+
+    def test_revoke_privilege(self):
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.cli.revoke_privilege('read', 'testdb', 'test')
+
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'revoke read on testdb from test'
+            )
+
+    @raises(Exception)
+    def test_revoke_privilege_invalid(self):
+        cli = InfluxDBClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'get', 400):
+            self.cli.revoke_privilege('', 'testdb', 'test')
 
 
 class FakeClient(InfluxDBClient):
@@ -727,3 +853,18 @@ class TestInfluxDBClusterClient(unittest.TestCase):
             'https+influxdb://usr:pwd@host:8086/db',
             **{'ssl': False})
         self.assertEqual('http://host:8086', cli.clients[0]._baseurl)
+
+    def test_dsn_password_caps(self):
+        cli = InfluxDBClusterClient.from_DSN(
+            'https+influxdb://usr:pWd@host:8086/db')
+        self.assertEqual('pWd', cli.clients[0]._password)
+
+    def test_dsn_mixed_scheme_case(self):
+        cli = InfluxDBClusterClient.from_DSN(
+            'hTTps+inFLUxdb://usr:pWd@host:8086/db')
+        self.assertEqual('pWd', cli.clients[0]._password)
+        self.assertEqual('https://host:8086', cli.clients[0]._baseurl)
+
+        cli = InfluxDBClusterClient.from_DSN(
+            'uDP+influxdb://usr:pwd@host1:8086,usr:pwd@host2:8086/db')
+        self.assertTrue(cli.clients[0].use_udp)
