@@ -20,10 +20,10 @@ def main(host='localhost', port=8086):
     client.create_database(dbname)
 
     print("Write DataFrame")
-    client.write_points({'demo': df})
+    client.write_points(df, 'demo')
 
     print("Write DataFrame with Tags")
-    client.write_points({('demo', (('k1', 'v1'), ('k2', 'v2'))): df})
+    client.write_points(df, 'demo', {'k1': 'v1', 'k2': 'v2'})
 
     print("Read DataFrame")
     client.query("select * from demo")
