@@ -32,6 +32,12 @@ from influxdb import InfluxDBClient
 from influxdb.client import InfluxDBClientError
 
 from tests.influxdb.misc import get_free_port, is_port_open
+from tests import skipIfPYpy, using_pypy
+
+if not using_pypy:
+    import pandas as pd
+    from pandas.util.testing import assert_frame_equal
+    from influxdb import DataFrameClient
 
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -108,6 +114,31 @@ dummy_points = [  # some dummy points
         }
     }
 ]
+
+if not using_pypy:
+    dummy_pointDF = {
+        "measurement": "cpu_load_short",
+        "tags": {"host": "server01",
+                 "region": "us-west"},
+        "dataframe": pd.DataFrame(
+            [[0.64]], columns=['value'],
+            index=pd.to_datetime(["2009-11-10T23:00:00Z"]))
+    }
+    dummy_pointsDF = [{
+        "measurement": "cpu_load_short",
+        "tags": {"host": "server01", "region": "us-west"},
+        "dataframe": pd.DataFrame(
+            [[0.64]], columns=['value'],
+            index=pd.to_datetime(["2009-11-10T23:00:00Z"])),
+    }, {
+        "measurement": "memory",
+        "tags": {"host": "server01", "region": "us-west"},
+        "dataframe": pd.DataFrame(
+            [[33]], columns=['value'],
+            index=pd.to_datetime(["2009-11-10T23:01:35Z"])
+        )
+    }]
+
 
 dummy_point_without_timestamp = [
     {
@@ -233,6 +264,10 @@ def _setup_influxdb_server(inst):
     inst.cli = InfluxDBClient('localhost',
                               inst.influxd_inst.webui_port,
                               'root', '', database='db')
+    if not using_pypy:
+        inst.cliDF = DataFrameClient('localhost',
+                                     inst.influxd_inst.webui_port,
+                                     'root', '', database='db')
 
 
 def _unsetup_influxdb_server(inst):
@@ -474,6 +509,18 @@ class CommonTests(ManyTestCasesWithServerMixin,
         """ same as test_write() but with write_points \o/ """
         self.assertIs(True, self.cli.write_points(dummy_point))
 
+    @skipIfPYpy
+    def test_write_points_DF(self):
+        """ same as test_write() but with write_points \o/ """
+        self.assertIs(
+            True,
+            self.cliDF.write_points(
+                dummy_pointDF['dataframe'],
+                dummy_pointDF['measurement'],
+                dummy_pointDF['tags']
+            )
+        )
+
     def test_write_points_check_read(self):
         """ same as test_write_check_read() but with write_points \o/ """
         self.test_write_points()
@@ -494,6 +541,27 @@ class CommonTests(ManyTestCasesWithServerMixin,
             {'time': '2009-11-10T23:00:00Z', 'value': 0.64}
         )
 
+    @skipIfPYpy
+    def test_write_points_check_read_DF(self):
+        """ same as test_write_check_read() but with write_points \o/ """
+        self.test_write_points_DF()
+        time.sleep(1)  # same as test_write_check_read()
+
+        rsp = self.cliDF.query('SELECT * FROM cpu_load_short')
+        assert_frame_equal(
+            rsp['cpu_load_short'],
+            dummy_pointDF['dataframe']
+        )
+
+        # Query with Tags
+        rsp = self.cliDF.query(
+            "SELECT * FROM cpu_load_short GROUP BY *")
+        assert_frame_equal(
+            rsp[('cpu_load_short',
+                 (('host', 'server01'), ('region', 'us-west')))],
+            dummy_pointDF['dataframe']
+        )
+
     def test_write_multiple_points_different_series(self):
         self.assertIs(True, self.cli.write_points(dummy_points))
         time.sleep(1)
@@ -510,6 +578,28 @@ class CommonTests(ManyTestCasesWithServerMixin,
         self.assertEqual(
             rsp,
             [[{'value': 33, 'time': '2009-11-10T23:01:35Z'}]]
+        )
+
+    @skipIfPYpy
+    def test_write_multiple_points_different_series_DF(self):
+        for i in range(2):
+            self.assertIs(
+                True, self.cliDF.write_points(
+                    dummy_pointsDF[i]['dataframe'],
+                    dummy_pointsDF[i]['measurement'],
+                    dummy_pointsDF[i]['tags']))
+        time.sleep(1)
+        rsp = self.cliDF.query('SELECT * FROM cpu_load_short')
+
+        assert_frame_equal(
+            rsp['cpu_load_short'],
+            dummy_pointsDF[0]['dataframe']
+        )
+
+        rsp = self.cliDF.query('SELECT * FROM memory')
+        assert_frame_equal(
+            rsp['memory'],
+            dummy_pointsDF[1]['dataframe']
         )
 
     def test_write_points_batch(self):
@@ -654,10 +744,14 @@ class CommonTests(ManyTestCasesWithServerMixin,
         rsp = self.cli.get_list_series()
         self.assertEqual([], rsp)
 
-    def test_get_list_series_non_empty(self):
+    @skipIfPYpy
+    def test_get_list_series_empty_DF(self):
+        rsp = self.cliDF.get_list_series()
+        self.assertEqual({}, rsp)
+
+    def test_get_list_series(self):
         self.cli.write_points(dummy_point)
         rsp = self.cli.get_list_series()
-
         self.assertEqual(
             [
                 {'name': 'cpu_load_short',
@@ -666,6 +760,16 @@ class CommonTests(ManyTestCasesWithServerMixin,
             ],
             rsp
         )
+
+    @skipIfPYpy
+    def test_get_list_series_DF(self):
+        self.cli.write_points(dummy_point)
+        rsp = self.cliDF.get_list_series()
+
+        expected = pd.DataFrame(
+            [[1, 'server01', 'us-west']],
+            columns=['_id', 'host', 'region'])
+        assert_frame_equal(rsp['cpu_load_short'], expected)
 
     def test_get_list_users_empty(self):
         rsp = self.cli.get_list_users()
