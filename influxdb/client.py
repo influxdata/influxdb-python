@@ -256,7 +256,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         else:
             raise InfluxDBClientError(response.content, response.status_code)
 
-    def write(self, data, params=None, expected_response_code=200):
+    def write(self, data, params=None, expected_response_code=204):
         """Write data to InfluxDB.
 
         :param data: the data to be written
@@ -264,7 +264,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :param params: additional parameters for the request, defaults to None
         :type params: dict
         :param expected_response_code: the expected response code of the write
-            operation, defaults to 200
+            operation, defaults to 204
         :type expected_response_code: int
         :returns: True, if the write operation is successful
         :rtype: bool
@@ -403,7 +403,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         else:
             self.write(
                 data=data,
-                expected_response_code=200
+                expected_response_code=204
             )
 
         return True
