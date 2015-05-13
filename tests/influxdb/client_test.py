@@ -137,7 +137,8 @@ class TestInfluxDBClient(unittest.TestCase):
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.POST,
-                "http://localhost:8086/write"
+                "http://localhost:8086/write",
+                status_code=204
             )
             cli = InfluxDBClient(database='db')
             cli.write(
@@ -165,7 +166,8 @@ class TestInfluxDBClient(unittest.TestCase):
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.POST,
-                "http://localhost:8086/write"
+                "http://localhost:8086/write",
+                status_code=204
             )
 
             cli = InfluxDBClient(database='db')
@@ -184,7 +186,8 @@ class TestInfluxDBClient(unittest.TestCase):
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.POST,
-                "http://localhost:8086/write"
+                "http://localhost:8086/write",
+                status_code=204
             )
 
             cli = InfluxDBClient(database='db')
@@ -222,7 +225,8 @@ class TestInfluxDBClient(unittest.TestCase):
                                           "fields": {"value": 12.00}}]}
         with requests_mock.Mocker() as m:
             m.register_uri(requests_mock.POST,
-                           "http://localhost:8086/write")
+                           "http://localhost:8086/write",
+                           status_code=204)
             cli = InfluxDBClient(database='db')
             cli.write_points(points=dummy_points,
                              database='db',
@@ -278,7 +282,8 @@ class TestInfluxDBClient(unittest.TestCase):
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.POST,
-                "http://localhost:8086/write"
+                "http://localhost:8086/write",
+                status_code=204
             )
 
             cli = InfluxDBClient(database='db')
@@ -559,7 +564,7 @@ class TestInfluxDBClient(unittest.TestCase):
                     raise requests.exceptions.ConnectionError
                 else:
                     r = requests.Response()
-                    r.status_code = 200
+                    r.status_code = 204
                     return r
 
         mock_request.side_effect = CustomMock().connection_error

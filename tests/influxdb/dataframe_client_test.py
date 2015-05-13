@@ -34,14 +34,14 @@ class TestDataFrameClient(unittest.TestCase):
         expected = {
             'database': 'db',
             'points': [
-                {'timestamp': '1970-01-01T00:00:00+00:00',
+                {'time': '1970-01-01T00:00:00+00:00',
                  'fields': {
                      'column_two': 1,
                      'column_three': 1.0,
                      'column_one': '1'},
                  'tags': {},
                  'name': 'foo'},
-                {'timestamp': '1970-01-01T01:00:00+00:00',
+                {'time': '1970-01-01T01:00:00+00:00',
                  'fields': {
                      'column_two': 2,
                      'column_three': 2.0,
@@ -52,7 +52,8 @@ class TestDataFrameClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(requests_mock.POST,
-                           "http://localhost:8086/write")
+                           "http://localhost:8086/write",
+                           status_code=204)
 
             cli = DataFrameClient(database='db')
 
@@ -70,7 +71,8 @@ class TestDataFrameClient(unittest.TestCase):
                                           "column_three"])
         with requests_mock.Mocker() as m:
             m.register_uri(requests_mock.POST,
-                           "http://localhost:8086/write")
+                           "http://localhost:8086/write",
+                           status_code=204)
 
             cli = DataFrameClient(database='db')
             assert cli.write_points(dataframe, "foo", batch_size=1) is True
@@ -89,20 +91,21 @@ class TestDataFrameClient(unittest.TestCase):
                     '1': 1,
                     '2': 1.0},
                  'tags': {'hello': 'there'},
-                 'timestamp': '1970-01-01T00:00:00+00:00',
+                 'time': '1970-01-01T00:00:00+00:00',
                  'name': 'foo'},
                 {'fields': {
                     '0': '2',
                     '1': 2,
                     '2': 2.0},
                  'tags': {'hello': 'there'},
-                 'timestamp': '1970-01-01T01:00:00+00:00',
+                 'time': '1970-01-01T01:00:00+00:00',
                  'name': 'foo'}],
         }
 
         with requests_mock.Mocker() as m:
             m.register_uri(requests_mock.POST,
-                           "http://localhost:8086/write")
+                           "http://localhost:8086/write",
+                           status_code=204)
 
             cli = DataFrameClient(database='db')
             cli.write_points(dataframe, "foo", {"hello": "there"})
@@ -123,20 +126,21 @@ class TestDataFrameClient(unittest.TestCase):
                      'column_one': '1',
                      'column_two': 1,
                      'column_three': 1.0},
-                 'timestamp': '1970-01-01T00:00:00+00:00'},
+                 'time': '1970-01-01T00:00:00+00:00'},
                 {'name': 'foo',
                  'tags': {},
                  'fields': {
                      'column_one': '2',
                      'column_two': 2,
                      'column_three': 2.0},
-                 'timestamp': '1970-01-02T00:00:00+00:00'}],
+                 'time': '1970-01-02T00:00:00+00:00'}],
             'database': 'db',
         }
 
         with requests_mock.Mocker() as m:
             m.register_uri(requests_mock.POST,
-                           "http://localhost:8086/write")
+                           "http://localhost:8086/write",
+                           status_code=204)
 
             cli = DataFrameClient(database='db')
             cli.write_points(dataframe, "foo")
@@ -152,19 +156,20 @@ class TestDataFrameClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(requests_mock.POST,
-                           "http://localhost:8086/write")
+                           "http://localhost:8086/write",
+                           status_code=204)
 
             points = {
                 'database': 'db',
                 'points': [
-                    {'timestamp': '1970-01-01T00:00:00+00:00',
+                    {'time': '1970-01-01T00:00:00+00:00',
                      'fields': {
                          'column_one': '1',
                          'column_three': 1.0,
                          'column_two': 1},
                      'tags': {},
                      'name': 'foo'},
-                    {'timestamp': '1970-01-01T01:00:00+00:00',
+                    {'time': '1970-01-01T01:00:00+00:00',
                      'fields': {
                          'column_one': '2',
                          'column_three': 2.0,
@@ -196,7 +201,8 @@ class TestDataFrameClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(requests_mock.POST,
-                           "http://localhost:8086/db/db/series")
+                           "http://localhost:8086/db/db/series",
+                           status_code=204)
 
             cli = DataFrameClient(database='db')
             cli.write_points(dataframe, "foo")
@@ -209,7 +215,8 @@ class TestDataFrameClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(requests_mock.POST,
-                           "http://localhost:8086/db/db/series")
+                           "http://localhost:8086/db/db/series",
+                           status_code=204)
 
             cli = DataFrameClient(database='db')
             cli.write_points(dataframe, "foo")
