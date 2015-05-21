@@ -605,17 +605,17 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         text = "SET PASSWORD FOR {} = '{}'".format(username, password)
         self.query(text)
 
-    def delete_series(self, name, database=None):
+    def delete_series(self, id, database=None):
         """Delete series from a database.
 
-        :param name: the name of the series to be deleted
-        :type name: str
+        :param id: the id of the series to be deleted
+        :type id: int
         :param database: the database from which the series should be
             deleted, defaults to client's current database
         :type database: str
         """
         database = database or self._database
-        self.query('DROP SERIES \"%s\"' % name, database=database)
+        self.query('DROP SERIES %s' % id, database=database)
 
     def grant_admin_privileges(self, username):
         """Grant cluster administration privileges to an user.
