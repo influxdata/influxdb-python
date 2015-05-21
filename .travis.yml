@@ -14,7 +14,7 @@ install:
     - sudo pip install coveralls
     - wget http://get.influxdb.org/influxdb_0.9.0-rc30_amd64.deb && sudo dpkg -i influxdb_0.9.0-rc30_amd64.deb
 script:
-    - travis_wait tox -e $TOX_ENV
+    - travis_wait 30 tox -e $TOX_ENV
 after_success:
     - if [ "$TOX_ENV" == "coverage" ] ; then coveralls; fi
 notifications:
