@@ -749,7 +749,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         rsp = self.cliDF.get_list_series()
         self.assertEqual({}, rsp)
 
-    def test_get_list_series(self):
+    def test_get_list_series_and_delete(self):
         self.cli.write_points(dummy_point)
         rsp = self.cli.get_list_series()
         self.assertEqual(
@@ -759,6 +759,19 @@ class CommonTests(ManyTestCasesWithServerMixin,
                            'region': 'us-west'}]}
             ],
             rsp
+        )
+
+    def test_delete_series(self):
+        self.assertEqual(
+            len(self.cli.get_list_series()), 0
+        )
+        self.cli.write_points(dummy_point)
+        self.assertEqual(
+            len(self.cli.get_list_series()), 1
+        )
+        self.cli.delete_series(1)
+        self.assertEqual(
+            len(self.cli.get_list_series()), 0
         )
 
     @skipIfPYpy
