@@ -281,8 +281,8 @@ class InfluxDBClient(object):
                     [
                         12
                     ]
-                ], 
-                "name": "cpu_load_short", 
+                ],
+                "name": "cpu_load_short",
                 "columns": [
                     "value"
                 ]
