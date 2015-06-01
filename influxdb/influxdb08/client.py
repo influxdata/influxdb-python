@@ -134,7 +134,6 @@ class InfluxDBClient(object):
         udp_port parameter (cf. examples).
         :raise ValueError: if the provided DSN has any unexpected value.
         """
-        dsn = dsn.lower()
 
         init_args = {}
         conn_params = urlparse(dsn)
