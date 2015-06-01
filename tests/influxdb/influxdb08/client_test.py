@@ -27,8 +27,6 @@ else:
     def u(x):
         return x
 
-DSN_STRING = 'influxdb://uSr:pWd@host:1886/db'
-
 
 def _build_response_object(status_code=200, content=""):
     resp = requests.Response()
@@ -91,6 +89,8 @@ class TestInfluxDBClient(unittest.TestCase):
             }
         ]
 
+        self.dsn_string = 'influxdb://uSr:pWd@host:1886/db'
+
     def test_scheme(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
         self.assertEqual(cli._baseurl, 'http://host:8086')
@@ -101,20 +101,20 @@ class TestInfluxDBClient(unittest.TestCase):
         self.assertEqual(cli._baseurl, 'https://host:8086')
 
     def test_dsn(self):
-        cli = InfluxDBClient.from_DSN(DSN_STRING)
+        cli = InfluxDBClient.from_DSN(self.dsn_string)
         self.assertEqual('http://host:1886', cli._baseurl)
         self.assertEqual('uSr', cli._username)
         self.assertEqual('pWd', cli._password)
         self.assertEqual('db', cli._database)
         self.assertFalse(cli.use_udp)
 
-        cli = InfluxDBClient.from_DSN('udp+' + DSN_STRING)
+        cli = InfluxDBClient.from_DSN('udp+' + self.dsn_string)
         self.assertTrue(cli.use_udp)
 
-        cli = InfluxDBClient.from_DSN('https+' + DSN_STRING)
+        cli = InfluxDBClient.from_DSN('https+' + self.dsn_string)
         self.assertEqual('https://host:1886', cli._baseurl)
 
-        cli = InfluxDBClient.from_DSN('https+' + DSN_STRING,
+        cli = InfluxDBClient.from_DSN('https+' + self.dsn_string,
                                       **{'ssl': False})
         self.assertEqual('http://host:1886', cli._baseurl)
 
