@@ -89,49 +89,51 @@ class TestInfluxDBClient(unittest.TestCase):
             }
         ]
 
+        self.dsn_string = 'influxdb://uSr:pWd@host:1886/db'
+
     def test_scheme(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
-        assert cli._baseurl == 'http://host:8086'
+        self.assertEqual(cli._baseurl, 'http://host:8086')
 
         cli = InfluxDBClient(
             'host', 8086, 'username', 'password', 'database', ssl=True
         )
-        assert cli._baseurl == 'https://host:8086'
+        self.assertEqual(cli._baseurl, 'https://host:8086')
 
     def test_dsn(self):
-        cli = InfluxDBClient.from_DSN('influxdb://usr:pwd@host:1886/db')
-        assert cli._baseurl == 'http://host:1886'
-        assert cli._username == 'usr'
-        assert cli._password == 'pwd'
-        assert cli._database == 'db'
-        assert cli.use_udp is False
+        cli = InfluxDBClient.from_DSN(self.dsn_string)
+        self.assertEqual('http://host:1886', cli._baseurl)
+        self.assertEqual('uSr', cli._username)
+        self.assertEqual('pWd', cli._password)
+        self.assertEqual('db', cli._database)
+        self.assertFalse(cli.use_udp)
 
-        cli = InfluxDBClient.from_DSN('udp+influxdb://usr:pwd@host:1886/db')
-        assert cli.use_udp is True
+        cli = InfluxDBClient.from_DSN('udp+' + self.dsn_string)
+        self.assertTrue(cli.use_udp)
 
-        cli = InfluxDBClient.from_DSN('https+influxdb://usr:pwd@host:1886/db')
-        assert cli._baseurl == 'https://host:1886'
+        cli = InfluxDBClient.from_DSN('https+' + self.dsn_string)
+        self.assertEqual('https://host:1886', cli._baseurl)
 
-        cli = InfluxDBClient.from_DSN('https+influxdb://usr:pwd@host:1886/db',
+        cli = InfluxDBClient.from_DSN('https+' + self.dsn_string,
                                       **{'ssl': False})
-        assert cli._baseurl == 'http://host:1886'
+        self.assertEqual('http://host:1886', cli._baseurl)
 
     def test_switch_database(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
         cli.switch_database('another_database')
-        assert cli._database == 'another_database'
+        self.assertEqual(cli._database, 'another_database')
 
     @raises(FutureWarning)
     def test_switch_db_deprecated(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
         cli.switch_db('another_database')
-        assert cli._database == 'another_database'
+        self.assertEqual(cli._database, 'another_database')
 
     def test_switch_user(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
         cli.switch_user('another_username', 'another_password')
-        assert cli._username == 'another_username'
-        assert cli._password == 'another_password'
+        self.assertEqual(cli._username, 'another_username')
+        self.assertEqual(cli._password, 'another_password')
 
     def test_write(self):
         with requests_mock.Mocker() as m:
@@ -250,8 +252,8 @@ class TestInfluxDBClient(unittest.TestCase):
 
         received_data, addr = s.recvfrom(1024)
 
-        assert self.dummy_points == \
-            json.loads(received_data.decode(), strict=True)
+        self.assertEqual(self.dummy_points,
+                         json.loads(received_data.decode(), strict=True))
 
     def test_write_bad_precision_udp(self):
         cli = InfluxDBClient(
@@ -277,7 +279,7 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_write_points_with_precision(self):
         with _mocked_session('post', 200, self.dummy_points):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            assert cli.write_points(self.dummy_points) is True
+            self.assertTrue(cli.write_points(self.dummy_points))
 
     def test_write_points_bad_precision(self):
         cli = InfluxDBClient()
@@ -299,13 +301,14 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_delete_points(self):
         with _mocked_session('delete', 204) as mocked:
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            assert cli.delete_points("foo") is True
+            self.assertTrue(cli.delete_points("foo"))
 
-            assert len(mocked.call_args_list) == 1
+            self.assertEqual(len(mocked.call_args_list), 1)
             args, kwds = mocked.call_args_list[0]
 
-            assert kwds['params'] == {'u': 'username', 'p': 'password'}
-            assert kwds['url'] == 'http://host:8086/db/db/series/foo'
+            self.assertEqual(kwds['params'],
+                             {'u': 'username', 'p': 'password'})
+            self.assertEqual(kwds['url'], 'http://host:8086/db/db/series/foo')
 
     @raises(Exception)
     def test_delete_points_with_wrong_name(self):
@@ -342,7 +345,7 @@ class TestInfluxDBClient(unittest.TestCase):
         with _mocked_session('get', 200, data):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
             result = cli.query('select column_one from foo;')
-            assert len(result[0]['points']) == 4
+            self.assertEqual(len(result[0]['points']), 4)
 
     def test_query_chunked(self):
         cli = InfluxDBClient(database='db')
@@ -422,7 +425,7 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_create_database(self):
         with _mocked_session('post', 201, {"name": "new_db"}):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            assert cli.create_database('new_db') is True
+            self.assertTrue(cli.create_database('new_db'))
 
     @raises(Exception)
     def test_create_database_fails(self):
@@ -433,7 +436,7 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_delete_database(self):
         with _mocked_session('delete', 204):
             cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-            assert cli.delete_database('old_db') is True
+            self.assertTrue(cli.delete_database('old_db'))
 
     @raises(Exception)
     def test_delete_database_fails(self):
@@ -447,8 +450,8 @@ class TestInfluxDBClient(unittest.TestCase):
         ]
         with _mocked_session('get', 200, data):
             cli = InfluxDBClient('host', 8086, 'username', 'password')
-            assert len(cli.get_list_database()) == 1
-            assert cli.get_list_database()[0]['name'] == 'a_db'
+            self.assertEqual(len(cli.get_list_database()), 1)
+            self.assertEqual(cli.get_list_database()[0]['name'], 'a_db')
 
     @raises(Exception)
     def test_get_list_database_fails(self):
@@ -463,8 +466,8 @@ class TestInfluxDBClient(unittest.TestCase):
         ]
         with _mocked_session('get', 200, data):
             cli = InfluxDBClient('host', 8086, 'username', 'password')
-            assert len(cli.get_database_list()) == 1
-            assert cli.get_database_list()[0]['name'] == 'a_db'
+            self.assertEqual(len(cli.get_database_list()), 1)
+            self.assertEqual(cli.get_database_list()[0]['name'], 'a_db')
 
     def test_delete_series(self):
         with _mocked_session('delete', 204):

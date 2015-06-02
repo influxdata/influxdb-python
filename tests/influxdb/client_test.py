@@ -95,6 +95,8 @@ class TestInfluxDBClient(unittest.TestCase):
             }
         ]
 
+        self.dsn_string = 'influxdb://uSr:pWd@host:1886/db'
+
     def test_scheme(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
         self.assertEqual('http://host:8086', cli._baseurl)
@@ -105,20 +107,20 @@ class TestInfluxDBClient(unittest.TestCase):
         self.assertEqual('https://host:8086', cli._baseurl)
 
     def test_dsn(self):
-        cli = InfluxDBClient.from_DSN('influxdb://usr:pwd@host:1886/db')
+        cli = InfluxDBClient.from_DSN(self.dsn_string)
         self.assertEqual('http://host:1886', cli._baseurl)
-        self.assertEqual('usr', cli._username)
-        self.assertEqual('pwd', cli._password)
+        self.assertEqual('uSr', cli._username)
+        self.assertEqual('pWd', cli._password)
         self.assertEqual('db', cli._database)
         self.assertFalse(cli.use_udp)
 
-        cli = InfluxDBClient.from_DSN('udp+influxdb://usr:pwd@host:1886/db')
+        cli = InfluxDBClient.from_DSN('udp+' + self.dsn_string)
         self.assertTrue(cli.use_udp)
 
-        cli = InfluxDBClient.from_DSN('https+influxdb://usr:pwd@host:1886/db')
+        cli = InfluxDBClient.from_DSN('https+' + self.dsn_string)
         self.assertEqual('https://host:1886', cli._baseurl)
 
-        cli = InfluxDBClient.from_DSN('https+influxdb://usr:pwd@host:1886/db',
+        cli = InfluxDBClient.from_DSN('https+' + self.dsn_string,
                                       **{'ssl': False})
         self.assertEqual('http://host:1886', cli._baseurl)
 
@@ -742,6 +744,7 @@ class TestInfluxDBClusterClient(unittest.TestCase):
         warnings.simplefilter('error', FutureWarning)
 
         self.hosts = [('host1', 8086), ('host2', 8086), ('host3', 8086)]
+        self.dsn_string = 'influxdb://uSr:pWd@host1:8086,uSr:pWd@host2:8086/db'
 
     def test_init(self):
         cluster = InfluxDBClusterClient(hosts=self.hosts,
@@ -808,33 +811,29 @@ class TestInfluxDBClusterClient(unittest.TestCase):
         self.assertEqual(2, len(cluster.bad_clients))
 
     def test_dsn(self):
-        cli = InfluxDBClusterClient.from_DSN(
-            'influxdb://usr:pwd@host1:8086,usr:pwd@host2:8086/db')
+        cli = InfluxDBClusterClient.from_DSN(self.dsn_string)
         self.assertEqual(2, len(cli.clients))
         self.assertEqual('http://host1:8086', cli.clients[0]._baseurl)
-        self.assertEqual('usr', cli.clients[0]._username)
-        self.assertEqual('pwd', cli.clients[0]._password)
+        self.assertEqual('uSr', cli.clients[0]._username)
+        self.assertEqual('pWd', cli.clients[0]._password)
         self.assertEqual('db', cli.clients[0]._database)
         self.assertFalse(cli.clients[0].use_udp)
         self.assertEqual('http://host2:8086', cli.clients[1]._baseurl)
-        self.assertEqual('usr', cli.clients[1]._username)
-        self.assertEqual('pwd', cli.clients[1]._password)
+        self.assertEqual('uSr', cli.clients[1]._username)
+        self.assertEqual('pWd', cli.clients[1]._password)
         self.assertEqual('db', cli.clients[1]._database)
         self.assertFalse(cli.clients[1].use_udp)
 
-        cli = InfluxDBClusterClient.from_DSN(
-            'udp+influxdb://usr:pwd@host1:8086,usr:pwd@host2:8086/db')
+        cli = InfluxDBClusterClient.from_DSN('udp+' + self.dsn_string)
         self.assertTrue(cli.clients[0].use_udp)
         self.assertTrue(cli.clients[1].use_udp)
 
-        cli = InfluxDBClusterClient.from_DSN(
-            'https+influxdb://usr:pwd@host1:8086,usr:pwd@host2:8086/db')
+        cli = InfluxDBClusterClient.from_DSN('https+' + self.dsn_string)
         self.assertEqual('https://host1:8086', cli.clients[0]._baseurl)
         self.assertEqual('https://host2:8086', cli.clients[1]._baseurl)
 
-        cli = InfluxDBClusterClient.from_DSN(
-            'https+influxdb://usr:pwd@host1:8086,usr:pwd@host2:8086/db',
-            **{'ssl': False})
+        cli = InfluxDBClusterClient.from_DSN('https+' + self.dsn_string,
+                                             **{'ssl': False})
         self.assertEqual('http://host1:8086', cli.clients[0]._baseurl)
         self.assertEqual('http://host2:8086', cli.clients[1]._baseurl)
 

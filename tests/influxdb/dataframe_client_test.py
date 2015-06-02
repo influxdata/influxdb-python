@@ -75,7 +75,7 @@ class TestDataFrameClient(unittest.TestCase):
                            status_code=204)
 
             cli = DataFrameClient(database='db')
-            assert cli.write_points(dataframe, "foo", batch_size=1) is True
+            self.assertTrue(cli.write_points(dataframe, "foo", batch_size=1))
 
     def test_write_points_from_dataframe_with_numeric_column_names(self):
         now = pd.Timestamp('1970-01-01 00:00+00:00')
@@ -266,7 +266,7 @@ class TestDataFrameClient(unittest.TestCase):
         cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
         with _mocked_session(cli, 'GET', 200, {"results": [{}]}):
             result = cli.query('select column_one from foo;')
-            assert result == {}
+            self.assertEqual(result, {})
 
     def test_list_series(self):
         response = {
