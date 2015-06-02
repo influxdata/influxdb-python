@@ -10,21 +10,21 @@ class TestResultSet(unittest.TestCase):
     def setUp(self):
         self.query_response = {
             "results": [
-                {"series": [{"name": "cpu_load_short",
+                {"series": [{"measurement": "cpu_load_short",
                              "tags": {"host": "server01",
                                       "region": "us-west"},
                              "columns": ["time", "value"],
                             "values": [
                                 ["2015-01-29T21:51:28.968422294Z", 0.64]
                              ]},
-                            {"name": "cpu_load_short",
+                            {"measurement": "cpu_load_short",
                              "tags": {"host": "server02",
                                       "region": "us-west"},
                              "columns": ["time", "value"],
                             "values": [
                                 ["2015-01-29T21:51:28.968422294Z", 0.65]
                              ]},
-                            {"name": "other_serie",
+                            {"measurement": "other_serie",
                              "tags": {"host": "server01",
                                       "region": "us-west"},
                              "columns": ["time", "value"],

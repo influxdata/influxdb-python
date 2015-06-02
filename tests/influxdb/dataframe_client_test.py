@@ -40,14 +40,14 @@ class TestDataFrameClient(unittest.TestCase):
                      'column_three': 1.0,
                      'column_one': '1'},
                  'tags': {},
-                 'name': 'foo'},
+                 'measurement': 'foo'},
                 {'time': '1970-01-01T01:00:00+00:00',
                  'fields': {
                      'column_two': 2,
                      'column_three': 2.0,
                      'column_one': '2'},
                  'tags': {},
-                 'name': 'foo'}]
+                 'measurement': 'foo'}]
         }
 
         with requests_mock.Mocker() as m:
@@ -92,14 +92,14 @@ class TestDataFrameClient(unittest.TestCase):
                     '2': 1.0},
                  'tags': {'hello': 'there'},
                  'time': '1970-01-01T00:00:00+00:00',
-                 'name': 'foo'},
+                 'measurement': 'foo'},
                 {'fields': {
                     '0': '2',
                     '1': 2,
                     '2': 2.0},
                  'tags': {'hello': 'there'},
                  'time': '1970-01-01T01:00:00+00:00',
-                 'name': 'foo'}],
+                 'measurement': 'foo'}],
         }
 
         with requests_mock.Mocker() as m:
@@ -120,14 +120,14 @@ class TestDataFrameClient(unittest.TestCase):
                                           "column_three"])
         expected = {
             'points': [
-                {'name': 'foo',
+                {'measurement': 'foo',
                  'tags': {},
                  'fields': {
                      'column_one': '1',
                      'column_two': 1,
                      'column_three': 1.0},
                  'time': '1970-01-01T00:00:00+00:00'},
-                {'name': 'foo',
+                {'measurement': 'foo',
                  'tags': {},
                  'fields': {
                      'column_one': '2',
@@ -168,14 +168,14 @@ class TestDataFrameClient(unittest.TestCase):
                          'column_three': 1.0,
                          'column_two': 1},
                      'tags': {},
-                     'name': 'foo'},
+                     'measurement': 'foo'},
                     {'time': '1970-01-01T01:00:00+00:00',
                      'fields': {
                          'column_one': '2',
                          'column_three': 2.0,
                          'column_two': 2},
                      'tags': {},
-                     'name': 'foo'}]
+                     'measurement': 'foo'}]
             }
 
             cli = DataFrameClient(database='db')
@@ -225,12 +225,12 @@ class TestDataFrameClient(unittest.TestCase):
         data = {
             "results": [{
                 "series": [
-                    {"name": "network",
+                    {"measurement": "network",
                      "tags": {"direction": ""},
                      "columns": ["time", "value"],
                      "values":[["2009-11-10T23:00:00Z", 23422]]
                      },
-                    {"name": "network",
+                    {"measurement": "network",
                      "tags": {"direction": "in"},
                      "columns": ["time", "value"],
                      "values": [["2009-11-10T23:00:00Z", 23422],
@@ -274,7 +274,7 @@ class TestDataFrameClient(unittest.TestCase):
                 {'series': [
                     {
                         'columns': ['host'],
-                        'name': 'cpu',
+                        'measurement': 'cpu',
                         'values': [
                             ['server01']]
                     },
@@ -283,7 +283,7 @@ class TestDataFrameClient(unittest.TestCase):
                             'host',
                             'region'
                         ],
-                        'name': 'network',
+                        'measurement': 'network',
                         'values': [
                             [
                                 'server01',
@@ -314,7 +314,7 @@ class TestDataFrameClient(unittest.TestCase):
     def test_get_list_database(self):
         data = {'results': [
             {'series': [
-                {'name': 'databases',
+                {'measurement': 'databases',
                  'values': [
                      ['new_db_1'],
                      ['new_db_2']],

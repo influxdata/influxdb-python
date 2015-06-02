@@ -72,7 +72,7 @@ class TestSeriesHelper(unittest.TestCase):
             server_name='us.east-1', other_tag='ello', some_stat=156)
         expectation = [
             {
-                "name": "events.stats.us.east-1",
+                "measurement": "events.stats.us.east-1",
                 "tags": {
                     "other_tag": "ello",
                     "server_name": "us.east-1"
@@ -82,7 +82,7 @@ class TestSeriesHelper(unittest.TestCase):
                 },
             },
             {
-                "name": "events.stats.us.east-1",
+                "measurement": "events.stats.us.east-1",
                 "tags": {
                     "other_tag": "ello",
                     "server_name": "us.east-1"
@@ -92,7 +92,7 @@ class TestSeriesHelper(unittest.TestCase):
                 },
             },
             {
-                "name": "events.stats.us.east-1",
+                "measurement": "events.stats.us.east-1",
                 "tags": {
                     "other_tag": "ello",
                     "server_name": "us.east-1"
@@ -102,7 +102,7 @@ class TestSeriesHelper(unittest.TestCase):
                 },
             },
             {
-                "name": "events.stats.us.east-1",
+                "measurement": "events.stats.us.east-1",
                 "tags": {
                     "other_tag": "ello",
                     "server_name": "us.east-1"
@@ -141,7 +141,7 @@ class TestSeriesHelper(unittest.TestCase):
                 'fields': {
                     'some_stat': 157
                 },
-                'name': 'events.stats.lu.lux',
+                'measurement': 'events.stats.lu.lux',
                 'tags': {
                     'other_tag': 'ello',
                     'server_name': 'lu.lux'
@@ -151,7 +151,7 @@ class TestSeriesHelper(unittest.TestCase):
                 'fields': {
                     'some_stat': 156
                 },
-                'name': 'events.stats.uk.london',
+                'measurement': 'events.stats.uk.london',
                 'tags': {
                     'other_tag': 'ello',
                     'server_name': 'uk.london'
@@ -161,7 +161,7 @@ class TestSeriesHelper(unittest.TestCase):
                 'fields': {
                     'some_stat': 158
                 },
-                'name': 'events.stats.fr.paris-10',
+                'measurement': 'events.stats.fr.paris-10',
                 'tags': {
                     'other_tag': 'ello',
                     'server_name': 'fr.paris-10'
@@ -171,7 +171,7 @@ class TestSeriesHelper(unittest.TestCase):
                 'fields': {
                     'some_stat': 159
                 },
-                'name': 'events.stats.us.east-1',
+                'measurement': 'events.stats.us.east-1',
                 'tags': {
                     'other_tag': 'ello',
                     'server_name': 'us.east-1'
