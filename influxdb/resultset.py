@@ -50,7 +50,7 @@ class ResultSet(object):
             raise TypeError('serie_name must be an str or None')
 
         for serie in self._get_series():
-            serie_name = serie.get('name', 'results')
+            serie_name = serie.get('measurement', serie.get('name', 'results'))
             if serie_name is None:
                 # this is a "system" query or a query which
                 # doesn't return a name attribute.
@@ -119,7 +119,9 @@ class ResultSet(object):
         keys = []
         for serie in self._get_series():
             keys.append(
-                (serie.get('name', 'results'), serie.get('tags', None))
+                (serie.get('measurement',
+                           serie.get('name', 'results')),
+                 serie.get('tags', None))
             )
         return keys
 
@@ -129,7 +131,9 @@ class ResultSet(object):
         """
         items = []
         for serie in self._get_series():
-            serie_key = (serie.get('name', 'results'), serie.get('tags', None))
+            serie_key = (serie.get('measurement',
+                                   serie.get('name', 'results')),
+                         serie.get('tags', None))
             items.append(
                 (serie_key, self[serie_key])
             )

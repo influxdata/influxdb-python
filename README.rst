@@ -104,7 +104,7 @@ Here's a basic example (for more see the examples directory)::
 
     >>> json_body = [
         {
-            "name": "cpu_load_short",
+            "measurement": "cpu_load_short",
             "tags": {
                 "host": "server01",
                 "region": "us-west"

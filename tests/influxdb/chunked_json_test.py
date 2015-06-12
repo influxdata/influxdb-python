@@ -16,10 +16,10 @@ class TestChunkJson(unittest.TestCase):
         Tests reading a sequence of JSON values from a string
         """
         example_response = \
-            '{"results": [{"series": [{"name": "sdfsdfsdf", ' \
+            '{"results": [{"series": [{"measurement": "sdfsdfsdf", ' \
             '"columns": ["time", "value"], "values": ' \
             '[["2009-11-10T23:00:00Z", 0.64]]}]}, {"series": ' \
-            '[{"name": "cpu_load_short", "columns": ["time", "value"], ' \
+            '[{"measurement": "cpu_load_short", "columns": ["time", "value"], ' \
             '"values": [["2009-11-10T23:00:00Z", 0.64]]}]}]}'
 
         res = list(chunked_json.loads(example_response))
@@ -32,12 +32,12 @@ class TestChunkJson(unittest.TestCase):
                     'results': [
                         {'series': [{
                             'values': [['2009-11-10T23:00:00Z', 0.64]],
-                            'name': 'sdfsdfsdf',
+                            'measurement': 'sdfsdfsdf',
                             'columns':
                                 ['time', 'value']}]},
                         {'series': [{
                             'values': [['2009-11-10T23:00:00Z', 0.64]],
-                            'name': 'cpu_load_short',
+                            'measurement': 'cpu_load_short',
                             'columns': ['time', 'value']}]}
                     ]
                 }

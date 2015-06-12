@@ -83,7 +83,7 @@ class TestInfluxDBClient(unittest.TestCase):
         self.cli = InfluxDBClient('localhost', 8086, 'username', 'password')
         self.dummy_points = [
             {
-                "name": "cpu_load_short",
+                "measurement": "cpu_load_short",
                 "tags": {
                     "host": "server01",
                     "region": "us-west"
@@ -146,7 +146,7 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.write(
                 {"database": "mydb",
                  "retentionPolicy": "mypolicy",
-                 "points": [{"name": "cpu_load_short",
+                 "points": [{"measurement": "cpu_load_short",
                              "tags": {"host": "server01",
                                       "region": "us-west"},
                              "timestamp": "2009-11-10T23:00:00Z",
@@ -157,7 +157,7 @@ class TestInfluxDBClient(unittest.TestCase):
                 json.loads(m.last_request.body),
                 {"database": "mydb",
                  "retentionPolicy": "mypolicy",
-                 "points": [{"name": "cpu_load_short",
+                 "points": [{"measurement": "cpu_load_short",
                              "tags": {"host": "server01",
                                       "region": "us-west"},
                              "timestamp": "2009-11-10T23:00:00Z",
@@ -211,17 +211,17 @@ class TestInfluxDBClient(unittest.TestCase):
 
     def test_write_points_batch(self):
         dummy_points = [
-            {"name": "cpu_usage", "tags": {"unit": "percent"},
+            {"measurement": "cpu_usage", "tags": {"unit": "percent"},
              "timestamp": "2009-11-10T23:00:00Z", "fields": {"value": 12.34}},
-            {"name": "network", "tags": {"direction": "in"},
+            {"measurement": "network", "tags": {"direction": "in"},
              "timestamp": "2009-11-10T23:00:00Z", "fields": {"value": 123.00}},
-            {"name": "network", "tags": {"direction": "out"},
+            {"measurement": "network", "tags": {"direction": "out"},
              "timestamp": "2009-11-10T23:00:00Z", "fields": {"value": 12.00}}
         ]
         expected_last_body = {"tags": {"host": "server01",
                                        "region": "us-west"},
                               "database": "db",
-                              "points": [{"name": "network",
+                              "points": [{"measurement": "network",
                                           "tags": {"direction": "out"},
                                           "timestamp": "2009-11-10T23:00:00Z",
                                           "fields": {"value": 12.00}}]}
@@ -322,10 +322,10 @@ class TestInfluxDBClient(unittest.TestCase):
 
     def test_query(self):
         example_response = \
-            '{"results": [{"series": [{"name": "sdfsdfsdf", ' \
+            '{"results": [{"series": [{"measurement": "sdfsdfsdf", ' \
             '"columns": ["time", "value"], "values": ' \
             '[["2009-11-10T23:00:00Z", 0.64]]}]}, {"series": ' \
-            '[{"name": "cpu_load_short", "columns": ["time", "value"], ' \
+            '[{"measurement": "cpu_load_short", "columns": ["time", "value"], ' \
             '"values": [["2009-11-10T23:00:00Z", 0.64]]}]}]}'
 
         with requests_mock.Mocker() as m:
@@ -352,7 +352,7 @@ class TestInfluxDBClient(unittest.TestCase):
                 [1415206212980, 10001, 555],
                 [1415197271586, 10001, 23]
             ],
-            'name': 'foo',
+            'measurement': 'foo',
             'columns': [
                 'time',
                 'sequence_number',
