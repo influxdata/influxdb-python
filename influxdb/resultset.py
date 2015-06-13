@@ -1,13 +1,18 @@
 # -*- coding: utf-8 -*-
 
+from influxdb.exceptions import InfluxDBClientError
+
 _sentinel = object()
 
 
 class ResultSet(object):
-    """A wrapper around series results """
+    """A wrapper around a single InfluxDB query result"""
 
     def __init__(self, series):
         self._raw = series
+
+        if 'error' in self.raw:
+            raise InfluxDBClientError(self.raw['error'])
 
     @property
     def raw(self):
@@ -46,8 +51,14 @@ class ResultSet(object):
             name = key
             tags = None
 
-        if not isinstance(name, (bytes, type(b''.decode()), type(None))):
-            raise TypeError('serie_name must be an str or None')
+        return self.get_points(name, tags)
+
+    def get_points(self, measurement=None, tags=None):
+
+        # Raise error if measurement is not str or bytes
+        if not isinstance(measurement,
+                          (bytes, type(b''.decode()), type(None))):
+            raise TypeError('measurement must be an str or None')
 
         for serie in self._get_series():
             serie_name = serie.get('measurement', serie.get('name', 'results'))
@@ -55,14 +66,14 @@ class ResultSet(object):
                 # this is a "system" query or a query which
                 # doesn't return a name attribute.
                 # like 'show retention policies' ..
-                if key is None:
+                if tags is None:
                     for point in serie['values']:
                         yield self.point_from_cols_vals(
                             serie['columns'],
                             point
                         )
 
-            elif name in (None, serie_name):
+            elif measurement in (None, serie_name):
                 # by default if no tags was provided then
                 # we will matches every returned serie
                 serie_tags = serie.get('tags', {})
@@ -101,13 +112,7 @@ class ResultSet(object):
 
     def _get_series(self):
         """Returns all series"""
-        series = []
-        try:
-            for result in self.raw['results']:
-                series.extend(result['series'])
-        except KeyError:
-            pass
-        return series
+        return self.raw.get('series', [])
 
     def __len__(self):
         return len(self.keys())

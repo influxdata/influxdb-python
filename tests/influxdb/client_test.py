@@ -337,7 +337,7 @@ class TestInfluxDBClient(unittest.TestCase):
             rs = self.cli.query('select * from foo')
 
             self.assertListEqual(
-                list(rs['cpu_load_short']),
+                list(rs[0].get_points()),
                 [{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]
             )
 
