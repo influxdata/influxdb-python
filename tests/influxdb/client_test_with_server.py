@@ -182,6 +182,7 @@ class InfluxDbInstance(object):
             meta_dir=os.path.join(tempdir, 'meta'),
             data_dir=os.path.join(tempdir, 'data'),
             cluster_dir=os.path.join(tempdir, 'state'),
+            handoff_dir=os.path.join(tempdir, 'handoff'),
             logs_file=os.path.join(self.temp_dir_base, 'logs.txt'),
             udp_enabled='true' if udp_enabled else 'false',
         )

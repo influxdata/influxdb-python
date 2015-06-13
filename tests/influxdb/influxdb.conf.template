@@ -74,7 +74,7 @@
 
 [hinted-handoff]
   enabled = false
-  dir = "/home/reazem/.influxdb/hh"
+  dir = "{handoff_dir}"
   max-size = 1073741824
   max-age = "168h0m0s"
   retry-rate-limit = 0
