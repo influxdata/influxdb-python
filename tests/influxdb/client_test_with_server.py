@@ -762,12 +762,12 @@ class CommonTests(ManyTestCasesWithServerMixin,
         rsp = self.cli.get_list_series()
         self.assertEqual(
             [
-                {'name': u'cpu_load_short',
+                {'name': 'cpu_load_short',
                  'tags': [
-                     {u'host': u'server01',
-                      u'region': u'us-west',
-                      u'_key':
-                          u'cpu_load_short,host=server01,region=us-west'}]}
+                     {'host': 'server01',
+                      'region': 'us-west',
+                      '_key':
+                          'cpu_load_short,host=server01,region=us-west'}]}
             ],
             rsp
         )
@@ -828,18 +828,18 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
         self.assertEqual(
             [
-                {u'duration': u'0',
-                 u'default': False,
-                 u'replicaN': 1,
-                 u'name': u'default'},
-                {u'duration': u'24h0m0s',
-                 u'default': True,
-                 u'replicaN': 1,
-                 u'name': u'somename'},
-                {u'duration': u'48h0m0s',
-                 u'default': False,
-                 u'replicaN': 1,
-                 u'name': u'another'}
+                {'duration': '0',
+                 'default': False,
+                 'replicaN': 1,
+                 'name': 'default'},
+                {'duration': '24h0m0s',
+                 'default': True,
+                 'replicaN': 1,
+                 'name': 'somename'},
+                {'duration': '48h0m0s',
+                 'default': False,
+                 'replicaN': 1,
+                 'name': 'another'}
             ],
             rsp
         )
