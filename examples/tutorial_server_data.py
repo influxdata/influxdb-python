@@ -29,7 +29,7 @@ def main(host='localhost', port=8086, nb_day=15):
         # pointValues = [int(past_date.strftime('%s')), value, hostName]
         pointValues = {
                 "timestamp": int(past_date.strftime('%s')),
-                "name": metric,
+                "measurement": metric,
                 'fields':  {
                     'value': value,
                 },
