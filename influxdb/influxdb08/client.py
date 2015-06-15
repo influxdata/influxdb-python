@@ -25,8 +25,8 @@ session = requests.Session()
 
 
 class InfluxDBClientError(Exception):
-    "Raised when an error occurs in the request"
-    def __init__(self, content, code):
+    """Raised when an error occurs in the request"""
+    def __init__(self, content, code=-1):
         super(InfluxDBClientError, self).__init__(
             "{0}: {1}".format(code, content))
         self.content = content
