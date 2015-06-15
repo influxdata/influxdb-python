@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+import warnings
+
 from influxdb.exceptions import InfluxDBClientError
 
 _sentinel = object()
@@ -37,6 +39,13 @@ class ResultSet(object):
         The order in which the points are yielded is actually undefined but
         it might change..
         """
+
+        warnings.warn(
+            ("ResultSet's ``__getitem__`` method will be deprecated. Use"
+             "``get_points`` instead."),
+            DeprecationWarning
+        )
+
         if isinstance(key, tuple):
             if 2 != len(key):
                 raise TypeError('only 2-tuples allowed')
@@ -54,6 +63,17 @@ class ResultSet(object):
         return self.get_points(name, tags)
 
     def get_points(self, measurement=None, tags=None):
+        """
+        Returns a generator for all the points that match the given filters.
+
+        :param measurement: The measurement name
+        :type measurement: str
+
+        :param tags: Tags to look for
+        :type tags: dict
+
+        :return: Points generator
+        """
 
         # Raise error if measurement is not str or bytes
         if not isinstance(measurement,
