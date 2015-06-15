@@ -12,6 +12,8 @@ import requests.exceptions
 from sys import version_info
 
 from influxdb.resultset import ResultSet
+from .exceptions import InfluxDBClientError
+from .exceptions import InfluxDBServerError
 
 try:
     xrange
@@ -22,23 +24,6 @@ if version_info[0] == 3:
     from urllib.parse import urlparse
 else:
     from urlparse import urlparse
-
-
-class InfluxDBClientError(Exception):
-    """Raised when an error occurs in the request."""
-    def __init__(self, content, code):
-        if isinstance(content, type(b'')):
-            content = content.decode('UTF-8', errors='replace')
-        super(InfluxDBClientError, self).__init__(
-            "{0}: {1}".format(code, content))
-        self.content = content
-        self.code = code
-
-
-class InfluxDBServerError(Exception):
-    """Raised when a server error occurs."""
-    def __init__(self, content):
-        super(InfluxDBServerError, self).__init__(content)
 
 
 class InfluxDBClient(object):
@@ -310,7 +295,13 @@ localhost:8086/databasename', timeout=5, udp_port=159)
 
         data = response.json()
 
-        return ResultSet(data)
+        results = [ResultSet(result) for result in data.get('results', [])]
+
+        # TODO(aviau): Always return a list. (This would be a breaking change)
+        if len(results) == 1:
+            return results[0]
+        else:
+            return results
 
     def write_points(self,
                      points,
@@ -420,7 +411,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         >>> dbs
         [{u'name': u'db1'}, {u'name': u'db2'}, {u'name': u'db3'}]
         """
-        return list(self.query("SHOW DATABASES")['databases'])
+        return list(self.query("SHOW DATABASES").get_points())
 
     def create_database(self, dbname):
         """Create a new database in InfluxDB.
@@ -527,7 +518,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         rsp = self.query(
             "SHOW RETENTION POLICIES %s" % (database or self._database)
         )
-        return list(rsp['results'])
+        return list(rsp.get_points())
 
     def get_list_series(self, database=None):
         """Get the list of series for a database.
@@ -572,7 +563,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
          {u'admin': False, u'user': u'user2'},
          {u'admin': False, u'user': u'user3'}]
         """
-        return list(self.query("SHOW USERS")["results"])
+        return list(self.query("SHOW USERS").get_points())
 
     def create_user(self, username, password):
         """Create a new user in InfluxDB
