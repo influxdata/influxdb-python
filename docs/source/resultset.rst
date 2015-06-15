@@ -31,7 +31,7 @@ Using ``rs.get_points(tags={'host_name': 'influxdb.com'})`` will return a genera
 ::
 
     rs = cli.query("SELECT * from cpu")
-    cpu_influxdb_com_points = list(rs[{"host_name": "influxdb.com"}])
+    cpu_influxdb_com_points = list(rs.get_points(tags={"host_name": "influxdb.com"}))
 
 Filtering by measurement and tags
 ---------------------------------
