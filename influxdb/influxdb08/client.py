@@ -7,6 +7,7 @@ import socket
 import requests
 import requests.exceptions
 import warnings
+import simplejson
 from sys import version_info
 
 from influxdb import chunked_json
@@ -226,7 +227,7 @@ class InfluxDBClient(object):
         params.update(auth)
 
         if data is not None and not isinstance(data, str):
-            data = json.dumps(data)
+            data = simplejson.dumps(data, ignore_nan=True)
 
         # Try to send the request a maximum of three times. (see #103)
         # TODO (aviau): Make this configurable.
