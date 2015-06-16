@@ -370,6 +370,11 @@ class SimpleTests(SingleTestCaseWithServerMixin,
         self.assertIn('database not found: db',
                       ctx.exception.content)
 
+    def test_query_fail_ignore_errors(self):
+        result = self.cli.query('select column_one from foo',
+                                raise_errors=False)
+        self.assertEqual(result.error, 'database not found: db')
+
     def test_create_user(self):
         self.cli.create_user('test_user', 'secret_password')
         rsp = list(self.cli.query("SHOW USERS")['results'])
