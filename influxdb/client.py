@@ -267,18 +267,27 @@ localhost:8086/databasename', timeout=5, udp_port=159)
               query,
               params={},
               expected_response_code=200,
-              database=None):
+              database=None,
+              raise_errors=True):
         """Send a query to InfluxDB.
 
         :param query: the actual query string
         :type query: str
+
         :param params: additional parameters for the request, defaults to {}
         :type params: dict
+
         :param expected_response_code: the expected status code of response,
             defaults to 200
         :type expected_response_code: int
+
         :param database: database to query, defaults to None
         :type database: str
+
+        :param raise_errors: Whether or not to raise exceptions when InfluxDB
+            returns errors, defaults to True
+        :type raise_errors: bool
+
         :returns: the queried data
         :rtype: :class:`~.ResultSet`
         """
@@ -295,7 +304,11 @@ localhost:8086/databasename', timeout=5, udp_port=159)
 
         data = response.json()
 
-        results = [ResultSet(result) for result in data.get('results', [])]
+        results = [
+            ResultSet(result, raise_errors=raise_errors)
+            for result
+            in data.get('results', [])
+        ]
 
         # TODO(aviau): Always return a list. (This would be a breaking change)
         if len(results) == 1:

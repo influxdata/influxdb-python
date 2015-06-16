@@ -10,11 +10,12 @@ _sentinel = object()
 class ResultSet(object):
     """A wrapper around a single InfluxDB query result"""
 
-    def __init__(self, series):
+    def __init__(self, series, raise_errors=True):
         self._raw = series
+        self._error = self.raw.get('error', None)
 
-        if 'error' in self.raw:
-            raise InfluxDBClientError(self.raw['error'])
+        if self.error is not None and raise_errors is True:
+            raise InfluxDBClientError(self.error)
 
     @property
     def raw(self):
@@ -24,6 +25,11 @@ class ResultSet(object):
     @raw.setter
     def raw(self, value):
         self._raw = value
+
+    @property
+    def error(self):
+        """Error returned by InfluxDB"""
+        return self._error
 
     def __getitem__(self, key):
         """
