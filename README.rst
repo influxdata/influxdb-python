@@ -103,7 +103,7 @@ Here's a basic example (for more see the examples directory)::
                 "host": "server01",
                 "region": "us-west"
             },
-            "timestamp": "2009-11-10T23:00:00Z",
+            "time": "2009-11-10T23:00:00Z",
             "fields": {
                 "value": 0.64
             }

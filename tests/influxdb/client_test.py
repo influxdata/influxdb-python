@@ -88,7 +88,7 @@ class TestInfluxDBClient(unittest.TestCase):
                     "host": "server01",
                     "region": "us-west"
                 },
-                "timestamp": "2009-11-10T23:00:00Z",
+                "time": "2009-11-10T23:00:00Z",
                 "fields": {
                     "value": 0.64
                 }
@@ -149,7 +149,7 @@ class TestInfluxDBClient(unittest.TestCase):
                  "points": [{"measurement": "cpu_load_short",
                              "tags": {"host": "server01",
                                       "region": "us-west"},
-                             "timestamp": "2009-11-10T23:00:00Z",
+                             "time": "2009-11-10T23:00:00Z",
                              "fields": {"value": 0.64}}]}
             )
 
@@ -160,7 +160,7 @@ class TestInfluxDBClient(unittest.TestCase):
                  "points": [{"measurement": "cpu_load_short",
                              "tags": {"host": "server01",
                                       "region": "us-west"},
-                             "timestamp": "2009-11-10T23:00:00Z",
+                             "time": "2009-11-10T23:00:00Z",
                              "fields": {"value": 0.64}}]}
             )
 
@@ -212,18 +212,18 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_write_points_batch(self):
         dummy_points = [
             {"measurement": "cpu_usage", "tags": {"unit": "percent"},
-             "timestamp": "2009-11-10T23:00:00Z", "fields": {"value": 12.34}},
+             "time": "2009-11-10T23:00:00Z", "fields": {"value": 12.34}},
             {"measurement": "network", "tags": {"direction": "in"},
-             "timestamp": "2009-11-10T23:00:00Z", "fields": {"value": 123.00}},
+             "time": "2009-11-10T23:00:00Z", "fields": {"value": 123.00}},
             {"measurement": "network", "tags": {"direction": "out"},
-             "timestamp": "2009-11-10T23:00:00Z", "fields": {"value": 12.00}}
+             "time": "2009-11-10T23:00:00Z", "fields": {"value": 12.00}}
         ]
         expected_last_body = {"tags": {"host": "server01",
                                        "region": "us-west"},
                               "database": "db",
                               "points": [{"measurement": "network",
                                           "tags": {"direction": "out"},
-                                          "timestamp": "2009-11-10T23:00:00Z",
+                                          "time": "2009-11-10T23:00:00Z",
                                           "fields": {"value": 12.00}}]}
         with requests_mock.Mocker() as m:
             m.register_uri(requests_mock.POST,

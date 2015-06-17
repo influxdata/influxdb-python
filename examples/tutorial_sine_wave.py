@@ -23,7 +23,7 @@ def main(host='localhost', port=8086):
 
         point = {
             "measurement": 'foobar',
-            "timestamp": int(now.strftime('%s')) + angle,
+            "time": int(now.strftime('%s')) + angle,
             "fields": {
                 "value": y
             }
