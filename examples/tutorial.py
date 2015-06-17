@@ -17,7 +17,7 @@ def main(host='localhost', port=8086):
                 "host": "server01",
                 "region": "us-west"
             },
-            "timestamp": "2009-11-10T23:00:00Z",
+            "time": "2009-11-10T23:00:00Z",
             "fields": {
                 "value": 0.64
             }
