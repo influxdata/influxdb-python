@@ -22,7 +22,7 @@ Using ``rs.get_points('cpu')`` will return a generator for all the points that a
 ::
 
     rs = cli.query("SELECT * from cpu")
-    cpu_points = list(rs.get_points(measurement='cpu')])
+    cpu_points = list(rs)
 
 Filtering by tags
 -----------------
