@@ -11,6 +11,7 @@ import requests
 import requests.exceptions
 from sys import version_info
 
+from influxdb.line_protocol import make_lines
 from influxdb.resultset import ResultSet
 
 try:
@@ -221,14 +222,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         if params is None:
             params = {}
 
-        auth = {
-            'u': self._username,
-            'p': self._password
-        }
-
-        params.update(auth)
-
-        if data is not None and not isinstance(data, str):
+        if isinstance(data, dict) or isinstance(data, list):
             data = json.dumps(data)
 
         # Try to send the request a maximum of three times. (see #103)
@@ -238,6 +232,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                 response = self._session.request(
                     method=method,
                     url=url,
+                    auth=(self._username, self._password),
                     params=params,
                     data=data,
                     headers=self._headers,
@@ -270,10 +265,10 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :rtype: bool
         """
         self.request(
-            url="write",
+            url="write_points",
             method='POST',
             params=params,
-            data=data,
+            data=make_lines(data).encode('utf-8'),
             expected_response_code=expected_response_code
         )
         return True
@@ -396,13 +391,12 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         if tags:
             data['tags'] = tags
 
-        data['database'] = database or self._database
-
         if self.use_udp:
             self.send_packet(data)
         else:
             self.write(
                 data=data,
+                params={'db': database or self._database},
                 expected_response_code=204
             )
 
@@ -679,9 +673,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :param packet: the packet to be sent
         :type packet: dict
         """
-        data = json.dumps(packet)
-        byte = data.encode('utf-8')
-        self.udp_socket.sendto(byte, (self._host, self.udp_port))
+        data = make_lines(packet).encode('utf-8')
+        self.udp_socket.sendto(data, (self._host, self.udp_port))
 
 
 class InfluxDBClusterClient(object):
