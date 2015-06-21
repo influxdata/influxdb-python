@@ -139,7 +139,7 @@ class TestInfluxDBClient(unittest.TestCase):
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.POST,
-                "http://localhost:8086/write",
+                "http://localhost:8086/write_points",
                 status_code=204
             )
             cli = InfluxDBClient(database='db')
@@ -154,21 +154,15 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
             self.assertEqual(
-                json.loads(m.last_request.body),
-                {"database": "mydb",
-                 "retentionPolicy": "mypolicy",
-                 "points": [{"measurement": "cpu_load_short",
-                             "tags": {"host": "server01",
-                                      "region": "us-west"},
-                             "timestamp": "2009-11-10T23:00:00Z",
-                             "fields": {"value": 0.64}}]}
+                m.last_request.body,
+                b"cpu_load_short,host=server01,region=us-west value=0.64 1257890400000000000\n",
             )
 
     def test_write_points(self):
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.POST,
-                "http://localhost:8086/write",
+                "http://localhost:8086/write_points",
                 status_code=204
             )
 
@@ -188,7 +182,7 @@ class TestInfluxDBClient(unittest.TestCase):
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.POST,
-                "http://localhost:8086/write",
+                "http://localhost:8086/write_points",
                 status_code=204
             )
 
@@ -227,7 +221,7 @@ class TestInfluxDBClient(unittest.TestCase):
                                           "fields": {"value": 12.00}}]}
         with requests_mock.Mocker() as m:
             m.register_uri(requests_mock.POST,
-                           "http://localhost:8086/write",
+                           "http://localhost:8086/write_points",
                            status_code=204)
             cli = InfluxDBClient(database='db')
             cli.write_points(points=dummy_points,
@@ -284,7 +278,7 @@ class TestInfluxDBClient(unittest.TestCase):
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.POST,
-                "http://localhost:8086/write",
+                "http://localhost:8086/write_points",
                 status_code=204
             )
 
@@ -294,12 +288,9 @@ class TestInfluxDBClient(unittest.TestCase):
                 time_precision='n'
             )
 
-            self.assertDictEqual(
-                {'points': self.dummy_points,
-                 'database': 'db',
-                 'precision': 'n',
-                 },
-                json.loads(m.last_request.body)
+            self.assertEqual(
+                b"cpu_load_short,host=server01,region=us-west value=0.64 1257890400000000000\n",
+                m.last_request.body,
             )
 
     def test_write_points_bad_precision(self):
