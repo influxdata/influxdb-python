@@ -94,9 +94,9 @@ def make_lines(data):
         lines = lines[:-1]  # strip the trailing comma
 
         # add timestamp
-        if 'timestamp' in point:
+        if 'time' in point:
             lines += " " + _force_text(str(int(
-                _convert_timestamp(point['timestamp'])
+                _convert_timestamp(point['time'])
             )))
 
         lines += "\n"
