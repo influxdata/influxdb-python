@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+from calendar import timegm
 from copy import copy
 from datetime import datetime
-from time import mktime
 
 from dateutil.parser import parse
 from pytz import utc
@@ -20,7 +20,7 @@ def _convert_timestamp(timestamp):
             timestamp = timestamp.astimezone(utc)
             timestamp.replace(tzinfo=None)
         return (
-            mktime(timestamp.timetuple()) * 1e9 +
+            timegm(timestamp.timetuple()) * 1e9 +
             timestamp.microsecond * 1e3
         )
     raise ValueError(timestamp)
