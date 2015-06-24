@@ -198,7 +198,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         self._password = password
 
     def request(self, url, method='GET', params=None, data=None,
-                expected_response_code=200):
+                expected_response_code=200, headers=None):
         """Make a HTTP request to the InfluxDB API.
 
         :param url: the path of the HTTP request, e.g. write, query, etc.
@@ -219,6 +219,9 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         """
         url = "{0}/{1}".format(self._baseurl, url)
 
+        if headers is None:
+            headers = self._headers
+
         if params is None:
             params = {}
 
@@ -235,7 +238,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                     auth=(self._username, self._password),
                     params=params,
                     data=data,
-                    headers=self._headers,
+                    headers=headers,
                     verify=self._verify_ssl,
                     timeout=self._timeout
                 )
@@ -264,12 +267,17 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :returns: True, if the write operation is successful
         :rtype: bool
         """
+
+        headers = self._headers
+        headers['Content-type'] = 'application/octet-stream'
+
         self.request(
-            url="write_points",
+            url="write",
             method='POST',
             params=params,
             data=make_lines(data).encode('utf-8'),
-            expected_response_code=expected_response_code
+            expected_response_code=expected_response_code,
+            headers=headers
         )
         return True
 

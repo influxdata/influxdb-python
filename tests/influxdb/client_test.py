@@ -139,7 +139,7 @@ class TestInfluxDBClient(unittest.TestCase):
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.POST,
-                "http://localhost:8086/write_points",
+                "http://localhost:8086/write",
                 status_code=204
             )
             cli = InfluxDBClient(database='db')
@@ -162,7 +162,7 @@ class TestInfluxDBClient(unittest.TestCase):
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.POST,
-                "http://localhost:8086/write_points",
+                "http://localhost:8086/write",
                 status_code=204
             )
 
@@ -182,7 +182,7 @@ class TestInfluxDBClient(unittest.TestCase):
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.POST,
-                "http://localhost:8086/write_points",
+                "http://localhost:8086/write",
                 status_code=204
             )
 
@@ -221,7 +221,7 @@ class TestInfluxDBClient(unittest.TestCase):
                                           "fields": {"value": 12.00}}]}
         with requests_mock.Mocker() as m:
             m.register_uri(requests_mock.POST,
-                           "http://localhost:8086/write_points",
+                           "http://localhost:8086/write",
                            status_code=204)
             cli = InfluxDBClient(database='db')
             cli.write_points(points=dummy_points,
@@ -278,7 +278,7 @@ class TestInfluxDBClient(unittest.TestCase):
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.POST,
-                "http://localhost:8086/write_points",
+                "http://localhost:8086/write",
                 status_code=204
             )
 
