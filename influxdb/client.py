@@ -390,21 +390,25 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             'points': points
         }
 
-        if time_precision:
-            data['precision'] = time_precision
-
-        if retention_policy:
-            data['retentionPolicy'] = retention_policy
-
         if tags:
             data['tags'] = tags
+
+        params = {
+            'db': database or self._database
+        }
+
+        if time_precision:
+            params['precision'] = time_precision
+
+        if retention_policy:
+            params['rp'] = retention_policy
 
         if self.use_udp:
             self.send_packet(data)
         else:
             self.write(
                 data=data,
-                params={'db': database or self._database},
+                params=params,
                 expected_response_code=204
             )
 
