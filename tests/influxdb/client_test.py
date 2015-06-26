@@ -170,12 +170,9 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.write_points(
                 self.dummy_points,
             )
-            self.assertDictEqual(
-                {
-                    "database": "db",
-                    "points": self.dummy_points,
-                },
-                json.loads(m.last_request.body)
+            self.assertEqual(
+                "cpu_load_short,host=server01,region=us-west value=0.64 1257894000000000000\n",
+                m.last_request.body.decode('utf-8'),
             )
 
     def test_write_points_toplevel_attributes(self):
@@ -193,14 +190,9 @@ class TestInfluxDBClient(unittest.TestCase):
                 tags={"tag": "hello"},
                 retention_policy="somepolicy"
             )
-            self.assertDictEqual(
-                {
-                    "database": "testdb",
-                    "tags": {"tag": "hello"},
-                    "points": self.dummy_points,
-                    "retentionPolicy": "somepolicy"
-                },
-                json.loads(m.last_request.body)
+            self.assertEqual(
+                "cpu_load_short,host=server01,region=us-west,tag=hello value=0.64 1257894000000000000\n",
+                m.last_request.body.decode('utf-8'),
             )
 
     def test_write_points_batch(self):

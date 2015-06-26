@@ -31,24 +31,10 @@ class TestDataFrameClient(unittest.TestCase):
                                  index=[now, now + timedelta(hours=1)],
                                  columns=["column_one", "column_two",
                                           "column_three"])
-        expected = {
-            'database': 'db',
-            'points': [
-                {'time': '1970-01-01T00:00:00+00:00',
-                 'fields': {
-                     'column_two': 1,
-                     'column_three': 1.0,
-                     'column_one': '1'},
-                 'tags': {},
-                 'measurement': 'foo'},
-                {'time': '1970-01-01T01:00:00+00:00',
-                 'fields': {
-                     'column_two': 2,
-                     'column_three': 2.0,
-                     'column_one': '2'},
-                 'tags': {},
-                 'measurement': 'foo'}]
-        }
+        expected = (
+            b"foo column_one=\"1\",column_three=1.0,column_two=1 0\n"
+            b"foo column_one=\"2\",column_three=2.0,column_two=2 3600000000000\n"
+        )
 
         with requests_mock.Mocker() as m:
             m.register_uri(requests_mock.POST,
@@ -58,10 +44,10 @@ class TestDataFrameClient(unittest.TestCase):
             cli = DataFrameClient(database='db')
 
             cli.write_points(dataframe, 'foo')
-            self.assertEqual(json.loads(m.last_request.body), expected)
+            self.assertEqual(m.last_request.body, expected)
 
             cli.write_points(dataframe, 'foo', tags=None)
-            self.assertEqual(json.loads(m.last_request.body), expected)
+            self.assertEqual(m.last_request.body, expected)
 
     def test_write_points_from_dataframe_in_batches(self):
         now = pd.Timestamp('1970-01-01 00:00+00:00')
@@ -83,24 +69,10 @@ class TestDataFrameClient(unittest.TestCase):
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
                                  index=[now, now + timedelta(hours=1)])
 
-        expected = {
-            'database': 'db',
-            'points': [
-                {'fields': {
-                    '0': '1',
-                    '1': 1,
-                    '2': 1.0},
-                 'tags': {'hello': 'there'},
-                 'time': '1970-01-01T00:00:00+00:00',
-                 'measurement': 'foo'},
-                {'fields': {
-                    '0': '2',
-                    '1': 2,
-                    '2': 2.0},
-                 'tags': {'hello': 'there'},
-                 'time': '1970-01-01T01:00:00+00:00',
-                 'measurement': 'foo'}],
-        }
+        expected = (
+            b"foo,hello=there 0=\"1\",1=1,2=1.0 0\n"
+            b"foo,hello=there 0=\"2\",1=2,2=2.0 3600000000000\n"
+        )
 
         with requests_mock.Mocker() as m:
             m.register_uri(requests_mock.POST,
@@ -110,7 +82,7 @@ class TestDataFrameClient(unittest.TestCase):
             cli = DataFrameClient(database='db')
             cli.write_points(dataframe, "foo", {"hello": "there"})
 
-            self.assertEqual(json.loads(m.last_request.body), expected)
+            self.assertEqual(m.last_request.body, expected)
 
     def test_write_points_from_dataframe_with_period_index(self):
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
@@ -118,24 +90,10 @@ class TestDataFrameClient(unittest.TestCase):
                                         pd.Period('1970-01-02')],
                                  columns=["column_one", "column_two",
                                           "column_three"])
-        expected = {
-            'points': [
-                {'measurement': 'foo',
-                 'tags': {},
-                 'fields': {
-                     'column_one': '1',
-                     'column_two': 1,
-                     'column_three': 1.0},
-                 'time': '1970-01-01T00:00:00+00:00'},
-                {'measurement': 'foo',
-                 'tags': {},
-                 'fields': {
-                     'column_one': '2',
-                     'column_two': 2,
-                     'column_three': 2.0},
-                 'time': '1970-01-02T00:00:00+00:00'}],
-            'database': 'db',
-        }
+        expected = (
+            b"foo column_one=\"1\",column_three=1.0,column_two=1 0\n"
+            b"foo column_one=\"2\",column_three=2.0,column_two=2 86400000000000\n"
+        )
 
         with requests_mock.Mocker() as m:
             m.register_uri(requests_mock.POST,
@@ -145,7 +103,7 @@ class TestDataFrameClient(unittest.TestCase):
             cli = DataFrameClient(database='db')
             cli.write_points(dataframe, "foo")
 
-            self.assertEqual(json.loads(m.last_request.body), expected)
+            self.assertEqual(m.last_request.body, expected)
 
     def test_write_points_from_dataframe_with_time_precision(self):
         now = pd.Timestamp('1970-01-01 00:00+00:00')

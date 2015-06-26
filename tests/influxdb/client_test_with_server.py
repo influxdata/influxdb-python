@@ -504,9 +504,10 @@ class CommonTests(ManyTestCasesWithServerMixin,
     influxdb_template_conf = os.path.join(THIS_DIR, 'influxdb.conf.template')
 
     def test_write(self):
-        new_dummy_point = dummy_point[0].copy()
-        new_dummy_point['database'] = 'db'
-        self.assertIs(True, self.cli.write(new_dummy_point))
+        self.assertIs(True, self.cli.write(
+            {'points': dummy_point},
+            params={'db': 'db'},
+        ))
 
     @unittest.skip("fail against real server instance, "
                    "don't know if it should succeed actually..")
