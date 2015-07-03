@@ -97,7 +97,8 @@ class InfluxDBClient(object):
 
         self._headers = {
             'Content-type': 'application/json',
-            'Accept': 'text/plain'}
+            'Accept': 'text/plain'
+        }
 
     @staticmethod
     def from_DSN(dsn, **kwargs):
@@ -394,17 +395,17 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             'points': points
         }
 
-        if tags:
+        if tags is not None:
             data['tags'] = tags
 
         params = {
             'db': database or self._database
         }
 
-        if time_precision:
+        if time_precision is not None:
             params['precision'] = time_precision
 
-        if retention_policy:
+        if retention_policy is not None:
             params['rp'] = retention_policy
 
         if self.use_udp:
