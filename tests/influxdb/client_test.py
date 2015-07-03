@@ -207,13 +207,11 @@ class TestInfluxDBClient(unittest.TestCase):
             {"measurement": "network", "tags": {"direction": "out"},
              "time": "2009-11-10T23:00:00Z", "fields": {"value": 12.00}}
         ]
-        expected_last_body = {"tags": {"host": "server01",
-                                       "region": "us-west"},
-                              "database": "db",
-                              "points": [{"measurement": "network",
-                                          "tags": {"direction": "out"},
-                                          "time": "2009-11-10T23:00:00Z",
-                                          "fields": {"value": 12.00}}]}
+        expected_last_body = (
+            "network,direction=out,host=server01,region=us-west "
+            "value=12.0 1257894000000000000\n"
+        )
+
         with requests_mock.Mocker() as m:
             m.register_uri(requests_mock.POST,
                            "http://localhost:8086/write",
@@ -225,7 +223,7 @@ class TestInfluxDBClient(unittest.TestCase):
                                    "region": "us-west"},
                              batch_size=2)
         self.assertEqual(m.call_count, 2)
-        self.assertEqual(expected_last_body, m.last_request.json())
+        self.assertEqual(expected_last_body, m.last_request.body)
 
     def test_write_points_udp(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -240,12 +238,10 @@ class TestInfluxDBClient(unittest.TestCase):
 
         received_data, addr = s.recvfrom(1024)
 
-        self.assertDictEqual(
-            {
-                "points": self.dummy_points,
-                "database": "test"
-            },
-            json.loads(received_data.decode(), strict=True)
+        self.assertEqual(
+            "cpu_load_short,host=server01,region=us-west "
+            "value=0.64 1257894000000000000\n",
+            received_data.decode()
         )
 
     def test_write_bad_precision_udp(self):

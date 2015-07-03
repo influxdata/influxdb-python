@@ -142,16 +142,15 @@ class TestDataFrameClient(unittest.TestCase):
             measurement = "foo"
 
             cli.write_points(dataframe, measurement, time_precision='s')
-            points.update(precision='s')
-            self.assertEqual(json.loads(m.last_request.body), points)
+            self.assertEqual(m.last_request.qs['precision'], ['s'])
 
             cli.write_points(dataframe, measurement, time_precision='m')
             points.update(precision='m')
-            self.assertEqual(json.loads(m.last_request.body), points)
+            self.assertEqual(m.last_request.qs['precision'], ['m'])
 
             cli.write_points(dataframe, measurement, time_precision='u')
             points.update(precision='u')
-            self.assertEqual(json.loads(m.last_request.body), points)
+            self.assertEqual(m.last_request.qs['precision'], ['u'])
 
     @raises(TypeError)
     def test_write_points_from_dataframe_fails_without_time_index(self):
