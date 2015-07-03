@@ -223,7 +223,8 @@ class TestInfluxDBClient(unittest.TestCase):
                                    "region": "us-west"},
                              batch_size=2)
         self.assertEqual(m.call_count, 2)
-        self.assertEqual(expected_last_body, m.last_request.body)
+        self.assertEqual(expected_last_body,
+                         m.last_request.body.decode('utf-8'))
 
     def test_write_points_udp(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
