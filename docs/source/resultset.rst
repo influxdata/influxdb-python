@@ -7,33 +7,39 @@ Query response object: ResultSet
 
 Using the ``InfluxDBClient.query()`` function will return a ``ResultSet`` Object.
 
-A ResultSet behaves like a dict. Its keys are series and values are points. However, it is a little bit smarter than a regular dict. Its ``__getitem__`` method can be used to query the ResultSet in several ways.
+A ResultSet can be browsed in several ways. Its ``get_points`` method can be used to retrieve points generators that filter either by measurement, tags, or both.
 
-Filtering by serie name
------------------------
+Getting all points
+------------------
 
-Using ``rs['cpu']`` will return a generator for all the points that are in a serie named ``cpu``, no matter the tags.
+Using ``rs.get_points()`` will return a generator for all the points in the ResultSet.
+
+
+Filtering by measurement
+------------------------
+
+Using ``rs.get_points('cpu')`` will return a generator for all the points that are in a serie with measurement name ``cpu``, no matter the tags.
 ::
 
     rs = cli.query("SELECT * from cpu")
-    cpu_points = list(rs['cpu'])
+    cpu_points = list(rs.get_points(measurement='cpu')])
 
 Filtering by tags
 -----------------
 
-Using ``rs[{'host_name': 'influxdb.com'}]`` will return a generator for all the points that are tagged with the specified tags, no matter the serie name.
+Using ``rs.get_points(tags={'host_name': 'influxdb.com'})`` will return a generator for all the points that are tagged with the specified tags, no matter the measurement name.
 ::
 
     rs = cli.query("SELECT * from cpu")
-    cpu_influxdb_com_points = list(rs[{"host_name": "influxdb.com"}])
+    cpu_influxdb_com_points = list(rs.get_points(tags={"host_name": "influxdb.com"}))
 
-Filtering by serie name and tags
---------------------------------
+Filtering by measurement and tags
+---------------------------------
 
-Using a tuple with a serie name and a dict will return a generator for all the points that are in a serie with the given name AND whose tags match the given tags.
+Using measurement name and tags will return a generator for all the points that are in a serie with the specified measurement name AND whose tags match the given tags.
 ::
 
     rs = cli.query("SELECT * from cpu")
-    points = list(rs[('cpu', {'host_name': 'influxdb.com'})])
+    points = list(rs.get_points(measurement='cpu', tags={'host_name': 'influxdb.com'}))
 
 See the :ref:`api-documentation` page for more information.

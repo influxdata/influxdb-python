@@ -22,8 +22,8 @@ def main(host='localhost', port=8086):
         y = 10 + math.sin(math.radians(angle)) * 10
 
         point = {
-            "name": 'foobar',
-            "timestamp": int(now.strftime('%s')) + angle,
+            "measurement": 'foobar',
+            "time": int(now.strftime('%s')) + angle,
             "fields": {
                 "value": y
             }

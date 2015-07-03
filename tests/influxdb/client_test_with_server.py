@@ -29,7 +29,7 @@ import warnings
 warnings.simplefilter('error', FutureWarning)
 
 from influxdb import InfluxDBClient
-from influxdb.client import InfluxDBClientError
+from influxdb.exceptions import InfluxDBClientError
 
 from tests.influxdb.misc import get_free_port, is_port_open
 from tests import skipIfPYpy, using_pypy
@@ -337,13 +337,11 @@ class SimpleTests(SingleTestCaseWithServerMixin,
             [{'name': 'new_db_1'}, {'name': 'new_db_2'}]
         )
 
-    @unittest.skip("Broken as of 0.9.0-rc30")
     def test_create_database_fails(self):
         self.assertIsNone(self.cli.create_database('new_db'))
         with self.assertRaises(InfluxDBClientError) as ctx:
             self.cli.create_database('new_db')
-        self.assertEqual(500, ctx.exception.code)
-        self.assertEqual('{"results":[{"error":"database exists"}]}',
+        self.assertEqual('database already exists',
                          ctx.exception.content)
 
     def test_get_list_series_empty(self):
@@ -360,21 +358,22 @@ class SimpleTests(SingleTestCaseWithServerMixin,
         self.assertIsNone(self.cli.drop_database('new_db_1'))
         self.assertEqual([{'name': 'new_db_2'}], self.cli.get_list_database())
 
-    @unittest.skip("Broken as of 0.9.0-rc30")
     def test_drop_database_fails(self):
         with self.assertRaises(InfluxDBClientError) as ctx:
             self.cli.drop_database('db')
-        self.assertEqual(500, ctx.exception.code)
-        self.assertIn('{"results":[{"error":"database not found: db',
+        self.assertIn('database not found: db',
                       ctx.exception.content)
 
-    @unittest.skip("Broken as of 0.9.0-rc30")
     def test_query_fail(self):
         with self.assertRaises(InfluxDBClientError) as ctx:
             self.cli.query('select column_one from foo')
-        self.assertEqual(500, ctx.exception.code)
-        self.assertIn('{"results":[{"error":"database not found: db',
+        self.assertIn('database not found: db',
                       ctx.exception.content)
+
+    def test_query_fail_ignore_errors(self):
+        result = self.cli.query('select column_one from foo',
+                                raise_errors=False)
+        self.assertEqual(result.error, 'database not found: db')
 
     def test_create_user(self):
         self.cli.create_user('test_user', 'secret_password')
@@ -387,6 +386,19 @@ class SimpleTests(SingleTestCaseWithServerMixin,
         rsp = list(self.cli.query("SHOW USERS")['results'])
         self.assertIn({'user': 'test_user', 'admin': False},
                       rsp)
+
+    def test_get_list_users_empty(self):
+        rsp = self.cli.get_list_users()
+        self.assertEqual([], rsp)
+
+    def test_get_list_users(self):
+        self.cli.query("CREATE USER test WITH PASSWORD 'test'")
+        rsp = self.cli.get_list_users()
+
+        self.assertEqual(
+            [{'user': 'test', 'admin': False}],
+            rsp
+        )
 
     def test_create_user_blank_username(self):
         with self.assertRaises(InfluxDBClientError) as ctx:
@@ -414,12 +426,10 @@ class SimpleTests(SingleTestCaseWithServerMixin,
         users = list(self.cli.query("SHOW USERS")['results'])
         self.assertEqual(users, [])
 
-    @unittest.skip("Broken as of 0.9.0-rc30")
     def test_drop_user_nonexisting(self):
         with self.assertRaises(InfluxDBClientError) as ctx:
             self.cli.drop_user('test')
-        self.assertEqual(500, ctx.exception.code)
-        self.assertIn('{"results":[{"error":"user not found"}]}',
+        self.assertIn('user not found',
                       ctx.exception.content)
 
     def test_drop_user_invalid(self):
@@ -551,7 +561,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
             [[{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]]
         )
 
-        rsp2 = list(rsp['cpu_load_short'])
+        rsp2 = list(rsp.get_points())
         self.assertEqual(len(rsp2), 1)
         pt = rsp2[0]
 
@@ -635,10 +645,10 @@ class CommonTests(ManyTestCasesWithServerMixin,
                               batch_size=2)
         time.sleep(5)
         net_in = self.cli.query("SELECT value FROM network "
-                                "WHERE direction='in'").raw['results'][0]
+                                "WHERE direction='in'").raw
         net_out = self.cli.query("SELECT value FROM network "
-                                 "WHERE direction='out'").raw['results'][0]
-        cpu = self.cli.query("SELECT value FROM cpu_usage").raw['results'][0]
+                                 "WHERE direction='out'").raw
+        cpu = self.cli.query("SELECT value FROM cpu_usage").raw
         self.assertIn(123, net_in['series'][0]['values'][0])
         self.assertIn(12, net_out['series'][0]['values'][0])
         self.assertIn(12.34, cpu['series'][0]['values'][0])
@@ -796,19 +806,6 @@ class CommonTests(ManyTestCasesWithServerMixin,
             [[1, 'server01', 'us-west']],
             columns=['_id', 'host', 'region'])
         assert_frame_equal(rsp['cpu_load_short'], expected)
-
-    def test_get_list_users_empty(self):
-        rsp = self.cli.get_list_users()
-        self.assertEqual([], rsp)
-
-    def test_get_list_users_non_empty(self):
-        self.cli.query("CREATE USER test WITH PASSWORD 'test'")
-        rsp = self.cli.get_list_users()
-
-        self.assertEqual(
-            [{'user': 'test', 'admin': False}],
-            rsp
-        )
 
     def test_default_retention_policy(self):
         rsp = self.cli.get_list_retention_policies()
