@@ -15,7 +15,6 @@ import datetime
 import distutils.spawn
 from functools import partial
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -653,96 +652,6 @@ class CommonTests(ManyTestCasesWithServerMixin,
         self.assertIn(12, net_out['series'][0]['values'][0])
         self.assertIn(12.34, cpu['series'][0]['values'][0])
 
-    def test_write_points_with_precision(self):
-        """ check that points written with an explicit precision have
-        actually that precision used.
-        """
-        # for that we'll check that - for each precision - the actual 'time'
-        #  value returned by a select has the correct regex format..
-        # n : u'2015-03-20T15:23:36.615654966Z'
-        # u : u'2015-03-20T15:24:10.542554Z'
-        # ms : u'2015-03-20T15:24:50.878Z'
-        # s : u'2015-03-20T15:20:24Z'
-        # m : u'2015-03-20T15:25:00Z'
-        # h : u'2015-03-20T15:00:00Z'
-        base_regex = '\d{4}-\d{2}-\d{2}T\d{2}:'  # YYYY-MM-DD 'T' hh:
-        base_s_regex = base_regex + '\d{2}:\d{2}'  # base_regex + mm:ss
-
-        point = {
-            "measurement": "cpu_load_short",
-            "tags": {
-                "host": "server01",
-                "region": "us-west"
-            },
-            "time": "2009-11-10T12:34:56.123456789Z",
-            "fields": {
-                "value": 0.64
-            }
-        }
-
-        # As far as we can see the values aren't directly available depending
-        # on the precision used.
-        # The less the precision, the more to wait for the value to be
-        # actually written/available.
-        for idx, (precision, expected_regex, sleep_time) in enumerate((
-            ('n', base_s_regex + '\.\d{9}Z', 1),
-            ('u', base_s_regex + '\.\d{6}Z', 1),
-            ('ms', base_s_regex + '\.\d{3}Z', 1),
-            ('s', base_s_regex + 'Z', 1),
-
-            # ('h', base_regex + '00:00Z', ),
-            # that would require a sleep of possibly up to 3600 secs (/ 2 ?)..
-        )):
-            db = 'db1'  # to not shoot us in the foot/head,
-            # we work on a fresh db each time:
-            self.cli.create_database(db)
-            before = datetime.datetime.now()
-            self.assertIs(
-                True,
-                self.cli.write_points(
-                    [point],
-                    time_precision=precision,
-                    database=db))
-
-            # sys.stderr.write('checking presision with %r :
-            # before=%s\n' % (precision, before))
-            after = datetime.datetime.now()
-
-            if sleep_time > 1:
-                sleep_time -= (after if before.min != after.min
-                               else before).second
-
-                start = time.time()
-                timeout = start + sleep_time
-                # sys.stderr.write('should sleep %s ..\n' % sleep_time)
-                while time.time() < timeout:
-                    rsp = self.cli.query('SELECT * FROM cpu_load_short',
-                                         database=db)
-                    if rsp != {'cpu_load_short': []}:
-                        # sys.stderr.write('already ? only slept %s\n' % (
-                        # time.time() - start))
-                        break
-                    time.sleep(1)
-                else:
-                    pass
-                    # sys.stderr.write('ok !\n')
-
-            # sys.stderr.write('sleeping %s..\n' % sleep_time)
-
-            if sleep_time:
-                time.sleep(sleep_time)
-
-            rsp = self.cli.query('SELECT * FROM cpu_load_short', database=db)
-            # sys.stderr.write('precision=%s rsp_timestamp = %r\n' % (
-            # precision, rsp['cpu_load_short'][0]['time']))
-
-            m = re.match(
-                expected_regex,
-                list(rsp['cpu_load_short'])[0]['time']
-            )
-            self.assertIsNotNone(m)
-            self.cli.drop_database(db)
-
     def test_query(self):
         self.assertIs(True, self.cli.write_points(dummy_point))
 
@@ -973,13 +882,11 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
 ############################################################################
 
-@unittest.skip("Broken as of 0.9.0")
 @unittest.skipIf(not is_influxdb_bin_ok, "could not find influxd binary")
 class UdpTests(ManyTestCasesWithServerMixin,
                unittest.TestCase):
 
     influxdb_udp_enabled = True
-
     influxdb_template_conf = os.path.join(THIS_DIR,
                                           'influxdb.conf.template')
 
@@ -990,14 +897,15 @@ class UdpTests(ManyTestCasesWithServerMixin,
             'root',
             '',
             database='db',
-            use_udp=True, udp_port=self.influxd_inst.udp_port
+            use_udp=True,
+            udp_port=self.influxd_inst.udp_port
         )
         cli.write_points(dummy_point)
 
         # The points are not immediately available after write_points.
         # This is to be expected because we are using udp (no response !).
         # So we have to wait some time,
-        time.sleep(1)  # 1 sec seems to be a good choice.
+        time.sleep(3)  # 3 sec seems to be a good choice.
         rsp = self.cli.query('SELECT * FROM cpu_load_short')
 
         self.assertEqual(

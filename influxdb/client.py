@@ -270,6 +270,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
     def query(self,
               query,
               params={},
+              epoch=None,
               expected_response_code=200,
               database=None,
               raise_errors=True):
@@ -297,6 +298,9 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         """
         params['q'] = query
         params['db'] = database or self._database
+
+        if epoch is not None:
+            params['epoch'] = epoch
 
         response = self.request(
             url="query",
