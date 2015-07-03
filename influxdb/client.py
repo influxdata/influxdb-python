@@ -211,7 +211,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         if params is None:
             params = {}
 
-        if isinstance(data, dict) or isinstance(data, list):
+        if isinstance(data, (dict, list)):
             data = json.dumps(data)
 
         # Try to send the request a maximum of three times. (see #103)
