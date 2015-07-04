@@ -589,15 +589,20 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         """
         return list(self.query("SHOW USERS").get_points())
 
-    def create_user(self, username, password):
+    def create_user(self, username, password, admin=False):
         """Create a new user in InfluxDB
 
         :param username: the new username to create
         :type username: str
         :param password: the password for the new user
         :type password: str
+        :param admin: whether the user should have cluster administration
+            privileges or not
+        :type admin: boolean
         """
         text = "CREATE USER {} WITH PASSWORD '{}'".format(username, password)
+        if admin:
+            text += ' WITH ALL PRIVILEGES'
         self.query(text)
 
     def drop_user(self, username):
@@ -620,29 +625,27 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         text = "SET PASSWORD FOR {} = '{}'".format(username, password)
         self.query(text)
 
-    def delete_series(self, id, database=None):
-        """Delete series from a database.
+    def delete_series(self, database=None, measurement=None, tags=None):
+        """Delete series from a database. Series can be filtered by
+        measurement and tags.
 
-        :param id: the id of the series to be deleted
-        :type id: int
+        :param measurement: Delete all series from a measurement
+        :type id: string
+        :param tags: Delete all series that match given tags
+        :type id: dict
         :param database: the database from which the series should be
             deleted, defaults to client's current database
         :type database: str
         """
         database = database or self._database
-        self.query('DROP SERIES %s' % id, database=database)
+        query_str = 'DROP SERIES'
+        if measurement:
+            query_str += ' FROM "{}"'.format(measurement)
 
-    def grant_admin_privileges(self, username):
-        """Grant cluster administration privileges to an user.
-
-        :param username: the username to grant privileges to
-        :type username: str
-
-        .. note:: Only a cluster administrator can create/ drop databases
-            and manage users.
-        """
-        text = "GRANT ALL PRIVILEGES TO {}".format(username)
-        self.query(text)
+        if tags:
+            query_str += ' WHERE ' + ' and '.join(["{}='{}'".format(k, v)
+                                                   for k, v in tags.items()])
+        self.query(query_str, database=database)
 
     def revoke_admin_privileges(self, username):
         """Revoke cluster administration privileges from an user.

@@ -109,7 +109,7 @@ dummy_points = [  # some dummy points
         },
         "time": "2009-11-10T23:01:35Z",
         "fields": {
-            "value": 33
+            "value": 33.0
         }
     }
 ]
@@ -380,6 +380,12 @@ class SimpleTests(SingleTestCaseWithServerMixin,
         self.assertIn({'user': 'test_user', 'admin': False},
                       rsp)
 
+    def test_create_user_admin(self):
+        self.cli.create_user('test_user', 'secret_password', True)
+        rsp = list(self.cli.query("SHOW USERS")['results'])
+        self.assertIn({'user': 'test_user', 'admin': True},
+                      rsp)
+
     def test_create_user_blank_password(self):
         self.cli.create_user('test_user', '')
         rsp = list(self.cli.query("SHOW USERS")['results'])
@@ -440,25 +446,8 @@ class SimpleTests(SingleTestCaseWithServerMixin,
                       ctx.exception.content)
 
     @unittest.skip("Broken as of 0.9.0")
-    def test_grant_admin_privileges(self):
-        self.cli.create_user('test', 'test')
-        self.assertEqual([{'user': 'test', 'admin': False}],
-                         self.cli.get_list_users())
-        self.cli.grant_admin_privileges('test')
-        self.assertEqual([{'user': 'test', 'admin': True}],
-                         self.cli.get_list_users())
-
-    def test_grant_admin_privileges_invalid(self):
-        with self.assertRaises(InfluxDBClientError) as ctx:
-            self.cli.grant_admin_privileges('')
-        self.assertEqual(400, ctx.exception.code)
-        self.assertIn('{"error":"error parsing query: ',
-                      ctx.exception.content)
-
-    @unittest.skip("Broken as of 0.9.0")
     def test_revoke_admin_privileges(self):
-        self.cli.create_user('test', 'test')
-        self.cli.grant_admin_privileges('test')
+        self.cli.create_user('test', 'test', admin=True)
         self.assertEqual([{'user': 'test', 'admin': True}],
                          self.cli.get_list_users())
         self.cli.revoke_admin_privileges('test')
@@ -518,23 +507,13 @@ class CommonTests(ManyTestCasesWithServerMixin,
             params={'db': 'db'},
         ))
 
-    @unittest.skip("fail against real server instance, "
-                   "don't know if it should succeed actually..")
     def test_write_check_read(self):
         self.test_write()
-        # hmmmm damn,
-        # after write has returned, if we directly query for the data it's not
-        #  directly available.. (don't know if this is expected behavior (
-        #   but it maybe))
-        # So we have to :
-        time.sleep(5)
-        # so that then the data is available through select :
+        time.sleep(1)
         rsp = self.cli.query('SELECT * FROM cpu_load_short', database='db')
-        self.assertEqual(
-            {'cpu_load_short': [
-                {'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]},
-            rsp
-        )
+        self.assertListEqual([{'value': 0.64,
+                               'time': '2009-11-10T23:00:00Z'}],
+                             list(rsp.get_points()))
 
     def test_write_points(self):
         self.assertIs(True, self.cli.write_points(dummy_point))
@@ -692,19 +671,18 @@ class CommonTests(ManyTestCasesWithServerMixin,
             rsp
         )
 
-    @unittest.skip("broken on 0.9.0")
+    def test_delete_series_invalid(self):
+        with self.assertRaises(InfluxDBClientError):
+            self.cli.delete_series()
+
     def test_delete_series(self):
-        self.assertEqual(
-            len(self.cli.get_list_series()), 0
-        )
-        self.cli.write_points(dummy_point)
-        self.assertEqual(
-            len(self.cli.get_list_series()), 1
-        )
-        self.cli.delete_series(1)
-        self.assertEqual(
-            len(self.cli.get_list_series()), 0
-        )
+        self.assertEqual(len(self.cli.get_list_series()), 0)
+        self.cli.write_points(dummy_points)
+        self.assertEqual(len(self.cli.get_list_series()), 2)
+        self.cli.delete_series(measurement='cpu_load_short')
+        self.assertEqual(len(self.cli.get_list_series()), 1)
+        self.cli.delete_series(tags={'region': 'us-west'})
+        self.assertEqual(len(self.cli.get_list_series()), 0)
 
     @unittest.skip("Broken as of 0.9.0")
     def test_get_list_series_DF(self):
