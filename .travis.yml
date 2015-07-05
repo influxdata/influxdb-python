@@ -19,3 +19,10 @@ after_success:
     - if [ "$TOX_ENV" == "coverage" ] ; then coveralls; fi
 notifications:
     email: false
+
+# Travis caching
+cache:
+  directories:
+    - $HOME/.cache/pip
+before_cache:
+  - rm -f $HOME/.cache/pip/log/debug.log
