@@ -1,6 +1,7 @@
 
 
 import socket
+import time
 
 
 def get_free_port(ip='127.0.0.1'):
@@ -11,6 +12,10 @@ def get_free_port(ip='127.0.0.1'):
         return sock.getsockname()[1]
     finally:
         sock.close()
+
+        # Is there a better way than a sleep?
+        # There were issues on Travis where the port was not yet free.
+        time.sleep(0.1)
 
 
 def is_port_open(port, ip='127.0.0.1'):
