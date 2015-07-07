@@ -15,7 +15,6 @@ import datetime
 import distutils.spawn
 from functools import partial
 import os
-import re
 import shutil
 import subprocess
 import sys
@@ -110,7 +109,7 @@ dummy_points = [  # some dummy points
         },
         "time": "2009-11-10T23:01:35Z",
         "fields": {
-            "value": 33
+            "value": 33.0
         }
     }
 ]
@@ -381,6 +380,12 @@ class SimpleTests(SingleTestCaseWithServerMixin,
         self.assertIn({'user': 'test_user', 'admin': False},
                       rsp)
 
+    def test_create_user_admin(self):
+        self.cli.create_user('test_user', 'secret_password', True)
+        rsp = list(self.cli.query("SHOW USERS")['results'])
+        self.assertIn({'user': 'test_user', 'admin': True},
+                      rsp)
+
     def test_create_user_blank_password(self):
         self.cli.create_user('test_user', '')
         rsp = list(self.cli.query("SHOW USERS")['results'])
@@ -441,25 +446,8 @@ class SimpleTests(SingleTestCaseWithServerMixin,
                       ctx.exception.content)
 
     @unittest.skip("Broken as of 0.9.0")
-    def test_grant_admin_privileges(self):
-        self.cli.create_user('test', 'test')
-        self.assertEqual([{'user': 'test', 'admin': False}],
-                         self.cli.get_list_users())
-        self.cli.grant_admin_privileges('test')
-        self.assertEqual([{'user': 'test', 'admin': True}],
-                         self.cli.get_list_users())
-
-    def test_grant_admin_privileges_invalid(self):
-        with self.assertRaises(InfluxDBClientError) as ctx:
-            self.cli.grant_admin_privileges('')
-        self.assertEqual(400, ctx.exception.code)
-        self.assertIn('{"error":"error parsing query: ',
-                      ctx.exception.content)
-
-    @unittest.skip("Broken as of 0.9.0")
     def test_revoke_admin_privileges(self):
-        self.cli.create_user('test', 'test')
-        self.cli.grant_admin_privileges('test')
+        self.cli.create_user('test', 'test', admin=True)
         self.assertEqual([{'user': 'test', 'admin': True}],
                          self.cli.get_list_users())
         self.cli.revoke_admin_privileges('test')
@@ -514,27 +502,18 @@ class CommonTests(ManyTestCasesWithServerMixin,
     influxdb_template_conf = os.path.join(THIS_DIR, 'influxdb.conf.template')
 
     def test_write(self):
-        new_dummy_point = dummy_point[0].copy()
-        new_dummy_point['database'] = 'db'
-        self.assertIs(True, self.cli.write(new_dummy_point))
+        self.assertIs(True, self.cli.write(
+            {'points': dummy_point},
+            params={'db': 'db'},
+        ))
 
-    @unittest.skip("fail against real server instance, "
-                   "don't know if it should succeed actually..")
     def test_write_check_read(self):
         self.test_write()
-        # hmmmm damn,
-        # after write has returned, if we directly query for the data it's not
-        #  directly available.. (don't know if this is expected behavior (
-        #   but it maybe))
-        # So we have to :
-        time.sleep(5)
-        # so that then the data is available through select :
+        time.sleep(1)
         rsp = self.cli.query('SELECT * FROM cpu_load_short', database='db')
-        self.assertEqual(
-            {'cpu_load_short': [
-                {'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]},
-            rsp
-        )
+        self.assertListEqual([{'value': 0.64,
+                               'time': '2009-11-10T23:00:00Z'}],
+                             list(rsp.get_points()))
 
     def test_write_points(self):
         self.assertIs(True, self.cli.write_points(dummy_point))
@@ -652,96 +631,6 @@ class CommonTests(ManyTestCasesWithServerMixin,
         self.assertIn(12, net_out['series'][0]['values'][0])
         self.assertIn(12.34, cpu['series'][0]['values'][0])
 
-    def test_write_points_with_precision(self):
-        """ check that points written with an explicit precision have
-        actually that precision used.
-        """
-        # for that we'll check that - for each precision - the actual 'time'
-        #  value returned by a select has the correct regex format..
-        # n : u'2015-03-20T15:23:36.615654966Z'
-        # u : u'2015-03-20T15:24:10.542554Z'
-        # ms : u'2015-03-20T15:24:50.878Z'
-        # s : u'2015-03-20T15:20:24Z'
-        # m : u'2015-03-20T15:25:00Z'
-        # h : u'2015-03-20T15:00:00Z'
-        base_regex = '\d{4}-\d{2}-\d{2}T\d{2}:'  # YYYY-MM-DD 'T' hh:
-        base_s_regex = base_regex + '\d{2}:\d{2}'  # base_regex + mm:ss
-
-        point = {
-            "measurement": "cpu_load_short",
-            "tags": {
-                "host": "server01",
-                "region": "us-west"
-            },
-            "time": "2009-11-10T12:34:56.123456789Z",
-            "fields": {
-                "value": 0.64
-            }
-        }
-
-        # As far as we can see the values aren't directly available depending
-        # on the precision used.
-        # The less the precision, the more to wait for the value to be
-        # actually written/available.
-        for idx, (precision, expected_regex, sleep_time) in enumerate((
-            ('n', base_s_regex + '\.\d{9}Z', 1),
-            ('u', base_s_regex + '\.\d{6}Z', 1),
-            ('ms', base_s_regex + '\.\d{3}Z', 1),
-            ('s', base_s_regex + 'Z', 1),
-
-            # ('h', base_regex + '00:00Z', ),
-            # that would require a sleep of possibly up to 3600 secs (/ 2 ?)..
-        )):
-            db = 'db1'  # to not shoot us in the foot/head,
-            # we work on a fresh db each time:
-            self.cli.create_database(db)
-            before = datetime.datetime.now()
-            self.assertIs(
-                True,
-                self.cli.write_points(
-                    [point],
-                    time_precision=precision,
-                    database=db))
-
-            # sys.stderr.write('checking presision with %r :
-            # before=%s\n' % (precision, before))
-            after = datetime.datetime.now()
-
-            if sleep_time > 1:
-                sleep_time -= (after if before.min != after.min
-                               else before).second
-
-                start = time.time()
-                timeout = start + sleep_time
-                # sys.stderr.write('should sleep %s ..\n' % sleep_time)
-                while time.time() < timeout:
-                    rsp = self.cli.query('SELECT * FROM cpu_load_short',
-                                         database=db)
-                    if rsp != {'cpu_load_short': []}:
-                        # sys.stderr.write('already ? only slept %s\n' % (
-                        # time.time() - start))
-                        break
-                    time.sleep(1)
-                else:
-                    pass
-                    # sys.stderr.write('ok !\n')
-
-            # sys.stderr.write('sleeping %s..\n' % sleep_time)
-
-            if sleep_time:
-                time.sleep(sleep_time)
-
-            rsp = self.cli.query('SELECT * FROM cpu_load_short', database=db)
-            # sys.stderr.write('precision=%s rsp_timestamp = %r\n' % (
-            # precision, rsp['cpu_load_short'][0]['time']))
-
-            m = re.match(
-                expected_regex,
-                list(rsp['cpu_load_short'])[0]['time']
-            )
-            self.assertIsNotNone(m)
-            self.cli.drop_database(db)
-
     def test_query(self):
         self.assertIs(True, self.cli.write_points(dummy_point))
 
@@ -782,19 +671,18 @@ class CommonTests(ManyTestCasesWithServerMixin,
             rsp
         )
 
-    @unittest.skip("broken on 0.9.0")
+    def test_delete_series_invalid(self):
+        with self.assertRaises(InfluxDBClientError):
+            self.cli.delete_series()
+
     def test_delete_series(self):
-        self.assertEqual(
-            len(self.cli.get_list_series()), 0
-        )
-        self.cli.write_points(dummy_point)
-        self.assertEqual(
-            len(self.cli.get_list_series()), 1
-        )
-        self.cli.delete_series(1)
-        self.assertEqual(
-            len(self.cli.get_list_series()), 0
-        )
+        self.assertEqual(len(self.cli.get_list_series()), 0)
+        self.cli.write_points(dummy_points)
+        self.assertEqual(len(self.cli.get_list_series()), 2)
+        self.cli.delete_series(measurement='cpu_load_short')
+        self.assertEqual(len(self.cli.get_list_series()), 1)
+        self.cli.delete_series(tags={'region': 'us-west'})
+        self.assertEqual(len(self.cli.get_list_series()), 0)
 
     @unittest.skip("Broken as of 0.9.0")
     def test_get_list_series_DF(self):
@@ -972,13 +860,11 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
 ############################################################################
 
-@unittest.skip("Broken as of 0.9.0")
 @unittest.skipIf(not is_influxdb_bin_ok, "could not find influxd binary")
 class UdpTests(ManyTestCasesWithServerMixin,
                unittest.TestCase):
 
     influxdb_udp_enabled = True
-
     influxdb_template_conf = os.path.join(THIS_DIR,
                                           'influxdb.conf.template')
 
@@ -989,14 +875,15 @@ class UdpTests(ManyTestCasesWithServerMixin,
             'root',
             '',
             database='db',
-            use_udp=True, udp_port=self.influxd_inst.udp_port
+            use_udp=True,
+            udp_port=self.influxd_inst.udp_port
         )
         cli.write_points(dummy_point)
 
         # The points are not immediately available after write_points.
         # This is to be expected because we are using udp (no response !).
         # So we have to wait some time,
-        time.sleep(1)  # 1 sec seems to be a good choice.
+        time.sleep(3)  # 3 sec seems to be a good choice.
         rsp = self.cli.query('SELECT * FROM cpu_load_short')
 
         self.assertEqual(

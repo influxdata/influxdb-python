@@ -154,14 +154,9 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
             self.assertEqual(
-                json.loads(m.last_request.body),
-                {"database": "mydb",
-                 "retentionPolicy": "mypolicy",
-                 "points": [{"measurement": "cpu_load_short",
-                             "tags": {"host": "server01",
-                                      "region": "us-west"},
-                             "time": "2009-11-10T23:00:00Z",
-                             "fields": {"value": 0.64}}]}
+                m.last_request.body,
+                b"cpu_load_short,host=server01,region=us-west "
+                b"value=0.64 1257894000000000000\n",
             )
 
     def test_write_points(self):
@@ -176,12 +171,10 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.write_points(
                 self.dummy_points,
             )
-            self.assertDictEqual(
-                {
-                    "database": "db",
-                    "points": self.dummy_points,
-                },
-                json.loads(m.last_request.body)
+            self.assertEqual(
+                "cpu_load_short,host=server01,region=us-west "
+                "value=0.64 1257894000000000000\n",
+                m.last_request.body.decode('utf-8'),
             )
 
     def test_write_points_toplevel_attributes(self):
@@ -199,14 +192,10 @@ class TestInfluxDBClient(unittest.TestCase):
                 tags={"tag": "hello"},
                 retention_policy="somepolicy"
             )
-            self.assertDictEqual(
-                {
-                    "database": "testdb",
-                    "tags": {"tag": "hello"},
-                    "points": self.dummy_points,
-                    "retentionPolicy": "somepolicy"
-                },
-                json.loads(m.last_request.body)
+            self.assertEqual(
+                "cpu_load_short,host=server01,region=us-west,tag=hello "
+                "value=0.64 1257894000000000000\n",
+                m.last_request.body.decode('utf-8'),
             )
 
     def test_write_points_batch(self):
@@ -218,13 +207,11 @@ class TestInfluxDBClient(unittest.TestCase):
             {"measurement": "network", "tags": {"direction": "out"},
              "time": "2009-11-10T23:00:00Z", "fields": {"value": 12.00}}
         ]
-        expected_last_body = {"tags": {"host": "server01",
-                                       "region": "us-west"},
-                              "database": "db",
-                              "points": [{"measurement": "network",
-                                          "tags": {"direction": "out"},
-                                          "time": "2009-11-10T23:00:00Z",
-                                          "fields": {"value": 12.00}}]}
+        expected_last_body = (
+            "network,direction=out,host=server01,region=us-west "
+            "value=12.0 1257894000000000000\n"
+        )
+
         with requests_mock.Mocker() as m:
             m.register_uri(requests_mock.POST,
                            "http://localhost:8086/write",
@@ -236,7 +223,8 @@ class TestInfluxDBClient(unittest.TestCase):
                                    "region": "us-west"},
                              batch_size=2)
         self.assertEqual(m.call_count, 2)
-        self.assertEqual(expected_last_body, m.last_request.json())
+        self.assertEqual(expected_last_body,
+                         m.last_request.body.decode('utf-8'))
 
     def test_write_points_udp(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -251,12 +239,10 @@ class TestInfluxDBClient(unittest.TestCase):
 
         received_data, addr = s.recvfrom(1024)
 
-        self.assertDictEqual(
-            {
-                "points": self.dummy_points,
-                "database": "test"
-            },
-            json.loads(received_data.decode(), strict=True)
+        self.assertEqual(
+            "cpu_load_short,host=server01,region=us-west "
+            "value=0.64 1257894000000000000\n",
+            received_data.decode()
         )
 
     def test_write_bad_precision_udp(self):
@@ -294,12 +280,10 @@ class TestInfluxDBClient(unittest.TestCase):
                 time_precision='n'
             )
 
-            self.assertDictEqual(
-                {'points': self.dummy_points,
-                 'database': 'db',
-                 'precision': 'n',
-                 },
-                json.loads(m.last_request.body)
+            self.assertEqual(
+                b"cpu_load_short,host=server01,region=us-west "
+                b"value=0.64 1257894000000000000\n",
+                m.last_request.body,
             )
 
     def test_write_points_bad_precision(self):
@@ -630,28 +614,6 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
             self.assertListEqual(self.cli.get_list_users(), [])
-
-    def test_grant_admin_privileges(self):
-        example_response = '{"results":[{}]}'
-
-        with requests_mock.Mocker() as m:
-            m.register_uri(
-                requests_mock.GET,
-                "http://localhost:8086/query",
-                text=example_response
-            )
-            self.cli.grant_admin_privileges('test')
-
-            self.assertEqual(
-                m.last_request.qs['q'][0],
-                'grant all privileges to test'
-            )
-
-    @raises(Exception)
-    def test_grant_admin_privileges_invalid(self):
-        cli = InfluxDBClient('host', 8086, 'username', 'password')
-        with _mocked_session(cli, 'get', 400):
-            self.cli.grant_admin_privileges('')
 
     def test_revoke_admin_privileges(self):
         example_response = '{"results":[{}]}'
