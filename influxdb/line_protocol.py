@@ -79,10 +79,10 @@ def make_lines(data):
             tags.update(point.get('tags', {}))
         # tags should be sorted client-side to take load off server
         for tag_key in sorted(tags.keys()):
-            lines += "{key}={value},".format(
-                key=_escape_tag(tag_key),
-                value=_escape_tag(tags[tag_key]),
-            )
+            key = _escape_tag(tag_key)
+            value = _escape_tag(tags[tag_key])
+            if key != '' and value != '':
+                lines += "{key}={value},".format(key=key, value=value)
         lines = lines[:-1] + " "  # strip the trailing comma
 
         # add fields
