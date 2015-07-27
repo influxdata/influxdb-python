@@ -242,7 +242,8 @@ class InfluxDBClient(object):
                     timeout=self._timeout
                 )
                 break
-            except requests.exceptions.ConnectionError as e:
+            except (requests.exceptions.ConnectionError,
+                    requests.exceptions.Timeout) as e:
                 if i < 2:
                     continue
                 else:
