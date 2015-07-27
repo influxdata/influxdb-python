@@ -113,6 +113,7 @@ dummy_point_without_timestamp = [
     }
 ]
 
+
 @skipServerTests
 class SimpleTests(SingleTestCaseWithServerMixin,
                   unittest.TestCase):

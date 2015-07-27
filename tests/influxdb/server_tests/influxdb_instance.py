@@ -26,7 +26,6 @@ class InfluxDbInstance(object):
 
         self.influxd_path = self.find_influxd_path()
 
-
         # create a temporary dir to store all needed files
         # for the influxdb server instance :
         self.temp_dir_base = tempfile.mkdtemp()
