@@ -540,7 +540,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
           u'replicaN': 1}]
         """
         rsp = self.query(
-            "SHOW RETENTION POLICIES %s" % (database or self._database)
+            "SHOW RETENTION POLICIES ON %s" % (database or self._database)
         )
         return list(rsp.get_points())
 
