@@ -2,8 +2,8 @@
 
 import sys
 
-from tests import using_pypy
-from tests.influxdb.server_tests.influxdb_instance import InfluxDbInstance
+from influxdb.tests import using_pypy
+from influxdb.tests.server_tests.influxdb_instance import InfluxDbInstance
 
 from influxdb.client import InfluxDBClient
 

@@ -9,7 +9,7 @@ import json
 import requests_mock
 from nose.tools import raises
 from datetime import timedelta
-from tests import skipIfPYpy, using_pypy
+from influxdb.tests import skipIfPYpy, using_pypy
 import warnings
 
 if not using_pypy:

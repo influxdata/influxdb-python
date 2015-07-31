@@ -24,9 +24,9 @@ warnings.simplefilter('error', FutureWarning)
 from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError
 
-from tests import skipIfPYpy, using_pypy, skipServerTests
-from tests.influxdb.server_tests.base import ManyTestCasesWithServerMixin
-from tests.influxdb.server_tests.base import SingleTestCaseWithServerMixin
+from influxdb.tests import skipIfPYpy, using_pypy, skipServerTests
+from influxdb.tests.server_tests.base import ManyTestCasesWithServerMixin
+from influxdb.tests.server_tests.base import SingleTestCaseWithServerMixin
 
 if not using_pypy:
     import pandas as pd

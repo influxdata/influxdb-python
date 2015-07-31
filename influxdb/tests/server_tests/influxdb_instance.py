@@ -12,7 +12,7 @@ import subprocess
 import unittest
 import sys
 
-from tests.influxdb.misc import get_free_port, is_port_open
+from influxdb.tests.misc import get_free_port, is_port_open
 
 
 class InfluxDbInstance(object):
