@@ -9,7 +9,7 @@ import json
 import requests_mock
 from nose.tools import raises
 from datetime import timedelta
-from tests import skipIfPYpy, using_pypy
+from influxdb.tests import skipIfPYpy, using_pypy
 import copy
 import warnings
 
@@ -52,6 +52,32 @@ class TestDataFrameClient(unittest.TestCase):
 
             self.assertListEqual(json.loads(m.last_request.body), points)
 
+    def test_write_points_from_dataframe_with_float_nan(self):
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[[1, float("NaN"), 1.0], [2, 2, 2.0]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["column_one", "column_two",
+                                          "column_three"])
+        points = [
+            {
+                "points": [
+                    [1, None, 1.0, 0],
+                    [2, 2, 2.0, 3600]
+                ],
+                "name": "foo",
+                "columns": ["column_one", "column_two", "column_three", "time"]
+            }
+        ]
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/db/db/series")
+
+            cli = DataFrameClient(database='db')
+            cli.write_points({"foo": dataframe})
+
+            self.assertListEqual(json.loads(m.last_request.body), points)
+
     def test_write_points_from_dataframe_in_batches(self):
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
@@ -63,8 +89,7 @@ class TestDataFrameClient(unittest.TestCase):
                            "http://localhost:8086/db/db/series")
 
             cli = DataFrameClient(database='db')
-            assert cli.write_points({"foo": dataframe},
-                                    batch_size=1) is True
+            self.assertTrue(cli.write_points({"foo": dataframe}, batch_size=1))
 
     def test_write_points_from_dataframe_with_numeric_column_names(self):
         now = pd.Timestamp('1970-01-01 00:00+00:00')
@@ -239,7 +264,7 @@ class TestDataFrameClient(unittest.TestCase):
             cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
             result = cli.query("""select mean(value), min(value), max(value),
                 stddev(value) from series1, series2, series3""")
-            assert dataframes.keys() == result.keys()
+            self.assertEqual(dataframes.keys(), result.keys())
             for key in dataframes.keys():
                 assert_frame_equal(dataframes[key], result[key])
 
@@ -247,7 +272,7 @@ class TestDataFrameClient(unittest.TestCase):
         with _mocked_session('get', 200, []):
             cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
             result = cli.query('select column_one from foo;')
-            assert result == []
+            self.assertEqual(result, [])
 
     def test_list_series(self):
         response = [
@@ -260,7 +285,7 @@ class TestDataFrameClient(unittest.TestCase):
         with _mocked_session('get', 200, response):
             cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
             series_list = cli.get_list_series()
-            assert series_list == ['seriesA', 'seriesB']
+            self.assertEqual(series_list, ['seriesA', 'seriesB'])
 
     def test_datetime_to_epoch(self):
         timestamp = pd.Timestamp('2013-01-01 00:00:00.000+00:00')

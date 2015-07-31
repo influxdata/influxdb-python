@@ -2,6 +2,7 @@
 
 import unittest
 
+from influxdb.exceptions import InfluxDBClientError
 from influxdb.resultset import ResultSet
 
 
@@ -10,21 +11,21 @@ class TestResultSet(unittest.TestCase):
     def setUp(self):
         self.query_response = {
             "results": [
-                {"series": [{"name": "cpu_load_short",
+                {"series": [{"measurement": "cpu_load_short",
                              "tags": {"host": "server01",
                                       "region": "us-west"},
                              "columns": ["time", "value"],
                             "values": [
                                 ["2015-01-29T21:51:28.968422294Z", 0.64]
                              ]},
-                            {"name": "cpu_load_short",
+                            {"measurement": "cpu_load_short",
                              "tags": {"host": "server02",
                                       "region": "us-west"},
                              "columns": ["time", "value"],
                             "values": [
                                 ["2015-01-29T21:51:28.968422294Z", 0.65]
                              ]},
-                            {"name": "other_serie",
+                            {"measurement": "other_serie",
                              "tags": {"host": "server01",
                                       "region": "us-west"},
                              "columns": ["time", "value"],
@@ -33,24 +34,33 @@ class TestResultSet(unittest.TestCase):
                              ]}]}
             ]
         }
-        self.rs = ResultSet(self.query_response)
+        self.rs = ResultSet(self.query_response['results'][0])
 
     def test_filter_by_name(self):
-        self.assertEqual(
-            list(self.rs['cpu_load_short']),
-            [
-                {'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'},
-                {'value': 0.65, 'time': '2015-01-29T21:51:28.968422294Z'}
-            ]
-        )
+        expected = [
+            {'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'},
+            {'value': 0.65, 'time': '2015-01-29T21:51:28.968422294Z'}
+        ]
+
+        self.assertEqual(expected, list(self.rs['cpu_load_short']))
+        self.assertEqual(expected,
+                         list(self.rs.get_points(
+                             measurement='cpu_load_short')))
 
     def test_filter_by_tags(self):
+        expected = [
+            {'time': '2015-01-29T21:51:28.968422294Z', 'value': 0.64},
+            {'time': '2015-01-29T21:51:28.968422294Z', 'value': 0.66}
+        ]
+
         self.assertEqual(
-            list(self.rs[{"host": "server01"}]),
-            [
-                {'time': '2015-01-29T21:51:28.968422294Z', 'value': 0.64},
-                {'time': '2015-01-29T21:51:28.968422294Z', 'value': 0.66}
-            ]
+            expected,
+            list(self.rs[{"host": "server01"}])
+        )
+
+        self.assertEqual(
+            expected,
+            list(self.rs.get_points(tags={'host': 'server01'}))
         )
 
     def test_filter_by_name_and_tags(self):
@@ -120,15 +130,12 @@ class TestResultSet(unittest.TestCase):
 
     def test_system_query(self):
         rs = ResultSet(
-            {'results': [
-                {'series': [
-                    {'values': [['another', '48h0m0s', 3, False],
-                                ['default', '0', 1, False],
-                                ['somename', '24h0m0s', 4, True]],
-                     'columns': ['name', 'duration',
-                                 'replicaN', 'default']}]}
-            ]
-            }
+            {'series': [
+                {'values': [['another', '48h0m0s', 3, False],
+                            ['default', '0', 1, False],
+                            ['somename', '24h0m0s', 4, True]],
+                 'columns': ['name', 'duration',
+                             'replicaN', 'default']}]}
         )
 
         self.assertEqual(
@@ -147,3 +154,10 @@ class TestResultSet(unittest.TestCase):
                  'name': 'somename'}
             ]
         )
+
+    def test_resultset_error(self):
+        with self.assertRaises(InfluxDBClientError):
+            ResultSet({
+                "series": [],
+                "error": "Big error, many problems."
+            })

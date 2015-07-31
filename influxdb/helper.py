@@ -137,7 +137,7 @@ class SeriesHelper(object):
         for series_name, data in six.iteritems(cls._datapoints):
             for point in data:
                 json_point = {
-                    "name": series_name,
+                    "measurement": series_name,
                     "fields": {},
                     "tags": {},
                 }

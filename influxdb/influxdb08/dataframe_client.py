@@ -15,18 +15,17 @@ class DataFrameClient(InfluxDBClient):
     The client reads and writes from pandas DataFrames.
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, ignore_nan=True, *args, **kwargs):
         super(DataFrameClient, self).__init__(*args, **kwargs)
+
         try:
             global pd
             import pandas as pd
         except ImportError as ex:
-            raise ImportError(
-                'DataFrameClient requires Pandas, "{ex}" problem importing'
-                .format(ex=str(ex))
-            )
-
+            raise ImportError('DataFrameClient requires Pandas, '
+                              '"{ex}" problem importing'.format(ex=str(ex)))
         self.EPOCH = pd.Timestamp('1970-01-01 00:00:00.000+00:00')
+        self.ignore_nan = ignore_nan
 
     def write_points(self, data, *args, **kwargs):
         """
@@ -135,8 +134,23 @@ class DataFrameClient(InfluxDBClient):
                              for dt in dataframe.index]
         data = {'name': name,
                 'columns': [str(column) for column in dataframe.columns],
-                'points': list([list(x) for x in dataframe.values])}
+                'points': [self._convert_array(x) for x in dataframe.values]}
         return data
+
+    def _convert_array(self, array):
+        try:
+            global np
+            import numpy as np
+        except ImportError as ex:
+            raise ImportError('DataFrameClient requires Numpy, '
+                              '"{ex}" problem importing'.format(ex=str(ex)))
+        if self.ignore_nan:
+            number_types = (int, float, np.number)
+            condition = (all(isinstance(el, number_types) for el in array) and
+                         np.isnan(array))
+            return list(np.where(condition, None, array))
+        else:
+            return list(array)
 
     def _datetime_to_epoch(self, datetime, time_precision='s'):
         seconds = (datetime - self.EPOCH).total_seconds()

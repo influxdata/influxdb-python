@@ -28,8 +28,8 @@ def main(host='localhost', port=8086, nb_day=15):
         hostName = "server-%d" % random.randint(1, 5)
         # pointValues = [int(past_date.strftime('%s')), value, hostName]
         pointValues = {
-                "timestamp": int(past_date.strftime('%s')),
-                "name": metric,
+                "time": int(past_date.strftime('%s')),
+                "measurement": metric,
                 'fields':  {
                     'value': value,
                 },

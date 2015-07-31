@@ -137,10 +137,10 @@ class DataFrameClient(InfluxDBClient):
         dataframe = dataframe.astype('object')
 
         points = [
-            {'name': measurement,
+            {'measurement': measurement,
              'tags': tags if tags else {},
              'fields': rec,
-             'timestamp': ts.isoformat()
+             'time': ts.isoformat()
              }
             for ts, rec in zip(dataframe.index, dataframe.to_dict('record'))]
         return points

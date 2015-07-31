@@ -12,12 +12,12 @@ def main(host='localhost', port=8086):
     query = 'select value from cpu_load_short;'
     json_body = [
         {
-            "name": "cpu_load_short",
+            "measurement": "cpu_load_short",
             "tags": {
                 "host": "server01",
                 "region": "us-west"
             },
-            "timestamp": "2009-11-10T23:00:00Z",
+            "time": "2009-11-10T23:00:00Z",
             "fields": {
                 "value": 0.64
             }

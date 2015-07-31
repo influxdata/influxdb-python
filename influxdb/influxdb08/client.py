@@ -25,8 +25,8 @@ session = requests.Session()
 
 
 class InfluxDBClientError(Exception):
-    "Raised when an error occurs in the request"
-    def __init__(self, content, code):
+    """Raised when an error occurs in the request"""
+    def __init__(self, content, code=-1):
         super(InfluxDBClientError, self).__init__(
             "{0}: {1}".format(code, content))
         self.content = content
@@ -115,13 +115,13 @@ class InfluxDBClient(object):
         also be passed to this function.
 
         Examples:
-            >>> cli = InfluxDBClient.from_DSN('influxdb://username:password@\
+            >> cli = InfluxDBClient.from_DSN('influxdb://username:password@\
             ... localhost:8086/databasename', timeout=5)
-            >>> type(cli)
+            >> type(cli)
             <class 'influxdb.client.InfluxDBClient'>
-            >>> cli = InfluxDBClient.from_DSN('udp+influxdb://username:pass@\
+            >> cli = InfluxDBClient.from_DSN('udp+influxdb://username:pass@\
             ... localhost:8086/databasename', timeout=5, udp_port=159)
-            >>> print('{0._baseurl} - {0.use_udp} {0.udp_port}'.format(cli))
+            >> print('{0._baseurl} - {0.use_udp} {0.udp_port}'.format(cli))
             http://localhost:8086 - True 159
 
         :param dsn: data source name
@@ -134,7 +134,6 @@ class InfluxDBClient(object):
         udp_port parameter (cf. examples).
         :raise ValueError: if the provided DSN has any unexpected value.
         """
-        dsn = dsn.lower()
 
         init_args = {}
         conn_params = urlparse(dsn)
@@ -243,7 +242,8 @@ class InfluxDBClient(object):
                     timeout=self._timeout
                 )
                 break
-            except requests.exceptions.ConnectionError as e:
+            except (requests.exceptions.ConnectionError,
+                    requests.exceptions.Timeout) as e:
                 if i < 2:
                     continue
                 else:
@@ -273,9 +273,23 @@ class InfluxDBClient(object):
 
     def write_points(self, data, time_precision='s', *args, **kwargs):
         """
-        Write to multiple time series names.
+        Write to multiple time series names. An example data blob is:
 
-        :param data: A list of dicts.
+        data = [
+            {
+                "points": [
+                    [
+                        12
+                    ]
+                ],
+                "name": "cpu_load_short",
+                "columns": [
+                    "value"
+                ]
+            }
+        ]
+
+        :param data: A list of dicts in InfluxDB 0.8.x data format.
         :param time_precision: [Optional, default 's'] Either 's', 'm', 'ms'
             or 'u'.
         :param batch_size: [Optional] Value to write the points in batches
