@@ -115,14 +115,16 @@ class InfluxDBClient(object):
 
         :Example:
 
-        >>> cli = InfluxDBClient.from_DSN('influxdb://username:password@\
+        ::
+
+            >> cli = InfluxDBClient.from_DSN('influxdb://username:password@\
 localhost:8086/databasename', timeout=5)
-        >>> type(cli)
-        <class 'influxdb.client.InfluxDBClient'>
-        >>> cli = InfluxDBClient.from_DSN('udp+influxdb://username:pass@\
+            >> type(cli)
+            <class 'influxdb.client.InfluxDBClient'>
+            >> cli = InfluxDBClient.from_DSN('udp+influxdb://username:pass@\
 localhost:8086/databasename', timeout=5, udp_port=159)
-        >>> print('{0._baseurl} - {0.use_udp} {0.udp_port}'.format(cli))
-        http://localhost:8086 - True 159
+            >> print('{0._baseurl} - {0.use_udp} {0.udp_port}'.format(cli))
+            http://localhost:8086 - True 159
 
         .. note:: parameters provided in `**kwargs` may override dsn parameters
         .. note:: when using "udp+influxdb" the specified port (if any) will
@@ -431,9 +433,11 @@ localhost:8086/databasename', timeout=5, udp_port=159)
 
         :Example:
 
-        >>> dbs = client.get_list_database()
-        >>> dbs
-        [{u'name': u'db1'}, {u'name': u'db2'}, {u'name': u'db3'}]
+        ::
+
+            >> dbs = client.get_list_database()
+            >> dbs
+            [{u'name': u'db1'}, {u'name': u'db2'}, {u'name': u'db3'}]
         """
         return list(self.query("SHOW DATABASES").get_points())
 
@@ -532,13 +536,15 @@ localhost:8086/databasename', timeout=5, udp_port=159)
 
         :Example:
 
-        >>> ret_policies = client.get_list_retention_policies('my_db')
-        >>> ret_policies
-        [{u'default': True,
-          u'duration': u'0',
-          u'name': u'default',
-          u'replicaN': 1}]
-        """
+        ::
+
+            >> ret_policies = client.get_list_retention_policies('my_db')
+            >> ret_policies
+            [{u'default': True,
+              u'duration': u'0',
+              u'name': u'default',
+              u'replicaN': 1}]
+            """
         rsp = self.query(
             "SHOW RETENTION POLICIES ON %s" % (database or self._database)
         )
@@ -555,8 +561,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
 
         :Example:
 
-        >>> series = client.get_list_series('my_database')
-        >>> series
+        >> series = client.get_list_series('my_database')
+        >> series
         [{'name': u'cpu_usage',
           'tags': [{u'_id': 1,
                     u'host': u'server01',
@@ -581,11 +587,13 @@ localhost:8086/databasename', timeout=5, udp_port=159)
 
         :Example:
 
-        >>> users = client.get_list_users()
-        >>> users
-        [{u'admin': True, u'user': u'user1'},
-         {u'admin': False, u'user': u'user2'},
-         {u'admin': False, u'user': u'user3'}]
+        ::
+
+            >> users = client.get_list_users()
+            >> users
+            [{u'admin': True, u'user': u'user1'},
+             {u'admin': False, u'user': u'user2'},
+             {u'admin': False, u'user': u'user3'}]
         """
         return list(self.query("SHOW USERS").get_points())
 
@@ -768,13 +776,15 @@ class InfluxDBClusterClient(object):
 
         :Example:
 
-        >>> cluster = InfluxDBClusterClient.from_DSN('influxdb://usr:pwd\
+        ::
+
+            >> cluster = InfluxDBClusterClient.from_DSN('influxdb://usr:pwd\
 @host1:8086,usr:pwd@host2:8086/db_name', timeout=5)
-        >>> type(cluster)
-        <class 'influxdb.client.InfluxDBClusterClient'>
-        >>> cluster.clients
-        [<influxdb.client.InfluxDBClient at 0x7feb480295d0>,
-         <influxdb.client.InfluxDBClient at 0x7feb438ec950>]
+            >> type(cluster)
+            <class 'influxdb.client.InfluxDBClusterClient'>
+            >> cluster.clients
+            [<influxdb.client.InfluxDBClient at 0x7feb480295d0>,
+             <influxdb.client.InfluxDBClient at 0x7feb438ec950>]
         """
         conn_params = urlparse(dsn)
         netlocs = conn_params.netloc.split(',')
