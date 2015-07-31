@@ -24,6 +24,11 @@ class InfluxDbInstance(object):
                  conf_template,
                  udp_enabled=False):
 
+        if os.environ.get("INFLUXDB_PYTHON_SKIP_SERVER_TESTS", None) == 'True':
+            raise unittest.SkipTest(
+                "Skipping server test (INFLUXDB_PYTHON_SKIP_SERVER_TESTS)"
+            )
+
         self.influxd_path = self.find_influxd_path()
 
         # create a temporary dir to store all needed files
