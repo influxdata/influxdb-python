@@ -15,8 +15,8 @@ install:
     - mkdir influxdb_install
     - wget https://s3.amazonaws.com/influxdb/influxdb_0.9.2_amd64.deb
     - dpkg -x influxdb_*_amd64.deb influxdb_install
-    - export INFLUXDB_PYTHON_INFLUXD_PATH=$(pwd)/influxdb_install/opt/influxdb/versions/0.9.2/influxd
 script:
+    - export INFLUXDB_PYTHON_INFLUXD_PATH=$(pwd)/influxdb_install/opt/influxdb/versions/0.9.2/influxd
     - travis_wait 30 tox -e $TOX_ENV
 after_success:
     - if [ "$TOX_ENV" == "coverage" ] ; then coveralls; fi
