@@ -4,13 +4,14 @@ from __future__ import unicode_literals
 from calendar import timegm
 from copy import copy
 from datetime import datetime
+from numbers import Integral
 
 from dateutil.parser import parse
 from six import binary_type, text_type
 
 
 def _convert_timestamp(timestamp, precision=None):
-    if isinstance(timestamp, int):
+    if isinstance(timestamp, Integral):
         return timestamp  # assume precision is correct if timestamp is int
     if isinstance(_get_unicode(timestamp), text_type):
         timestamp = parse(timestamp)
