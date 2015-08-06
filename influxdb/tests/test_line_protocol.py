@@ -6,16 +6,19 @@ from influxdb import line_protocol
 
 class TestLineProtocol(unittest.TestCase):
 
-    def test_empty_tag(self):
+    def test_make_lines(self):
         data = {
             "tags": {
-                "my_tag": ""
+                "empty_tag": "",
+                "integer_tag": 2,
+                "string_tag": "hello"
             },
             "points": [
                 {
                     "measurement": "test",
                     "fields": {
-                        "value": "hello!"
+                        "string_val": "hello!",
+                        "int_val": 1,
                     }
                 }
             ]
@@ -23,5 +26,6 @@ class TestLineProtocol(unittest.TestCase):
 
         self.assertEqual(
             line_protocol.make_lines(data),
-            'test value="hello!"\n'
+            'test,integer_tag=2,string_tag=hello '
+            'int_val=1,string_val="hello!"\n'
         )

@@ -12,7 +12,7 @@ from six import binary_type, text_type
 def _convert_timestamp(timestamp, precision=None):
     if isinstance(timestamp, int):
         return timestamp  # assume precision is correct if timestamp is int
-    if isinstance(_force_text(timestamp), text_type):
+    if isinstance(_get_unicode(timestamp), text_type):
         timestamp = parse(timestamp)
     if isinstance(timestamp, datetime):
         ns = (
@@ -32,6 +32,7 @@ def _convert_timestamp(timestamp, precision=None):
 
 
 def _escape_tag(tag):
+    tag = _get_unicode(tag, force=True)
     return tag.replace(
         "\\", "\\\\"
     ).replace(
@@ -44,8 +45,8 @@ def _escape_tag(tag):
 
 
 def _escape_value(value):
-    value = _force_text(value)
-    if isinstance(value, text_type):
+    value = _get_unicode(value)
+    if isinstance(value, text_type) and value != '':
         return "\"{}\"".format(value.replace(
             "\"", "\\\""
         ))
@@ -53,12 +54,14 @@ def _escape_value(value):
         return str(value)
 
 
-def _force_text(data):
+def _get_unicode(data, force=False):
     """
     Try to return a text aka unicode object from the given data.
     """
     if isinstance(data, binary_type):
         return data.decode('utf-8')
+    elif force:
+        return str(data)
     else:
         return data
 
@@ -74,7 +77,7 @@ def make_lines(data, precision=None):
         elements = []
 
         # add measurement name
-        measurement = _escape_tag(_force_text(
+        measurement = _escape_tag(_get_unicode(
             point.get('measurement', data.get('measurement'))
         ))
         key_values = [measurement]
@@ -90,6 +93,7 @@ def make_lines(data, precision=None):
         for tag_key in sorted(tags.keys()):
             key = _escape_tag(tag_key)
             value = _escape_tag(tags[tag_key])
+
             if key != '' and value != '':
                 key_values.append("{key}={value}".format(key=key, value=value))
         key_values = ','.join(key_values)
@@ -107,7 +111,7 @@ def make_lines(data, precision=None):
 
         # add timestamp
         if 'time' in point:
-            timestamp = _force_text(str(int(
+            timestamp = _get_unicode(str(int(
                 _convert_timestamp(point['time'], precision)
             )))
             elements.append(timestamp)
