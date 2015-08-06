@@ -39,7 +39,7 @@ class DataFrameClient(InfluxDBClient):
         :param dataframe: data points in a DataFrame
         :param measurement: name of measurement
         :param tags: dictionary of tags, with string key-values
-        :param time_precision: [Optional, default 's'] Either 's', 'ms', 'u'
+        :param time_precision: [Optional, default None] Either 's', 'ms', 'u'
             or 'n'.
         :param batch_size: [Optional] Value to write the points in batches
             instead of all at one time. Useful for when doing data dumps from
@@ -140,7 +140,7 @@ class DataFrameClient(InfluxDBClient):
             {'measurement': measurement,
              'tags': tags if tags else {},
              'fields': rec,
-             'time': ts.isoformat()
+             'time': ts.value
              }
             for ts, rec in zip(dataframe.index, dataframe.to_dict('record'))]
         return points
@@ -150,8 +150,8 @@ class DataFrameClient(InfluxDBClient):
         if time_precision == 's':
             return seconds
         elif time_precision == 'ms':
-            return seconds * 10 ** 3
+            return seconds * 1e3
         elif time_precision == 'u':
-            return seconds * 10 ** 6
+            return seconds * 1e6
         elif time_precision == 'n':
-            return seconds * 10 ** 9
+            return seconds * 1e9
