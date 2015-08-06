@@ -6,23 +6,28 @@ from copy import copy
 from datetime import datetime
 
 from dateutil.parser import parse
-from pytz import utc
 from six import binary_type, text_type
 
 
-def _convert_timestamp(timestamp):
+def _convert_timestamp(timestamp, precision=None):
     if isinstance(timestamp, int):
-        return timestamp
+        return timestamp  # assume precision is correct if timestamp is int
     if isinstance(_force_text(timestamp), text_type):
         timestamp = parse(timestamp)
     if isinstance(timestamp, datetime):
-        if timestamp.tzinfo:
-            timestamp = timestamp.astimezone(utc)
-            timestamp.replace(tzinfo=None)
-        return (
-            timegm(timestamp.timetuple()) * 1e9 +
+        ns = (
+            timegm(timestamp.utctimetuple()) * 1e9 +
             timestamp.microsecond * 1e3
         )
+        if precision is None or precision == 'n':
+            return ns
+        elif precision == 'u':
+            return ns / 1e3
+        elif precision == 'ms':
+            return ns / 1e6
+        elif precision == 's':
+            return ns / 1e9
+
     raise ValueError(timestamp)
 
 
@@ -58,7 +63,7 @@ def _force_text(data):
         return data
 
 
-def make_lines(data):
+def make_lines(data, precision=None):
     """
     Extracts the points from the given dict and returns a Unicode string
     matching the line protocol introduced in InfluxDB 0.9.0.
@@ -103,7 +108,7 @@ def make_lines(data):
         # add timestamp
         if 'time' in point:
             timestamp = _force_text(str(int(
-                _convert_timestamp(point['time'])
+                _convert_timestamp(point['time'], precision)
             )))
             elements.append(timestamp)
 

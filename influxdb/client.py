@@ -259,11 +259,16 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         headers = self._headers
         headers['Content-type'] = 'application/octet-stream'
 
+        if params:
+            precision = params.get('precision')
+        else:
+            precision = None
+
         self.request(
             url="write",
             method='POST',
             params=params,
-            data=make_lines(data).encode('utf-8'),
+            data=make_lines(data, precision).encode('utf-8'),
             expected_response_code=expected_response_code,
             headers=headers
         )

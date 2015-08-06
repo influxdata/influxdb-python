@@ -55,15 +55,14 @@ class DataFrameClient(InfluxDBClient):
                 end_index = (batch + 1) * batch_size
                 points = self._convert_dataframe_to_json(
                     dataframe.ix[start_index:end_index].copy(),
-                    measurement,
-                    tags
+                    measurement, tags, time_precision
                 )
                 super(DataFrameClient, self).write_points(
                     points, time_precision, database, retention_policy)
             return True
         else:
             points = self._convert_dataframe_to_json(
-                dataframe, measurement, tags
+                dataframe, measurement, tags, time_precision
             )
             super(DataFrameClient, self).write_points(
                 points, time_precision, database, retention_policy)
@@ -116,7 +115,8 @@ class DataFrameClient(InfluxDBClient):
             result[key] = df
         return result
 
-    def _convert_dataframe_to_json(self, dataframe, measurement, tags=None):
+    def _convert_dataframe_to_json(self, dataframe, measurement, tags=None,
+                                   time_precision=None):
 
         if not isinstance(dataframe, pd.DataFrame):
             raise TypeError('Must be DataFrame, but type was: {}.'
@@ -136,11 +136,18 @@ class DataFrameClient(InfluxDBClient):
         # Convert dtype for json serialization
         dataframe = dataframe.astype('object')
 
+        precision_factor = {
+            "n": 1,
+            "u": 1e3,
+            "ms": 1e6,
+            "s": 1e9
+        }.get(time_precision, 1)
+
         points = [
             {'measurement': measurement,
              'tags': tags if tags else {},
              'fields': rec,
-             'time': ts.value
+             'time': int(ts.value / precision_factor)
              }
             for ts, rec in zip(dataframe.index, dataframe.to_dict('record'))]
         return points
