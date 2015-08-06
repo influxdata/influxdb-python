@@ -140,7 +140,9 @@ class DataFrameClient(InfluxDBClient):
             "n": 1,
             "u": 1e3,
             "ms": 1e6,
-            "s": 1e9
+            "s": 1e9,
+            "m": 1e9 * 60,
+            "h": 1e9 * 3600,
         }.get(time_precision, 1)
 
         points = [
@@ -154,7 +156,11 @@ class DataFrameClient(InfluxDBClient):
 
     def _datetime_to_epoch(self, datetime, time_precision='s'):
         seconds = (datetime - self.EPOCH).total_seconds()
-        if time_precision == 's':
+        if time_precision == 'h':
+            return seconds / 3600
+        elif time_precision == 'm':
+            return seconds / 60
+        elif time_precision == 's':
             return seconds
         elif time_precision == 'ms':
             return seconds * 1e3
