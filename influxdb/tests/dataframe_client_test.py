@@ -71,8 +71,8 @@ class TestDataFrameClient(unittest.TestCase):
                                  index=[now, now + timedelta(hours=1)])
 
         expected = (
-            b"foo,hello=there 0=\"1\",1=1,2=1.0 0\n"
-            b"foo,hello=there 0=\"2\",1=2,2=2.0 3600000000000\n"
+            b'foo,hello=there 0=\"1\",1=1,2=1.0 0\n'
+            b'foo,hello=there 0=\"2\",1=2,2=2.0 3600000000000\n'
         )
 
         with requests_mock.Mocker() as m:
@@ -121,6 +121,22 @@ class TestDataFrameClient(unittest.TestCase):
 
             cli = DataFrameClient(database='db')
             measurement = "foo"
+
+            cli.write_points(dataframe, measurement, time_precision='h')
+            self.assertEqual(m.last_request.qs['precision'], ['h'])
+            self.assertEqual(
+                b'foo column_one="1",column_three=1.0,column_two=1 0\nfoo '
+                b'column_one="2",column_three=2.0,column_two=2 1\n',
+                m.last_request.body,
+            )
+
+            cli.write_points(dataframe, measurement, time_precision='m')
+            self.assertEqual(m.last_request.qs['precision'], ['m'])
+            self.assertEqual(
+                b'foo column_one="1",column_three=1.0,column_two=1 0\nfoo '
+                b'column_one="2",column_three=2.0,column_two=2 60\n',
+                m.last_request.body,
+            )
 
             cli.write_points(dataframe, measurement, time_precision='s')
             self.assertEqual(m.last_request.qs['precision'], ['s'])
@@ -297,6 +313,14 @@ class TestDataFrameClient(unittest.TestCase):
         self.assertEqual(
             cli._datetime_to_epoch(timestamp),
             1356998400.0
+        )
+        self.assertEqual(
+            cli._datetime_to_epoch(timestamp, time_precision='h'),
+            1356998400.0 / 3600
+        )
+        self.assertEqual(
+            cli._datetime_to_epoch(timestamp, time_precision='m'),
+            1356998400.0 / 60
         )
         self.assertEqual(
             cli._datetime_to_epoch(timestamp, time_precision='s'),
