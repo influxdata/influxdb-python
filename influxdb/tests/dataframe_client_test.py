@@ -119,38 +119,41 @@ class TestDataFrameClient(unittest.TestCase):
                            "http://localhost:8086/write",
                            status_code=204)
 
-            points = {
-                'database': 'db',
-                'points': [
-                    {'time': '1970-01-01T00:00:00+00:00',
-                     'fields': {
-                         'column_one': '1',
-                         'column_three': 1.0,
-                         'column_two': 1},
-                     'tags': {},
-                     'measurement': 'foo'},
-                    {'time': '1970-01-01T01:00:00+00:00',
-                     'fields': {
-                         'column_one': '2',
-                         'column_three': 2.0,
-                         'column_two': 2},
-                     'tags': {},
-                     'measurement': 'foo'}]
-            }
-
             cli = DataFrameClient(database='db')
             measurement = "foo"
 
             cli.write_points(dataframe, measurement, time_precision='s')
             self.assertEqual(m.last_request.qs['precision'], ['s'])
+            self.assertEqual(
+                b'foo column_one="1",column_three=1.0,column_two=1 0\nfoo '
+                b'column_one="2",column_three=2.0,column_two=2 3600\n',
+                m.last_request.body,
+            )
 
-            cli.write_points(dataframe, measurement, time_precision='m')
-            points.update(precision='m')
-            self.assertEqual(m.last_request.qs['precision'], ['m'])
+            cli.write_points(dataframe, measurement, time_precision='ms')
+            self.assertEqual(m.last_request.qs['precision'], ['ms'])
+            self.assertEqual(
+                b'foo column_one="1",column_three=1.0,column_two=1 0\nfoo '
+                b'column_one="2",column_three=2.0,column_two=2 3600000\n',
+                m.last_request.body,
+            )
 
             cli.write_points(dataframe, measurement, time_precision='u')
-            points.update(precision='u')
             self.assertEqual(m.last_request.qs['precision'], ['u'])
+            self.assertEqual(
+                b'foo column_one="1",column_three=1.0,column_two=1 0\nfoo '
+                b'column_one="2",column_three=2.0,column_two=2 3600000000\n',
+                m.last_request.body,
+            )
+
+            cli.write_points(dataframe, measurement, time_precision='n')
+            self.assertEqual(m.last_request.qs['precision'], ['n'])
+            self.assertEqual(
+                b'foo column_one="1",column_three=1.0,column_two=1 0\n'
+                b'foo column_one="2",column_three=2.0,column_two=2 '
+                b'3600000000000\n',
+                m.last_request.body,
+            )
 
     @raises(TypeError)
     def test_write_points_from_dataframe_fails_without_time_index(self):

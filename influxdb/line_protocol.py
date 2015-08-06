@@ -6,23 +6,28 @@ from copy import copy
 from datetime import datetime
 
 from dateutil.parser import parse
-from pytz import utc
 from six import binary_type, text_type
 
 
-def _convert_timestamp(timestamp):
+def _convert_timestamp(timestamp, precision=None):
     if isinstance(timestamp, int):
-        return timestamp
+        return timestamp  # assume precision is correct if timestamp is int
     if isinstance(_force_text(timestamp), text_type):
         timestamp = parse(timestamp)
     if isinstance(timestamp, datetime):
-        if timestamp.tzinfo:
-            timestamp = timestamp.astimezone(utc)
-            timestamp.replace(tzinfo=None)
-        return (
-            timegm(timestamp.timetuple()) * 1e9 +
+        ns = (
+            timegm(timestamp.utctimetuple()) * 1e9 +
             timestamp.microsecond * 1e3
         )
+        if precision is None or precision == 'n':
+            return ns
+        elif precision == 'u':
+            return ns / 1e3
+        elif precision == 'ms':
+            return ns / 1e6
+        elif precision == 's':
+            return ns / 1e9
+
     raise ValueError(timestamp)
 
 
@@ -58,18 +63,21 @@ def _force_text(data):
         return data
 
 
-def make_lines(data):
+def make_lines(data, precision=None):
     """
     Extracts the points from the given dict and returns a Unicode string
     matching the line protocol introduced in InfluxDB 0.9.0.
     """
-    lines = ""
+    lines = []
     static_tags = data.get('tags', None)
     for point in data['points']:
+        elements = []
+
         # add measurement name
-        lines += _escape_tag(_force_text(
+        measurement = _escape_tag(_force_text(
             point.get('measurement', data.get('measurement'))
-        )) + ","
+        ))
+        key_values = [measurement]
 
         # add tags
         if static_tags is None:
@@ -77,27 +85,34 @@ def make_lines(data):
         else:
             tags = copy(static_tags)
             tags.update(point.get('tags', {}))
+
         # tags should be sorted client-side to take load off server
         for tag_key in sorted(tags.keys()):
             key = _escape_tag(tag_key)
             value = _escape_tag(tags[tag_key])
             if key != '' and value != '':
-                lines += "{key}={value},".format(key=key, value=value)
-        lines = lines[:-1] + " "  # strip the trailing comma
+                key_values.append("{key}={value}".format(key=key, value=value))
+        key_values = ','.join(key_values)
+        elements.append(key_values)
 
         # add fields
+        field_values = []
         for field_key in sorted(point['fields'].keys()):
-            lines += "{key}={value},".format(
+            field_values.append("{key}={value}".format(
                 key=_escape_tag(field_key),
                 value=_escape_value(point['fields'][field_key]),
-            )
-        lines = lines[:-1]  # strip the trailing comma
+            ))
+        field_values = ','.join(field_values)
+        elements.append(field_values)
 
         # add timestamp
         if 'time' in point:
-            lines += " " + _force_text(str(int(
-                _convert_timestamp(point['time'])
+            timestamp = _force_text(str(int(
+                _convert_timestamp(point['time'], precision)
             )))
+            elements.append(timestamp)
 
-        lines += "\n"
-    return lines
+        line = ' '.join(elements)
+        lines.append(line)
+    lines = '\n'.join(lines)
+    return lines + '\n'

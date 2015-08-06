@@ -275,14 +275,32 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
             cli = InfluxDBClient(database='db')
-            cli.write_points(
-                self.dummy_points,
-                time_precision='n'
-            )
 
+            cli.write_points(self.dummy_points, time_precision='n')
             self.assertEqual(
                 b"cpu_load_short,host=server01,region=us-west "
                 b"value=0.64 1257894000000000000\n",
+                m.last_request.body,
+            )
+
+            cli.write_points(self.dummy_points, time_precision='u')
+            self.assertEqual(
+                b"cpu_load_short,host=server01,region=us-west "
+                b"value=0.64 1257894000000000\n",
+                m.last_request.body,
+            )
+
+            cli.write_points(self.dummy_points, time_precision='ms')
+            self.assertEqual(
+                b"cpu_load_short,host=server01,region=us-west "
+                b"value=0.64 1257894000000\n",
+                m.last_request.body,
+            )
+
+            cli.write_points(self.dummy_points, time_precision='s')
+            self.assertEqual(
+                b"cpu_load_short,host=server01,region=us-west "
+                b"value=0.64 1257894000\n",
                 m.last_request.body,
             )
 
