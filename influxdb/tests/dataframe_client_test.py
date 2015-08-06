@@ -149,8 +149,9 @@ class TestDataFrameClient(unittest.TestCase):
             cli.write_points(dataframe, measurement, time_precision='n')
             self.assertEqual(m.last_request.qs['precision'], ['n'])
             self.assertEqual(
-                b'foo column_one="1",column_three=1.0,column_two=1 0\nfoo '
-                b'column_one="2",column_three=2.0,column_two=2 3600000000000\n',
+                b'foo column_one="1",column_three=1.0,column_two=1 0\n'
+                b'foo column_one="2",column_three=2.0,column_two=2 '
+                b'3600000000000\n',
                 m.last_request.body,
             )
 
