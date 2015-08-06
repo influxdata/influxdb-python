@@ -47,9 +47,13 @@ def _escape_tag(tag):
 def _escape_value(value):
     value = _get_unicode(value)
     if isinstance(value, text_type) and value != '':
-        return "\"{}\"".format(value.replace(
-            "\"", "\\\""
-        ))
+        return "\"{}\"".format(
+            value.replace(
+                "\"", "\\\""
+            ).replace(
+                "\n", "\\n"
+            )
+        )
     else:
         return str(value)
 
@@ -60,6 +64,8 @@ def _get_unicode(data, force=False):
     """
     if isinstance(data, binary_type):
         return data.decode('utf-8')
+    elif data is None:
+        return ''
     elif force:
         return str(data)
     else:
@@ -102,10 +108,13 @@ def make_lines(data, precision=None):
         # add fields
         field_values = []
         for field_key in sorted(point['fields'].keys()):
-            field_values.append("{key}={value}".format(
-                key=_escape_tag(field_key),
-                value=_escape_value(point['fields'][field_key]),
-            ))
+            key = _escape_tag(field_key)
+            value = _escape_value(point['fields'][field_key])
+            if key != '' and value != '':
+                field_values.append("{key}={value}".format(
+                    key=key,
+                    value=value
+                ))
         field_values = ','.join(field_values)
         elements.append(field_values)
 
