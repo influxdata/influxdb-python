@@ -242,7 +242,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         else:
             raise InfluxDBClientError(response.content, response.status_code)
 
-    def write(self, point, params={}, expected_response_code=204):
+    def write(self, data, params={}, expected_response_code=204):
         """Write data to InfluxDB.
 
         :param data: the data to be written
@@ -256,7 +256,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :rtype: bool
         """
 
-        data = {"points": [point] }
+        data['points'] = data.get('points', [data]) # Accept a single point or a list
 
         if not 'db' in params:
             params['db'] = self._database
