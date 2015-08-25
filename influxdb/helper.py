@@ -144,7 +144,9 @@ class SeriesHelper(object):
                     "fields": {},
                     "tags": {},
                 }
-                if 'timestamp' in point.__dict__ and point.__dict__['timestamp']:
+                if 'timestamp' in point.__dict__ \
+                   and point.__dict__['timestamp']:
+                    # keep the timestamp in json_point
                     json_point["timestamp"] = point.__dict__['timestamp']
                     # remove timestamp from fields
                     if "timestamp" in cls._fields:
