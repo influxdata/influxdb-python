@@ -59,6 +59,8 @@ def _escape_value(value):
                 "\n", "\\n"
             )
         )
+    if isinstance(value, int):
+        return str(value) + 'i'
     else:
         return str(value)
 
@@ -116,8 +118,6 @@ def make_lines(data, precision=None):
             key = _escape_tag(field_key)
             value = _escape_value(point['fields'][field_key])
             if key != '' and value != '':
-                if isinstance(value, int):
-                    value = str(value) + 'i'
                 field_values.append("{key}={value}".format(
                     key=key,
                     value=value
