@@ -20,6 +20,7 @@ class TestLineProtocol(unittest.TestCase):
                     "fields": {
                         "string_val": "hello!",
                         "int_val": 1,
+                        "float_val": 1.1,
                         "none_field": None,
                     }
                 }
@@ -29,7 +30,7 @@ class TestLineProtocol(unittest.TestCase):
         self.assertEqual(
             line_protocol.make_lines(data),
             'test,integer_tag=2,string_tag=hello '
-            'int_val=1,string_val="hello!"\n'
+            'float_val=1.1,int_val=1i,string_val="hello!"\n'
         )
 
     def test_string_val_newline(self):

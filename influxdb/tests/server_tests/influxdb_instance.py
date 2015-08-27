@@ -51,6 +51,7 @@ class InfluxDbInstance(object):
         conf_data = dict(
             meta_dir=os.path.join(tempdir, 'meta'),
             data_dir=os.path.join(tempdir, 'data'),
+            wal_dir=os.path.join(tempdir, 'wal'),
             cluster_dir=os.path.join(tempdir, 'state'),
             handoff_dir=os.path.join(tempdir, 'handoff'),
             logs_file=os.path.join(self.temp_dir_base, 'logs.txt'),
