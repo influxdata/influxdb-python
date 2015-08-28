@@ -303,8 +303,8 @@ class CommonTests(ManyTestCasesWithServerMixin,
         self.test_write()
         time.sleep(1)
         rsp = self.cli.query('SELECT * FROM cpu_load_short', database='db')
-        self.assertListEqual([{'value': 0.64,
-                               'time': '2009-11-10T23:00:00Z'}],
+        self.assertListEqual([{'value': 0.64, 'time': '2009-11-10T23:00:00Z',
+                               "host": "server01", "region": "us-west"}],
                              list(rsp.get_points()))
 
     def test_write_points(self):
@@ -328,7 +328,8 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
         self.assertEqual(
             list(rsp),
-            [[{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]]
+            [[{'value': 0.64, 'time': '2009-11-10T23:00:00Z',
+               "host": "server01", "region": "us-west"}]]
         )
 
         rsp2 = list(rsp.get_points())
@@ -337,7 +338,8 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
         self.assertEqual(
             pt,
-            {'time': '2009-11-10T23:00:00Z', 'value': 0.64}
+            {'time': '2009-11-10T23:00:00Z', 'value': 0.64,
+             "host": "server01", "region": "us-west"}
         )
 
     @unittest.skip("Broken as of 0.9.0")
@@ -367,7 +369,8 @@ class CommonTests(ManyTestCasesWithServerMixin,
         lrsp = list(rsp)
 
         self.assertEqual(
-            [[{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]],
+            [[{'value': 0.64, 'time': '2009-11-10T23:00:00Z',
+               "host": "server01", "region": "us-west"}]],
             lrsp
         )
 
@@ -375,7 +378,8 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
         self.assertEqual(
             rsp,
-            [[{'value': 33, 'time': '2009-11-10T23:01:35Z'}]]
+            [[{'value': 33, 'time': '2009-11-10T23:01:35Z',
+               "host": "server01", "region": "us-west"}]]
         )
 
     @unittest.skip("Broken as of 0.9.0")
@@ -678,6 +682,7 @@ class UdpTests(ManyTestCasesWithServerMixin,
 
         self.assertEqual(
             # this is dummy_points :
-            [{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}],
+            [{'value': 0.64, 'time': '2009-11-10T23:00:00Z',
+              "host": "server01", "region": "us-west"}],
             list(rsp['cpu_load_short'])
         )

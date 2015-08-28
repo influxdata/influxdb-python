@@ -10,6 +10,7 @@
 
 [data]
   dir = "{data_dir}"
+  wal-dir = "{wal_dir}"
   retention-auto-create = true
   retention-check-enabled = true
   retention-check-period = "10m0s"
@@ -54,7 +55,7 @@
   retention-policy = ""
   consistency-level = "one"
 
-[udp]
+[[udp]]
   enabled = {udp_enabled}
   bind-address = ":{udp_port}"
   database = "db"

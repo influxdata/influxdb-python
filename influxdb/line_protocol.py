@@ -7,7 +7,7 @@ from datetime import datetime
 from numbers import Integral
 
 from dateutil.parser import parse
-from six import binary_type, text_type
+from six import binary_type, text_type, integer_types
 
 
 def _convert_timestamp(timestamp, precision=None):
@@ -59,6 +59,8 @@ def _escape_value(value):
                 "\n", "\\n"
             )
         )
+    elif isinstance(value, integer_types):
+        return str(value) + 'i'
     else:
         return str(value)
 
