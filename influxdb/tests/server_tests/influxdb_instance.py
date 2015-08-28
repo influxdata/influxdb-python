@@ -31,6 +31,18 @@ class InfluxDbInstance(object):
 
         self.influxd_path = self.find_influxd_path()
 
+        errors = 0
+        while True:
+            try:
+                self._start_server(conf_template, udp_enabled)
+                break
+            except RuntimeError:  # Happens when the ports are already in use.
+                errors += 1
+                if errors > 2:
+                    raise e
+
+    def _start_server(self, conf_template, udp_enabled):
+
         # create a temporary dir to store all needed files
         # for the influxdb server instance :
         self.temp_dir_base = tempfile.mkdtemp()
