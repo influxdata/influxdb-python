@@ -36,7 +36,8 @@ class InfluxDbInstance(object):
             try:
                 self._start_server(conf_template, udp_enabled)
                 break
-            except RuntimeError:  # Happens when the ports are already in use.
+            # Happens when the ports are already in use.
+            except RuntimeError as e:
                 errors += 1
                 if errors > 2:
                     raise e
