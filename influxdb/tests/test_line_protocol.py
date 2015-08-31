@@ -22,6 +22,7 @@ class TestLineProtocol(unittest.TestCase):
                         "int_val": 1,
                         "float_val": 1.1,
                         "none_field": None,
+                        "bool_val": True,
                     }
                 }
             ]
@@ -30,7 +31,7 @@ class TestLineProtocol(unittest.TestCase):
         self.assertEqual(
             line_protocol.make_lines(data),
             'test,integer_tag=2,string_tag=hello '
-            'float_val=1.1,int_val=1i,string_val="hello!"\n'
+            'bool_val=True,float_val=1.1,int_val=1i,string_val="hello!"\n'
         )
 
     def test_string_val_newline(self):

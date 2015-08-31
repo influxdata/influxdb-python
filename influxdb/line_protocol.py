@@ -59,7 +59,7 @@ def _escape_value(value):
                 "\n", "\\n"
             )
         )
-    elif isinstance(value, integer_types):
+    elif isinstance(value, integer_types) and not isinstance(value, bool):
         return str(value) + 'i'
     else:
         return str(value)
