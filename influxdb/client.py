@@ -202,8 +202,10 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :type expected_response_code: int
         :returns: the response from the request
         :rtype: :class:`requests.Response`
+        :raises InfluxDBServerError: if the response code is any server error
+            code (5xx)
         :raises InfluxDBClientError: if the response code is not the
-            same as `expected_response_code`
+            same as `expected_response_code` and is not a server error code
         """
         url = "{0}/{1}".format(self._baseurl, url)
 
@@ -237,7 +239,9 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                 else:
                     raise e
 
-        if response.status_code == expected_response_code:
+        if response.status_code >= 500 and response.status_code < 600:
+            raise InfluxDBServerError(response.content)
+        elif response.status_code == expected_response_code:
             return response
         else:
             raise InfluxDBClientError(response.content, response.status_code)
