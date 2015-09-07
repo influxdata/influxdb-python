@@ -167,7 +167,7 @@ problems or submit contributions.
 TODO
 ====
 
-The TODO/Roadmap can be found in Github bug tracker: https://github.com/influxdb/influxdb-python/issues/109
+The TODO/Roadmap can be found in Github bug tracker: https://github.com/influxdb/influxdb-python/issues
 
 
 Source code
