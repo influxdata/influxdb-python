@@ -805,6 +805,28 @@ class TestInfluxDBClusterClient(unittest.TestCase):
         self.assertEqual(1, len(cluster.clients))
         self.assertEqual(2, len(cluster.bad_clients))
 
+    def test_switch_database(self):
+        c = InfluxDBClusterClient(hosts=self.hosts,
+                                  shuffle=True,
+                                  client_base_class=InfluxDBClient)
+        self.assertEqual(3, len(c.clients))
+        self.assertEqual(0, len(c.bad_clients))
+        map(lambda x: self.assertEqual(None, x._database), c.clients)
+        c.switch_database('database')
+        map(lambda x: self.assertEqual('database', x._database), c.clients)
+
+    def test_switch_user(self):
+        c = InfluxDBClusterClient(hosts=self.hosts,
+                                  shuffle=True,
+                                  client_base_class=InfluxDBClient)
+        self.assertEqual(3, len(c.clients))
+        self.assertEqual(0, len(c.bad_clients))
+        map(lambda x: self.assertEqual('root', x._username), c.clients)
+        map(lambda x: self.assertEqual('root', x._password), c.clients)
+        c.switch_user('username', 'password')
+        map(lambda x: self.assertEqual('username', x._username), c.clients)
+        map(lambda x: self.assertEqual('password', x._password), c.clients)
+
     def test_dsn(self):
         cli = InfluxDBClusterClient.from_DSN(self.dsn_string)
         self.assertEqual(2, len(cli.clients))

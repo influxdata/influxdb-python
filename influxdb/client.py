@@ -763,12 +763,35 @@ class InfluxDBClusterClient(object):
                                                   use_udp=use_udp,
                                                   udp_port=udp_port))
         for method in dir(client_base_class):
-            if method.startswith('_'):
+            if method.startswith('_') or method in ('switch_database',
+                                                    'switch_user'):
                 continue
+
             orig_func = getattr(client_base_class, method)
             if not callable(orig_func):
                 continue
+
             setattr(self, method, self._make_func(orig_func))
+
+    def switch_database(self, database):
+        """Change the database of all clients in the cluster.
+
+        :param database: the name of the database to switch to
+        :type database: str
+        """
+        for client in self.clients + self.bad_clients:
+            client.switch_database(database)
+
+    def switch_user(self, username, password):
+        """Change the username of all clients in the cluster.
+
+        :param username: the username to switch to
+        :type username: str
+        :param password: the password for the username
+        :type password: str
+        """
+        for client in self.clients + self.bad_clients:
+            client.switch_user(username, password)
 
     @staticmethod
     def from_DSN(dsn, client_base_class=InfluxDBClient,
