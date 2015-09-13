@@ -12,7 +12,7 @@ import subprocess
 import unittest
 import sys
 
-from influxdb.tests.misc import get_free_port, is_port_open
+from influxdb.tests.misc import is_port_open, get_free_ports
 
 
 class InfluxDbInstance(object):
@@ -54,12 +54,12 @@ class InfluxDbInstance(object):
             dir=self.temp_dir_base)
 
         # find a couple free ports :
-        ports = dict(
-            http_port=get_free_port(),
-            admin_port=get_free_port(),
-            meta_port=get_free_port(),
-            udp_port=get_free_port() if udp_enabled else -1,
-        )
+        free_ports = get_free_ports(4)
+        ports = {}
+        for service in 'http', 'admin', 'meta', 'udp':
+            ports[service + '_port'] = free_ports.pop()
+        if not udp_enabled:
+            ports['udp_port'] = -1
 
         conf_data = dict(
             meta_dir=os.path.join(tempdir, 'meta'),
