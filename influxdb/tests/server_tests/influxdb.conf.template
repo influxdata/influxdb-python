@@ -62,9 +62,8 @@
   batch-size = 0
   batch-timeout = "0"
 
-[monitoring]
-  enabled = false
-  write-interval = "1m0s"
+[monitor]
+  store-enabled = false
 
 [continuous_queries]
   enabled = true
