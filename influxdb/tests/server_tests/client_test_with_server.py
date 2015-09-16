@@ -121,14 +121,18 @@ class SimpleTests(SingleTestCaseWithServerMixin,
     influxdb_template_conf = os.path.join(THIS_DIR, 'influxdb.conf.template')
 
     def test_fresh_server_no_db(self):
-        self.assertEqual([], self.cli.get_list_database())
+        self.assertEqual([{"name": "_internal"}],
+                         self.cli.get_list_database())
 
     def test_create_database(self):
         self.assertIsNone(self.cli.create_database('new_db_1'))
         self.assertIsNone(self.cli.create_database('new_db_2'))
         self.assertEqual(
-            self.cli.get_list_database(),
-            [{'name': 'new_db_1'}, {'name': 'new_db_2'}]
+            sorted(self.cli.get_list_database(), key=lambda a: a['name']),
+            sorted([{'name': '_internal'},
+                    {'name': 'new_db_1'},
+                    {'name': 'new_db_2'}],
+                   key=lambda a: a['name'])
         )
 
     def test_create_database_fails(self):
@@ -150,7 +154,8 @@ class SimpleTests(SingleTestCaseWithServerMixin,
     def test_drop_database(self):
         self.test_create_database()
         self.assertIsNone(self.cli.drop_database('new_db_1'))
-        self.assertEqual([{'name': 'new_db_2'}], self.cli.get_list_database())
+        self.assertEqual([{'name': '_internal'}, {'name': 'new_db_2'}],
+                         self.cli.get_list_database())
 
     def test_drop_database_fails(self):
         with self.assertRaises(InfluxDBClientError) as ctx:
