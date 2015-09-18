@@ -715,7 +715,9 @@ class TestInfluxDBClient(unittest.TestCase):
 
 
 class FakeClient(InfluxDBClient):
-    fail = False
+
+    def __init__(self, *args, **kwargs):
+        super(FakeClient, self).__init__(*args, **kwargs)
 
     def query(self,
               query,
@@ -724,9 +726,10 @@ class FakeClient(InfluxDBClient):
               database=None):
         if query == 'Fail':
             raise Exception("Fail")
-
-        if self.fail:
-            raise Exception("Fail")
+        elif query == 'Fail once' and self._host == 'host1':
+            raise Exception("Fail Once")
+        elif query == 'Fail twice' and self._host in 'host1 host2':
+            raise Exception("Fail Twice")
         else:
             return "Success"
 
@@ -747,32 +750,28 @@ class TestInfluxDBClusterClient(unittest.TestCase):
                                         database='database',
                                         shuffle=False,
                                         client_base_class=FakeClient)
-        self.assertEqual(3, len(cluster.clients))
-        self.assertEqual(0, len(cluster.bad_clients))
-        for idx, client in enumerate(cluster.clients):
-            self.assertEqual(self.hosts[idx][0], client._host)
-            self.assertEqual(self.hosts[idx][1], client._port)
+        self.assertEqual(3, len(cluster.hosts))
+        self.assertEqual(0, len(cluster.bad_hosts))
+        self.assertIn((cluster._client._host,
+                       cluster._client._port), cluster.hosts)
 
     def test_one_server_fails(self):
         cluster = InfluxDBClusterClient(hosts=self.hosts,
                                         database='database',
                                         shuffle=False,
                                         client_base_class=FakeClient)
-        cluster.clients[0].fail = True
-        self.assertEqual('Success', cluster.query(''))
-        self.assertEqual(2, len(cluster.clients))
-        self.assertEqual(1, len(cluster.bad_clients))
+        self.assertEqual('Success', cluster.query('Fail once'))
+        self.assertEqual(2, len(cluster.hosts))
+        self.assertEqual(1, len(cluster.bad_hosts))
 
     def test_two_servers_fail(self):
         cluster = InfluxDBClusterClient(hosts=self.hosts,
                                         database='database',
                                         shuffle=False,
                                         client_base_class=FakeClient)
-        cluster.clients[0].fail = True
-        cluster.clients[1].fail = True
-        self.assertEqual('Success', cluster.query(''))
-        self.assertEqual(1, len(cluster.clients))
-        self.assertEqual(2, len(cluster.bad_clients))
+        self.assertEqual('Success', cluster.query('Fail twice'))
+        self.assertEqual(1, len(cluster.hosts))
+        self.assertEqual(2, len(cluster.bad_hosts))
 
     def test_all_fail(self):
         cluster = InfluxDBClusterClient(hosts=self.hosts,
@@ -781,8 +780,8 @@ class TestInfluxDBClusterClient(unittest.TestCase):
                                         client_base_class=FakeClient)
         with self.assertRaises(InfluxDBServerError):
             cluster.query('Fail')
-        self.assertEqual(0, len(cluster.clients))
-        self.assertEqual(3, len(cluster.bad_clients))
+        self.assertEqual(0, len(cluster.hosts))
+        self.assertEqual(3, len(cluster.bad_hosts))
 
     def test_all_good(self):
         cluster = InfluxDBClusterClient(hosts=self.hosts,
@@ -790,8 +789,8 @@ class TestInfluxDBClusterClient(unittest.TestCase):
                                         shuffle=True,
                                         client_base_class=FakeClient)
         self.assertEqual('Success', cluster.query(''))
-        self.assertEqual(3, len(cluster.clients))
-        self.assertEqual(0, len(cluster.bad_clients))
+        self.assertEqual(3, len(cluster.hosts))
+        self.assertEqual(0, len(cluster.bad_hosts))
 
     def test_recovery(self):
         cluster = InfluxDBClusterClient(hosts=self.hosts,
@@ -801,68 +800,39 @@ class TestInfluxDBClusterClient(unittest.TestCase):
         with self.assertRaises(InfluxDBServerError):
             cluster.query('Fail')
         self.assertEqual('Success', cluster.query(''))
-        self.assertEqual(1, len(cluster.clients))
-        self.assertEqual(2, len(cluster.bad_clients))
+        self.assertEqual(1, len(cluster.hosts))
+        self.assertEqual(2, len(cluster.bad_hosts))
 
     def test_dsn(self):
         cli = InfluxDBClusterClient.from_DSN(self.dsn_string)
-        self.assertEqual(2, len(cli.clients))
-        self.assertEqual('http://host1:8086', cli.clients[0]._baseurl)
-        self.assertEqual('uSr', cli.clients[0]._username)
-        self.assertEqual('pWd', cli.clients[0]._password)
-        self.assertEqual('db', cli.clients[0]._database)
-        self.assertFalse(cli.clients[0].use_udp)
-        self.assertEqual('http://host2:8086', cli.clients[1]._baseurl)
-        self.assertEqual('uSr', cli.clients[1]._username)
-        self.assertEqual('pWd', cli.clients[1]._password)
-        self.assertEqual('db', cli.clients[1]._database)
-        self.assertFalse(cli.clients[1].use_udp)
+        self.assertEqual([('host1', 8086), ('host2', 8086)], cli.hosts)
+        self.assertEqual('http://host1:8086', cli._client._baseurl)
+        self.assertEqual('uSr', cli._client._username)
+        self.assertEqual('pWd', cli._client._password)
+        self.assertEqual('db', cli._client._database)
+        self.assertFalse(cli._client.use_udp)
 
         cli = InfluxDBClusterClient.from_DSN('udp+' + self.dsn_string)
-        self.assertTrue(cli.clients[0].use_udp)
-        self.assertTrue(cli.clients[1].use_udp)
+        self.assertTrue(cli._client.use_udp)
 
         cli = InfluxDBClusterClient.from_DSN('https+' + self.dsn_string)
-        self.assertEqual('https://host1:8086', cli.clients[0]._baseurl)
-        self.assertEqual('https://host2:8086', cli.clients[1]._baseurl)
+        self.assertEqual('https://host1:8086', cli._client._baseurl)
 
         cli = InfluxDBClusterClient.from_DSN('https+' + self.dsn_string,
                                              **{'ssl': False})
-        self.assertEqual('http://host1:8086', cli.clients[0]._baseurl)
-        self.assertEqual('http://host2:8086', cli.clients[1]._baseurl)
-
-    def test_dsn_single_client(self):
-        cli = InfluxDBClusterClient.from_DSN('influxdb://usr:pwd@host:8086/db')
-        self.assertEqual('http://host:8086', cli.clients[0]._baseurl)
-        self.assertEqual('usr', cli.clients[0]._username)
-        self.assertEqual('pwd', cli.clients[0]._password)
-        self.assertEqual('db', cli.clients[0]._database)
-        self.assertFalse(cli.clients[0].use_udp)
-
-        cli = InfluxDBClusterClient.from_DSN(
-            'udp+influxdb://usr:pwd@host:8086/db')
-        self.assertTrue(cli.clients[0].use_udp)
-
-        cli = InfluxDBClusterClient.from_DSN(
-            'https+influxdb://usr:pwd@host:8086/db')
-        self.assertEqual('https://host:8086', cli.clients[0]._baseurl)
-
-        cli = InfluxDBClusterClient.from_DSN(
-            'https+influxdb://usr:pwd@host:8086/db',
-            **{'ssl': False})
-        self.assertEqual('http://host:8086', cli.clients[0]._baseurl)
+        self.assertEqual('http://host1:8086', cli._client._baseurl)
 
     def test_dsn_password_caps(self):
         cli = InfluxDBClusterClient.from_DSN(
             'https+influxdb://usr:pWd@host:8086/db')
-        self.assertEqual('pWd', cli.clients[0]._password)
+        self.assertEqual('pWd', cli._client._password)
 
     def test_dsn_mixed_scheme_case(self):
         cli = InfluxDBClusterClient.from_DSN(
             'hTTps+inFLUxdb://usr:pWd@host:8086/db')
-        self.assertEqual('pWd', cli.clients[0]._password)
-        self.assertEqual('https://host:8086', cli.clients[0]._baseurl)
+        self.assertEqual('pWd', cli._client._password)
+        self.assertEqual('https://host:8086', cli._client._baseurl)
 
         cli = InfluxDBClusterClient.from_DSN(
             'uDP+influxdb://usr:pwd@host1:8086,usr:pwd@host2:8086/db')
-        self.assertTrue(cli.clients[0].use_udp)
+        self.assertTrue(cli._client.use_udp)
