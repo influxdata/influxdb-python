@@ -19,6 +19,7 @@ Contents
 
     include-readme
     api-documentation
+    exceptions
     resultset
     examples
 
