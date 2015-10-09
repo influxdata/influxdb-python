@@ -69,6 +69,47 @@ class ResultSet(object):
         return self.get_points(name, tags)
 
     def get_points(self, measurement=None, tags=None):
+        # """
+        # Returns a generator for all the points that match the given filters.
+
+        # :param measurement: The measurement name
+        # :type measurement: str
+
+        # :param tags: Tags to look for
+        # :type tags: dict
+
+        # :return: Points generator
+        # """
+
+        # # Raise error if measurement is not str or bytes
+        # if not isinstance(measurement,
+        #                   (bytes, type(b''.decode()), type(None))):
+        #     raise TypeError('measurement must be an str or None')
+
+        # for serie in self._get_series():
+        #     serie_name = serie.get('measurement', serie.get('name', 'results'))
+        #     if serie_name is None:
+        #         # this is a "system" query or a query which
+        #         # doesn't return a name attribute.
+        #         # like 'show retention policies' ..
+        #         if tags is None:
+        #             for point in serie['values']:
+        #                 yield self.point_from_cols_vals(
+        #                     serie['columns'],
+        #                     point
+        #                 )
+
+        #     elif measurement in (None, serie_name):
+        #         # by default if no tags was provided then
+        #         # we will matches every returned serie
+        #         serie_tags = serie.get('tags', {})
+        #         if tags is None or self._tag_matches(serie_tags, tags):
+        #             for point in serie.get('values', []):
+        #                 yield self.point_from_cols_vals(
+        #                     serie['columns'],
+        #                     point
+        #                 )
+
         """
         Returns a generator for all the points that match the given filters.
 
@@ -82,33 +123,39 @@ class ResultSet(object):
         """
 
         # Raise error if measurement is not str or bytes
-        if not isinstance(measurement,
-                          (bytes, type(b''.decode()), type(None))):
+        if measurement and (not isinstance(measurement, basestring)):
             raise TypeError('measurement must be an str or None')
 
         for serie in self._get_series():
-            serie_name = serie.get('measurement', serie.get('name', 'results'))
-            if serie_name is None:
-                # this is a "system" query or a query which
-                # doesn't return a name attribute.
-                # like 'show retention policies' ..
-                if tags is None:
-                    for point in serie['values']:
-                        yield self.point_from_cols_vals(
-                            serie['columns'],
-                            point
-                        )
 
-            elif measurement in (None, serie_name):
-                # by default if no tags was provided then
-                # we will matches every returned serie
-                serie_tags = serie.get('tags', {})
-                if tags is None or self._tag_matches(serie_tags, tags):
-                    for point in serie.get('values', []):
-                        yield self.point_from_cols_vals(
-                            serie['columns'],
-                            point
-                        )
+            name = serie.get('name', None)
+            columns = serie.get('columns', None)
+            values = serie.get('values', None)
+
+            if tags:
+                tag_index_dict = {}
+                for tag_name, tag_value in tags.items():
+                    tag_index = columns.index(tag_name) if tag_name in columns else None
+                    tag_index_dict[tag_value] = tag_index
+
+            # this is a "system" query or a query which doesn't return
+            # a name attribute like:  'show retention policies' ..
+            if name is None:
+                for v in values:
+                    yield self.point_from_cols_vals(columns, v)
+            else:
+                if measurement in (name, None):
+                    # by default if no tags were provided then
+                    # we will match every returned serie
+                    for v in values:
+                        if tags:
+                            for tag, index in tag_index_dict.items():
+                                if v[index] == tag:
+                                    yield self.point_from_cols_vals(columns, v)
+                                    break # Only return each point once
+                        else:
+                            yield self.point_from_cols_vals(columns, v)
+
 
     def __repr__(self):
         items = []
