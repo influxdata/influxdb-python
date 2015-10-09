@@ -79,6 +79,7 @@ class ResultSet(object):
         :type tags: dict
 
         :return: Points generator
+        TODO: FIX FILTERING
         """
 
         # Raise error if measurement is not str or bytes
