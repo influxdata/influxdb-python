@@ -209,9 +209,7 @@ class ResultSet(object):
         """
         items = []
         for serie in self._get_series():
-            serie_key = (serie.get('measurement',
-                                   serie.get('name', 'results')),
-                         serie.get('tags', None))
+            serie_key = (serie.get('measurement', serie.get('name', 'results')), serie.get('tags', None))
             items.append(
                 (serie_key, self[serie_key])
             )
