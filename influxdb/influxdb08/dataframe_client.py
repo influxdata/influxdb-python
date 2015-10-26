@@ -105,9 +105,9 @@ class DataFrameClient(InfluxDBClient):
         dataframe = pd.DataFrame(data=json_result['points'],
                                  columns=json_result['columns'])
         if 'sequence_number' in dataframe.keys():
-            dataframe.sort(['time', 'sequence_number'], inplace=True)
+            dataframe.sort_values(['time', 'sequence_number'], inplace=True)
         else:
-            dataframe.sort(['time'], inplace=True)
+            dataframe.sort_values(['time'], inplace=True)
         pandas_time_unit = time_precision
         if time_precision == 'm':
             pandas_time_unit = 'ms'
