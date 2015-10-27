@@ -280,7 +280,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
 
     def query(self,
               query,
-              params={},
+              params=None,
               epoch=None,
               expected_response_code=200,
               database=None,
@@ -307,6 +307,9 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :returns: the queried data
         :rtype: :class:`~.ResultSet`
         """
+        if params is None:
+            params = {}
+
         params['q'] = query
         params['db'] = database or self._database
 
