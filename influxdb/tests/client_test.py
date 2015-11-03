@@ -337,12 +337,13 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.write_points_with_precision([])
 
     def test_query(self):
-        example_response = \
-            '{"results": [{"series": [{"measurement": "sdfsdfsdf", ' \
-            '"columns": ["time", "value"], "values": ' \
-            '[["2009-11-10T23:00:00Z", 0.64]]}]}, {"series": ' \
-            '[{"measurement": "cpu_load_short", "columns": ["time", "value"], ' \
+        example_response = (
+            '{"results": [{"series": [{"measurement": "sdfsdfsdf", '
+            '"columns": ["time", "value"], "values": '
+            '[["2009-11-10T23:00:00Z", 0.64]]}]}, {"series": '
+            '[{"measurement": "cpu_load_short", "columns": ["time", "value"], '
             '"values": [["2009-11-10T23:00:00Z", 0.64]]}]}]}'
+        )
 
         with requests_mock.Mocker() as m:
             m.register_uri(
@@ -803,6 +804,28 @@ class TestInfluxDBClusterClient(unittest.TestCase):
         self.assertEqual('Success', cluster.query(''))
         self.assertEqual(1, len(cluster.clients))
         self.assertEqual(2, len(cluster.bad_clients))
+
+    def test_switch_database(self):
+        c = InfluxDBClusterClient(hosts=self.hosts,
+                                  shuffle=True,
+                                  client_base_class=InfluxDBClient)
+        self.assertEqual(3, len(c.clients))
+        self.assertEqual(0, len(c.bad_clients))
+        map(lambda x: self.assertEqual(None, x._database), c.clients)
+        c.switch_database('database')
+        map(lambda x: self.assertEqual('database', x._database), c.clients)
+
+    def test_switch_user(self):
+        c = InfluxDBClusterClient(hosts=self.hosts,
+                                  shuffle=True,
+                                  client_base_class=InfluxDBClient)
+        self.assertEqual(3, len(c.clients))
+        self.assertEqual(0, len(c.bad_clients))
+        map(lambda x: self.assertEqual('root', x._username), c.clients)
+        map(lambda x: self.assertEqual('root', x._password), c.clients)
+        c.switch_user('username', 'password')
+        map(lambda x: self.assertEqual('username', x._username), c.clients)
+        map(lambda x: self.assertEqual('password', x._password), c.clients)
 
     def test_dsn(self):
         cli = InfluxDBClusterClient.from_DSN(self.dsn_string)
