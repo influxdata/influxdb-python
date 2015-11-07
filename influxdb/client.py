@@ -55,6 +55,8 @@ class InfluxDBClient(object):
     :type use_udp: int
     :param udp_port: UDP port to connect to InfluxDB, defaults to 4444
     :type udp_port: int
+    :param proxies: HTTP(S) proxy to use for Requests, defaults to {}
+    :type proxies: dict
     """
 
     def __init__(self,
@@ -68,6 +70,7 @@ class InfluxDBClient(object):
                  timeout=None,
                  use_udp=False,
                  udp_port=4444,
+                 proxies=None,
                  ):
         """Construct a new InfluxDBClient object."""
         self._host = host
@@ -89,6 +92,11 @@ class InfluxDBClient(object):
 
         if ssl is True:
             self._scheme = "https"
+
+        if proxies is None:
+            self._proxies = {}
+        else:
+            self._proxies = proxies
 
         self._baseurl = "{0}://{1}:{2}".format(
             self._scheme,
@@ -229,6 +237,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                     params=params,
                     data=data,
                     headers=headers,
+                    proxies=self._proxies,
                     verify=self._verify_ssl,
                     timeout=self._timeout
                 )
