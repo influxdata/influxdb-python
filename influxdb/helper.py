@@ -143,10 +143,10 @@ class SeriesHelper(object):
                 }
 
                 for field in cls._fields:
-                    json_point['fields'][field] = point.__dict__[field]
+                    json_point['fields'][field] = getattr(point, field)
 
                 for tag in cls._tags:
-                    json_point['tags'][tag] = point.__dict__[tag]
+                    json_point['tags'][tag] = getattr(point, tag)
 
                 json.append(json_point)
         return json
