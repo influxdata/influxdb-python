@@ -866,7 +866,7 @@ def parse_dsn(dsn):
 
 def _parse_netloc(netloc):
     import re
-    parsed = re.findall(r'(\w*):(\w*)@(\w*):(\d*)', netloc)
+    parsed = re.findall(r'(\w*):(\w*)@([a-zA-Z0-9_\.]*):(\d*)', netloc)
     if not parsed:
         raise ValueError('Invalid netloc "{}".'.format(netloc))
 

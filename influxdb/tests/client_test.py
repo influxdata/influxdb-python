@@ -95,7 +95,7 @@ class TestInfluxDBClient(unittest.TestCase):
             }
         ]
 
-        self.dsn_string = 'influxdb://uSr:pWd@host:1886/db'
+        self.dsn_string = 'influxdb://uSr:pWd@my.host.fr:1886/db'
 
     def test_scheme(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
@@ -108,7 +108,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
     def test_dsn(self):
         cli = InfluxDBClient.from_DSN(self.dsn_string)
-        self.assertEqual('http://host:1886', cli._baseurl)
+        self.assertEqual('http://my.host.fr:1886', cli._baseurl)
         self.assertEqual('uSr', cli._username)
         self.assertEqual('pWd', cli._password)
         self.assertEqual('db', cli._database)
@@ -118,11 +118,11 @@ class TestInfluxDBClient(unittest.TestCase):
         self.assertTrue(cli.use_udp)
 
         cli = InfluxDBClient.from_DSN('https+' + self.dsn_string)
-        self.assertEqual('https://host:1886', cli._baseurl)
+        self.assertEqual('https://my.host.fr:1886', cli._baseurl)
 
         cli = InfluxDBClient.from_DSN('https+' + self.dsn_string,
                                       **{'ssl': False})
-        self.assertEqual('http://host:1886', cli._baseurl)
+        self.assertEqual('http://my.host.fr:1886', cli._baseurl)
 
     def test_switch_database(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
