@@ -18,6 +18,7 @@ import json
 import requests
 import requests.exceptions
 import socket
+import time
 import unittest
 import requests_mock
 import random
@@ -803,6 +804,24 @@ class TestInfluxDBClusterClient(unittest.TestCase):
         self.assertEqual('Success', cluster.query(''))
         self.assertEqual(1, len(cluster.hosts))
         self.assertEqual(2, len(cluster.bad_hosts))
+
+    def test_healing(self):
+        cluster = InfluxDBClusterClient(hosts=self.hosts,
+                                        database='database',
+                                        shuffle=True,
+                                        healing_delay=1,
+                                        client_base_class=FakeClient)
+        with self.assertRaises(InfluxDBServerError):
+            cluster.query('Fail')
+        self.assertEqual('Success', cluster.query(''))
+        time.sleep(1.1)
+        self.assertEqual('Success', cluster.query(''))
+        self.assertEqual(2, len(cluster.hosts))
+        self.assertEqual(1, len(cluster.bad_hosts))
+        time.sleep(1.1)
+        self.assertEqual('Success', cluster.query(''))
+        self.assertEqual(3, len(cluster.hosts))
+        self.assertEqual(0, len(cluster.bad_hosts))
 
     def test_dsn(self):
         cli = InfluxDBClusterClient.from_DSN(self.dsn_string)
