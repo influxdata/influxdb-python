@@ -460,7 +460,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :param dbname: the name of the database to create
         :type dbname: str
         """
-        self.query("CREATE DATABASE %s" % dbname)
+        self.query("CREATE DATABASE \"%s\"" % dbname)
 
     def drop_database(self, dbname):
         """Drop a database from InfluxDB.
@@ -468,7 +468,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :param dbname: the name of the database to drop
         :type dbname: str
         """
-        self.query("DROP DATABASE %s" % dbname)
+        self.query("DROP DATABASE \"%s\"" % dbname)
 
     def create_retention_policy(self, name, duration, replication,
                                 database=None, default=False):

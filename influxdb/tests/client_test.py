@@ -407,7 +407,20 @@ class TestInfluxDBClient(unittest.TestCase):
             self.cli.create_database('new_db')
             self.assertEqual(
                 m.last_request.qs['q'][0],
-                'create database new_db'
+                'create database "new_db"'
+            )
+
+    def test_create_numeric_named_database(self):
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text='{"results":[{}]}'
+            )
+            self.cli.create_database('123')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create database "123"'
             )
 
     @raises(Exception)
@@ -425,7 +438,20 @@ class TestInfluxDBClient(unittest.TestCase):
             self.cli.drop_database('new_db')
             self.assertEqual(
                 m.last_request.qs['q'][0],
-                'drop database new_db'
+                'drop database "new_db"'
+            )
+
+    def test_drop_numeric_named_database(self):
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text='{"results":[{}]}'
+            )
+            self.cli.drop_database('123')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'drop database "123"'
             )
 
     @raises(Exception)
