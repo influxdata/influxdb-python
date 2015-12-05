@@ -460,7 +460,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :param dbname: the name of the database to create
         :type dbname: str
         """
-        self.query("CREATE DATABASE \"%s\"" % dbname)
+        self.query("CREATE DATABASE IF NOT EXISTS \"%s\"" % dbname)
 
     def drop_database(self, dbname):
         """Drop a database from InfluxDB.
