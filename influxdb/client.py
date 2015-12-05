@@ -454,13 +454,16 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         """
         return list(self.query("SHOW DATABASES").get_points())
 
-    def create_database(self, dbname):
+    def create_database(self, dbname, if_not_exists=False):
         """Create a new database in InfluxDB.
 
         :param dbname: the name of the database to create
         :type dbname: str
         """
-        self.query("CREATE DATABASE \"%s\"" % dbname)
+        if if_not_exists:
+            self.query("CREATE DATABASE IF NOT EXISTS \"%s\"" % dbname)
+        else:
+            self.query("CREATE DATABASE \"%s\"" % dbname)
 
     def drop_database(self, dbname):
         """Drop a database from InfluxDB.
