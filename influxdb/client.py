@@ -915,13 +915,8 @@ def parse_dsn(dsn):
 
 
 def _parse_netloc(netloc):
-    import re
-    parsed = re.findall(r'(\w*):(\w*)@([a-zA-Z0-9_\.]*):(\d*)', netloc)
-    if not parsed:
-        raise ValueError('Invalid netloc "{}".'.format(netloc))
-
-    info = parsed[0]
-    return {'username': info[0] or None,
-            'password': info[1] or None,
-            'host': info[2] or 'localhost',
-            'port': info[3] or 8086}
+    info = urlparse("http://{}".format(netloc))
+    return {'username': info.username or None,
+            'password': info.password or None,
+            'host': info.hostname or 'localhost',
+            'port': info.port or 8086}

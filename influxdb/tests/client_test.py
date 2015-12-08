@@ -108,6 +108,9 @@ class TestInfluxDBClient(unittest.TestCase):
         self.assertEqual('https://host:8086', cli._baseurl)
 
     def test_dsn(self):
+        cli = InfluxDBClient.from_DSN('influxdb://192.168.0.1:1886')
+        self.assertEqual('http://192.168.0.1:1886', cli._baseurl)
+
         cli = InfluxDBClient.from_DSN(self.dsn_string)
         self.assertEqual('http://my.host.fr:1886', cli._baseurl)
         self.assertEqual('uSr', cli._username)
