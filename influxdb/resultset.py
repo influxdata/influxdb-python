@@ -88,7 +88,6 @@ class ResultSet(object):
 
         for serie in self._get_series():
             serie_name = serie.get('measurement', serie.get('name', 'results'))
-            print serie_name
             if serie_name is None:
                 # this is a "system" query or a query which
                 # doesn't return a name attribute.
