@@ -592,6 +592,25 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             )
         return series
 
+    def get_list_servers(self):
+        """Get the list of servers in InfluxDB cluster.
+
+        :returns: all nodes in InfluxDB cluster
+        :rtype: list of dictionaries
+
+        :Example:
+
+        ::
+
+            >> servers = client.get_list_servers()
+            >> servers
+            [{'cluster_addr': 'server01:8088',
+              'id': 1,
+              'raft': True,
+              'raft-leader': True}]
+        """
+        return list(self.query("SHOW SERVERS").get_points())
+
     def get_list_users(self):
         """Get the list of all users in InfluxDB.
 
