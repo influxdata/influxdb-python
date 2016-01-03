@@ -413,6 +413,19 @@ class TestInfluxDBClient(unittest.TestCase):
                 'create database "new_db"'
             )
 
+    def test_create_database_with_exist_check(self):
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text='{"results":[{}]}'
+            )
+            self.cli.create_database('new_db', if_not_exists=True)
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create database if not exists "new_db"'
+            )
+
     def test_create_numeric_named_database(self):
         with requests_mock.Mocker() as m:
             m.register_uri(
