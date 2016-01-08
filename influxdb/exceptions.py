@@ -2,7 +2,7 @@ class InfluxDBClientError(Exception):
     """Raised when an error occurs in the request."""
     def __init__(self, content, code=None):
         if isinstance(content, type(b'')):
-            content = content.decode('UTF-8', errors='replace')
+            content = content.decode('UTF-8', 'replace')
 
         if code is not None:
             message = "%s: %s" % (code, content)
