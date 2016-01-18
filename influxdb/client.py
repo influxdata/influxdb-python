@@ -881,6 +881,8 @@ class InfluxDBClusterClient(object):
                 except InfluxDBClientError as e:
                     # Errors caused by user's requests, re-raise
                     raise e
+                except ValueError as e:
+                    raise e
                 except Exception as e:
                     # Errors that might caused by server failure, try another
                     bad_host = True
