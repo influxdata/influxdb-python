@@ -2,8 +2,8 @@
 
 InfluxDB-Python is a client for interacting with InfluxDB_.
 
-.. image:: https://travis-ci.org/influxdb/influxdb-python.svg?branch=master
-    :target: https://travis-ci.org/influxdb/influxdb-python
+.. image:: https://travis-ci.org/influxdata/influxdb-python.svg?branch=master
+    :target: https://travis-ci.org/influxdata/influxdb-python
 
 .. image:: https://readthedocs.org/projects/influxdb-python/badge/?version=latest&style
     :target: http://influxdb-python.readthedocs.org/
@@ -14,7 +14,7 @@ InfluxDB-Python is a client for interacting with InfluxDB_.
   :alt: Coverage
 
 .. image:: https://pypip.in/download/influxdb/badge.svg
-    :target: https://pypi.python.org/pypi//influxdb/
+    :target: https://pypi.python.org/pypi/influxdb/
     :alt: Downloads
 
 .. image:: https://pypip.in/version/influxdb/badge.svg
@@ -31,7 +31,7 @@ InfluxDB-Python is a client for interacting with InfluxDB_.
 
 .. _readme-about:
 
-InfluxDB is an open-source distributed time series database, find more about InfluxDB_ at http://influxdb.com/
+InfluxDB is an open-source distributed time series database, find more about InfluxDB_ at http://influxdata.com/
 
 
 .. _installation:
@@ -167,15 +167,15 @@ problems or submit contributions.
 TODO
 ====
 
-The TODO/Roadmap can be found in Github bug tracker: https://github.com/influxdb/influxdb-python/issues
+The TODO/Roadmap can be found in Github bug tracker: https://github.com/influxdata/influxdb-python/issues
 
 
 Source code
 ===========
 
-The source code is currently available on Github: https://github.com/influxdb/influxdb-python
+The source code is currently available on Github: https://github.com/influxdata/influxdb-python
 
 
-.. _InfluxDB: http://influxdb.com/
+.. _InfluxDB: http://influxdata.com/
 .. _Sphinx: http://sphinx.pocoo.org/
 .. _Tox: https://tox.readthedocs.org
