@@ -107,7 +107,8 @@ class ResultSet(object):
                     for point in serie.get('values', []):
                         yield self.point_from_cols_vals(
                             serie['columns'],
-                            point
+                            point,
+                            serie_tags
                         )
 
     def __repr__(self):
@@ -171,14 +172,14 @@ class ResultSet(object):
         return items
 
     @staticmethod
-    def point_from_cols_vals(cols, vals):
+    def point_from_cols_vals(cols, vals, tags = None):
         """ Creates a dict from columns and values lists
 
         :param cols: List of columns
         :param vals: List of values
         :return: Dict where keys are columns.
         """
-        point = {}
+        point = tags or {}
         for col_index, col_name in enumerate(cols):
             point[col_name] = vals[col_index]
         return point
