@@ -76,7 +76,7 @@ class InfluxDBClient(object):
                  ):
         """Construct a new InfluxDBClient object."""
         self.__host = host
-        self._port = port
+        self.__port = port
         self._username = username
         self._password = password
         self._database = database
@@ -110,7 +110,7 @@ class InfluxDBClient(object):
             'Accept': 'text/plain'
         }
 
-    # _baseurl and _host are properties to allow InfluxDBClusterClient
+    # _baseurl, _host and _port are properties to allow InfluxDBClusterClient
     # to override them with thread-local variables
     @property
     def _baseurl(self):
@@ -125,6 +125,13 @@ class InfluxDBClient(object):
 
     def _get_host(self):
         return self.__host
+
+    @property
+    def _port(self):
+        return self._get_port()
+
+    def _get_port(self):
+        return self.__port
 
     @staticmethod
     def from_DSN(dsn, **kwargs):
@@ -806,6 +813,7 @@ class InfluxDBClusterClient(object):
             setattr(self, method, self._make_func(orig_attr))
 
         self._client._get_host = self._get_host
+        self._client._get_port = self._get_port
         self._client._get_baseurl = self._get_baseurl
         self._update_client_host(self.hosts[0])
 
@@ -855,6 +863,9 @@ class InfluxDBClusterClient(object):
 
     def _get_host(self):
         return self._thread_local.host
+
+    def _get_port(self):
+        return self._thread_local.port
 
     def _make_func(self, orig_func):
 
