@@ -111,7 +111,7 @@ class TestSeriesHelper(unittest.TestCase):
         self.assertTrue(all([el in expectation for el in rcvd]) and
                         all([el in rcvd for el in expectation]),
                         'Invalid JSON body of time series returned from '
-                        '_json_body_ for several series names: {}.'
+                        '_json_body_ for several series names: {0}.'
                         .format(rcvd))
         TestSeriesHelper.MySeriesHelper._reset_()
         self.assertEqual(
@@ -171,8 +171,8 @@ class TestSeriesHelper(unittest.TestCase):
 
         self.assertGreaterEqual(
             len(rec_warnings), 1,
-            '{} call should have generated one warning.'
-            'Actual generated warnings: {}'.format(
+            '{0} call should have generated one warning.'
+            'Actual generated warnings: {1}'.format(
                 WarnBulkSizeZero, '\n'.join(map(str, rec_warnings))))
 
         expected_msg = (
@@ -201,8 +201,8 @@ class TestSeriesHelper(unittest.TestCase):
 
         self.assertGreaterEqual(
             len(rec_warnings), 1,
-            '{} call should have generated one warning.'
-            'Actual generated warnings: {}'.format(
+            '{0} call should have generated one warning.'
+            'Actual generated warnings: {1}'.format(
                 WarnBulkSizeNoEffect, '\n'.join(map(str, rec_warnings))))
 
         expected_msg = (
