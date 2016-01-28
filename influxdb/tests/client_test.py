@@ -19,13 +19,17 @@ import requests
 import requests.exceptions
 import socket
 import time
-import unittest
 import requests_mock
 import random
 from nose.tools import raises
 from mock import patch
 import warnings
 import mock
+import sys
+if sys.version_info < (2, 7):
+    import unittest2 as unittest
+else:
+    import unittest
 
 from influxdb import InfluxDBClient, InfluxDBClusterClient
 from influxdb.client import InfluxDBServerError

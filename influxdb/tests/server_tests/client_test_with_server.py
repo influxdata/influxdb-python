@@ -15,7 +15,11 @@ from __future__ import print_function
 from functools import partial
 import os
 import time
-import unittest
+import sys
+if sys.version_info < (2, 7):
+    import unittest2 as unittest
+else:
+    import unittest
 import warnings
 
 # By default, raise exceptions on warnings
