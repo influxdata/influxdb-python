@@ -121,7 +121,7 @@ class DataFrameClient(InfluxDBClient):
 
     def _convert_dataframe_to_json(self, dataframe, name, time_precision='s'):
         if not isinstance(dataframe, pd.DataFrame):
-            raise TypeError('Must be DataFrame, but type was: {}.'
+            raise TypeError('Must be DataFrame, but type was: {0}.'
                             .format(type(dataframe)))
         if not (isinstance(dataframe.index, pd.tseries.period.PeriodIndex) or
                 isinstance(dataframe.index, pd.tseries.index.DatetimeIndex)):

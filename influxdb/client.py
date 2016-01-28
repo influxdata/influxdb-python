@@ -530,12 +530,12 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             should be set. Otherwise the operation will fail.
         """
         query_string = (
-            "ALTER RETENTION POLICY {} ON {}"
+            "ALTER RETENTION POLICY {0} ON {1}"
         ).format(name, database or self._database)
         if duration:
-            query_string += " DURATION {}".format(duration)
+            query_string += " DURATION {0}".format(duration)
         if replication:
-            query_string += " REPLICATION {}".format(replication)
+            query_string += " REPLICATION {0}".format(replication)
         if default is True:
             query_string += " DEFAULT"
 
@@ -643,7 +643,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             privileges or not
         :type admin: boolean
         """
-        text = "CREATE USER {} WITH PASSWORD '{}'".format(username, password)
+        text = "CREATE USER {0} WITH PASSWORD '{1}'".format(username, password)
         if admin:
             text += ' WITH ALL PRIVILEGES'
         self.query(text)
@@ -654,7 +654,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :param username: the username to drop
         :type username: str
         """
-        text = "DROP USER {}".format(username)
+        text = "DROP USER {0}".format(username)
         self.query(text)
 
     def set_user_password(self, username, password):
@@ -665,7 +665,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :param password: the new password for the user
         :type password: str
         """
-        text = "SET PASSWORD FOR {} = '{}'".format(username, password)
+        text = "SET PASSWORD FOR {0} = '{1}'".format(username, password)
         self.query(text)
 
     def delete_series(self, database=None, measurement=None, tags=None):
@@ -683,10 +683,10 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         database = database or self._database
         query_str = 'DROP SERIES'
         if measurement:
-            query_str += ' FROM "{}"'.format(measurement)
+            query_str += ' FROM "{0}"'.format(measurement)
 
         if tags:
-            query_str += ' WHERE ' + ' and '.join(["{}='{}'".format(k, v)
+            query_str += ' WHERE ' + ' and '.join(["{0}='{1}'".format(k, v)
                                                    for k, v in tags.items()])
         self.query(query_str, database=database)
 
@@ -699,7 +699,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         .. note:: Only a cluster administrator can create/ drop databases
             and manage users.
         """
-        text = "REVOKE ALL PRIVILEGES FROM {}".format(username)
+        text = "REVOKE ALL PRIVILEGES FROM {0}".format(username)
         self.query(text)
 
     def grant_privilege(self, privilege, database, username):
@@ -713,7 +713,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :param username: the username to grant the privilege to
         :type username: str
         """
-        text = "GRANT {} ON {} TO {}".format(privilege,
+        text = "GRANT {0} ON {1} TO {2}".format(privilege,
                                              database,
                                              username)
         self.query(text)
@@ -729,7 +729,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :param username: the username to revoke the privilege from
         :type username: str
         """
-        text = "REVOKE {} ON {} FROM {}".format(privilege,
+        text = "REVOKE {0} ON {1} FROM {2}".format(privilege,
                                                 database,
                                                 username)
         self.query(text)
@@ -911,7 +911,7 @@ def parse_dsn(dsn):
         modifier, scheme = scheme_info
 
     if scheme != 'influxdb':
-        raise ValueError('Unknown scheme "{}".'.format(scheme))
+        raise ValueError('Unknown scheme "{0}".'.format(scheme))
 
     if modifier:
         if modifier == 'udp':
@@ -919,7 +919,7 @@ def parse_dsn(dsn):
         elif modifier == 'https':
             init_args['ssl'] = True
         else:
-            raise ValueError('Unknown modifier "{}".'.format(modifier))
+            raise ValueError('Unknown modifier "{0}".'.format(modifier))
 
     netlocs = conn_params.netloc.split(',')
 
@@ -937,7 +937,7 @@ def parse_dsn(dsn):
 
 
 def _parse_netloc(netloc):
-    info = urlparse("http://{}".format(netloc))
+    info = urlparse("http://{0}".format(netloc))
     return {'username': info.username or None,
             'password': info.password or None,
             'host': info.hostname or 'localhost',

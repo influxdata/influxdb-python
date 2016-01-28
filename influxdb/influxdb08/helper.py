@@ -51,7 +51,7 @@ class SeriesHelper(object):
                 _meta = getattr(cls, 'Meta')
             except AttributeError:
                 raise AttributeError(
-                    'Missing Meta class in {}.'.format(
+                    'Missing Meta class in {0}.'.format(
                         cls.__name__))
 
             for attr in ['series_name', 'fields']:
@@ -59,7 +59,7 @@ class SeriesHelper(object):
                     setattr(cls, '_' + attr, getattr(_meta, attr))
                 except AttributeError:
                     raise AttributeError(
-                        'Missing {} in {} Meta class.'.format(
+                        'Missing {0} in {1} Meta class.'.format(
                             attr,
                             cls.__name__))
 
@@ -68,14 +68,14 @@ class SeriesHelper(object):
             cls._client = getattr(_meta, 'client', None)
             if cls._autocommit and not cls._client:
                 raise AttributeError(
-                    'In {}, autocommit is set to True, but no client is set.'
+                    'In {0}, autocommit is set to True, but no client is set.'
                     .format(cls.__name__))
 
             try:
                 cls._bulk_size = getattr(_meta, 'bulk_size')
                 if cls._bulk_size < 1 and cls._autocommit:
                     warn(
-                        'Definition of bulk_size in {} forced to 1, '
+                        'Definition of bulk_size in {0} forced to 1, '
                         'was less than 1.'.format(cls.__name__))
                     cls._bulk_size = 1
             except AttributeError:
@@ -83,7 +83,7 @@ class SeriesHelper(object):
             else:
                 if not cls._autocommit:
                     warn(
-                        'Definition of bulk_size in {} has no affect because'
+                        'Definition of bulk_size in {0} has no affect because'
                         ' autocommit is false.'.format(cls.__name__))
 
             cls._datapoints = defaultdict(list)

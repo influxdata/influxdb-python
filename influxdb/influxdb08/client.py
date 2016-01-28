@@ -145,14 +145,14 @@ class InfluxDBClient(object):
             modifier, scheme = scheme_info
 
         if scheme != 'influxdb':
-            raise ValueError('Unknown scheme "{}".'.format(scheme))
+            raise ValueError('Unknown scheme "{0}".'.format(scheme))
         if modifier:
             if modifier == 'udp':
                 init_args['use_udp'] = True
             elif modifier == 'https':
                 init_args['ssl'] = True
             else:
-                raise ValueError('Unknown modifier "{}".'.format(modifier))
+                raise ValueError('Unknown modifier "{0}".'.format(modifier))
 
         if conn_params.hostname:
             init_args['host'] = conn_params.hostname
@@ -838,7 +838,7 @@ class InfluxDBClient(object):
         url = "db/{0}/users/{1}".format(self._database, username)
 
         if not password and not permissions:
-            raise ValueError("Nothing to alter for user {}.".format(username))
+            raise ValueError("Nothing to alter for user {0}.".format(username))
 
         data = {}
 
