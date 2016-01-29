@@ -52,7 +52,7 @@ def _escape_tag(tag):
 def _escape_value(value):
     value = _get_unicode(value)
     if isinstance(value, text_type) and value != '':
-        return "\"{}\"".format(
+        return "\"{0}\"".format(
             value.replace(
                 "\"", "\\\""
             ).replace(

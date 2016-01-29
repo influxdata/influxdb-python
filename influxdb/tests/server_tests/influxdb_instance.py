@@ -9,10 +9,29 @@ import distutils
 import time
 import shutil
 import subprocess
-import unittest
 import sys
+if sys.version_info < (2, 7):
+    import unittest2 as unittest
+else:
+    import unittest
 
 from influxdb.tests.misc import is_port_open, get_free_ports
+
+# hack in check_output if it's not defined, like for python 2.6
+if "check_output" not in dir( subprocess ): 
+    def f(*popenargs, **kwargs):
+        if 'stdout' in kwargs:
+            raise ValueError('stdout argument not allowed, it will be overridden.')
+        process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
+        output, unused_err = process.communicate()
+        retcode = process.poll()
+        if retcode:
+            cmd = kwargs.get("args")
+            if cmd is None:
+                cmd = popenargs[0]
+            raise subprocess.CalledProcessError(retcode, cmd)
+        return output
+    subprocess.check_output = f
 
 
 class InfluxDbInstance(object):

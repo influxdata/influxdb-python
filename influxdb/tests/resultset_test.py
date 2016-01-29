@@ -1,6 +1,10 @@
 # -*- coding: utf-8 -*-
 
-import unittest
+import sys
+if sys.version_info < (2, 7):
+    import unittest2 as unittest
+else:
+    import unittest
 
 from influxdb.exceptions import InfluxDBClientError
 from influxdb.resultset import ResultSet

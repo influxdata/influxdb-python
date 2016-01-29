@@ -119,7 +119,7 @@ class DataFrameClient(InfluxDBClient):
                                    time_precision=None):
 
         if not isinstance(dataframe, pd.DataFrame):
-            raise TypeError('Must be DataFrame, but type was: {}.'
+            raise TypeError('Must be DataFrame, but type was: {0}.'
                             .format(type(dataframe)))
         if not (isinstance(dataframe.index, pd.tseries.period.PeriodIndex) or
                 isinstance(dataframe.index, pd.tseries.index.DatetimeIndex)):

@@ -6,7 +6,11 @@ import json
 import requests
 import requests.exceptions
 import socket
-import unittest
+import sys
+if sys.version_info < (2, 7):
+    import unittest2 as unittest
+else:
+    import unittest
 import requests_mock
 import random
 from nose.tools import raises
