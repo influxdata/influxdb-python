@@ -43,6 +43,8 @@ Dependencies
 
 The InfluxDB-Python distribution is supported and tested on Python 2.6, 2.7, 3.2, 3.3, 3.4, PyPy and PyPy3.
 
+**Note:** Python 3.2 is currently untested. See ``.travis.yml``. 
+
 Main dependency is:
 
 - Requests: HTTP library for human beings (http://docs.python-requests.org/)
