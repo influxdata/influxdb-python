@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
+
 import sys
+import os
 if sys.version_info < (2, 7):
     import unittest2 as unittest
 else:
     import unittest
-import os
 
 using_pypy = hasattr(sys, "pypy_version_info")
 skipIfPYpy = unittest.skipIf(using_pypy, "Skipping this test on pypy.")

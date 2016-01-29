@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import sys
+
+from influxdb import chunked_json
+
 if sys.version_info < (2, 7):
     import unittest2 as unittest
 else:
     import unittest
-
-from influxdb import chunked_json
 
 
 class TestChunkJson(unittest.TestCase):
@@ -23,7 +24,7 @@ class TestChunkJson(unittest.TestCase):
             '{"results": [{"series": [{"measurement": "sdfsdfsdf", ' \
             '"columns": ["time", "value"], "values": ' \
             '[["2009-11-10T23:00:00Z", 0.64]]}]}, {"series": ' \
-            '[{"measurement": "cpu_load_short", "columns": ["time", "value"], ' \
+            '[{"measurement": "cpu_load_short", "columns": ["time", "value"],'\
             '"values": [["2009-11-10T23:00:00Z", 0.64]]}]}]}'
 
         res = list(chunked_json.loads(example_response))

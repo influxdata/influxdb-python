@@ -18,11 +18,15 @@ else:
 from influxdb.tests.misc import is_port_open, get_free_ports
 
 # hack in check_output if it's not defined, like for python 2.6
-if "check_output" not in dir( subprocess ): 
+if "check_output" not in dir(subprocess):
     def f(*popenargs, **kwargs):
         if 'stdout' in kwargs:
-            raise ValueError('stdout argument not allowed, it will be overridden.')
-        process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
+            raise ValueError(
+                'stdout argument not allowed, it will be overridden.'
+            )
+        process = subprocess.Popen(stdout=subprocess.PIPE,
+                                   *popenargs,
+                                   **kwargs)
         output, unused_err = process.communicate()
         retcode = process.poll()
         if retcode:
@@ -120,8 +124,8 @@ class InfluxDbInstance(object):
         # or you run a 286 @ 1Mhz ?
         try:
             while time.time() < timeout:
-                if (is_port_open(self.http_port)
-                        and is_port_open(self.admin_port)):
+                if (is_port_open(self.http_port) and
+                        is_port_open(self.admin_port)):
                     # it's hard to check if a UDP port is open..
                     if udp_enabled:
                         # so let's just sleep 0.5 sec in this case

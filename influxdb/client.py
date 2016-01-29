@@ -714,8 +714,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :type username: str
         """
         text = "GRANT {0} ON {1} TO {2}".format(privilege,
-                                             database,
-                                             username)
+                                                database,
+                                                username)
         self.query(text)
 
     def revoke_privilege(self, privilege, database, username):
@@ -730,8 +730,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :type username: str
         """
         text = "REVOKE {0} ON {1} FROM {2}".format(privilege,
-                                                database,
-                                                username)
+                                                   database,
+                                                   username)
         self.query(text)
 
     def send_packet(self, packet):
@@ -862,8 +862,8 @@ class InfluxDBClusterClient(object):
         def func(*args, **kwargs):
             now = time.time()
             with self._hosts_lock:
-                if (self.bad_hosts
-                        and self._last_healing + self.healing_delay < now):
+                if (self.bad_hosts and
+                        self._last_healing + self.healing_delay < now):
                     h = self.bad_hosts.pop(0)
                     self.hosts.append(h)
                     self._last_healing = now
