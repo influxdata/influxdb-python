@@ -162,6 +162,6 @@ Source code
 The source code is currently available on Github: https://github.com/influxdata/influxdb-python
 
 
-.. _InfluxDB: http://influxdata.com/
+.. _InfluxDB: https://influxdata.com/time-series-platform/influxdb/
 .. _Sphinx: http://sphinx.pocoo.org/
 .. _Tox: https://tox.readthedocs.org
