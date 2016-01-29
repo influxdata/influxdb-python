@@ -93,22 +93,16 @@ class ResultSet(object):
                 # doesn't return a name attribute.
                 # like 'show retention policies' ..
                 if tags is None:
-                    for point in serie['values']:
-                        yield self.point_from_cols_vals(
-                            serie['columns'],
-                            point
-                        )
+                    for item in self._get_points_for_serie(serie):
+                        yield item
 
             elif measurement in (None, serie_name):
                 # by default if no tags was provided then
                 # we will matches every returned serie
                 serie_tags = serie.get('tags', {})
                 if tags is None or self._tag_matches(serie_tags, tags):
-                    for point in serie.get('values', []):
-                        yield self.point_from_cols_vals(
-                            serie['columns'],
-                            point
-                        )
+                    for item in self._get_points_for_serie(serie):
+                        yield item
 
     def __repr__(self):
         items = []
@@ -166,9 +160,21 @@ class ResultSet(object):
                                    serie.get('name', 'results')),
                          serie.get('tags', None))
             items.append(
-                (serie_key, self[serie_key])
+                (serie_key, self._get_points_for_serie(serie))
             )
         return items
+
+    def _get_points_for_serie(self, serie):
+        """ Return generator of dict from columns and values of a serie
+
+        :param serie: One serie
+        :return: Generator of dicts
+        """
+        for point in serie.get('values', []):
+            yield self.point_from_cols_vals(
+                serie['columns'],
+                point
+            )
 
     @staticmethod
     def point_from_cols_vals(cols, vals):
