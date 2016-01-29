@@ -13,22 +13,6 @@ InfluxDB-Python is a client for interacting with InfluxDB_.
   :target: https://coveralls.io/r/influxdb/influxdb-python
   :alt: Coverage
 
-.. image:: https://pypip.in/download/influxdb/badge.svg
-    :target: https://pypi.python.org/pypi/influxdb/
-    :alt: Downloads
-
-.. image:: https://pypip.in/version/influxdb/badge.svg
-    :target: https://pypi.python.org/pypi/influxdb/
-    :alt: Latest Version
-
-.. image:: https://pypip.in/py_versions/influxdb/badge.svg
-    :target: https://pypi.python.org/pypi/influxdb/
-    :alt: Supported Python versions
-
-.. image:: https://pypip.in/license/influxdb/badge.svg
-    :target: https://pypi.python.org/pypi/influxdb/
-    :alt: License
-
 .. _readme-about:
 
 InfluxDB is an open-source distributed time series database, find more about InfluxDB_ at http://influxdata.com/
