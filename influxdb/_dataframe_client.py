@@ -101,6 +101,8 @@ class DataFrameClient(InfluxDBClient):
 
     def _to_dataframe(self, rs):
         result = {}
+        if isinstance(rs, list):
+            return map(self._to_dataframe, rs)
         for key, data in rs.items():
             name, tags = key
             if tags is None:
