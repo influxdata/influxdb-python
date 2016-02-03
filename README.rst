@@ -1,6 +1,6 @@
 
 
-InfluxDB-Python is a client for interacting with InfluxDB_.
+InfluxDB-Python is a client for interacting with InfluxDB_. Maintained by @aviau (https://github.com/aviau).
 
 .. image:: https://travis-ci.org/influxdata/influxdb-python.svg?branch=master
     :target: https://travis-ci.org/influxdata/influxdb-python
