@@ -251,7 +251,7 @@ class TestDataFrameClient(unittest.TestCase):
                     "series": [
                         {
                             "name": "cpu_load_short",
-                            "columns": ["time","value"],
+                            "columns": ["time", "value"],
                             "values": [
                                 ["2015-01-29T21:55:43.702900257Z", 0.55],
                                 ["2015-01-29T21:55:43.702900257Z", 23422],
@@ -263,7 +263,7 @@ class TestDataFrameClient(unittest.TestCase):
                     "series": [
                         {
                             "name": "cpu_load_short",
-                            "columns": ["time","count"],
+                            "columns": ["time", "count"],
                             "values": [
                                 ["1970-01-01T00:00:00Z", 3]
                             ]
@@ -281,16 +281,16 @@ class TestDataFrameClient(unittest.TestCase):
                 "2015-06-11 20:46:02+0000"])).tz_localize('UTC')
         pd2 = pd.DataFrame(
             [[3]], columns=['count'],
-            index=pd.to_datetime(["1970-01-01 00:00:00+00:00"])).tz_localize('UTC')
-        expected = [{'cpu_load_short':pd1}, {'cpu_load_short':pd2}]
-
+            index=pd.to_datetime(["1970-01-01 00:00:00+00:00"]))\
+            .tz_localize('UTC')
+        expected = [{'cpu_load_short': pd1}, {'cpu_load_short': pd2}]
 
         cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
+        iql = "SELECT value FROM cpu_load_short WHERE region='us-west';"\
+            "SELECT count(value) FROM cpu_load_short WHERE region='us-west'"
         with _mocked_session(cli, 'GET', 200, data):
-            result = cli.query(
-                "SELECT value FROM cpu_load_short WHERE region='us-west';"\
-                "SELECT count(value) FROM cpu_load_short WHERE region='us-west'")
-            for r,e in zip(result, expected):
+            result = cli.query(iql)
+            for r, e in zip(result, expected):
                 for k in e:
                     assert_frame_equal(e[k], r[k])
 
