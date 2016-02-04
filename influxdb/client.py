@@ -650,7 +650,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             privileges or not
         :type admin: boolean
         """
-        text = "CREATE USER {0} WITH PASSWORD '{1}'".format(username, password)
+        text = "CREATE USER \"{0}\" WITH PASSWORD '{1}'".format(username,
+                                                                password)
         if admin:
             text += ' WITH ALL PRIVILEGES'
         self.query(text)
