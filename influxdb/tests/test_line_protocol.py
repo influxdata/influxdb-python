@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals
 
 import sys
 if sys.version_info < (2, 7):
@@ -54,4 +55,24 @@ class TestLineProtocol(unittest.TestCase):
         self.assertEqual(
             line_protocol.make_lines(data),
             'm1 multi_line="line1\\nline1\\nline3"\n'
+        )
+
+    def test_make_lines_unicode(self):
+        data = {
+            "tags": {
+                "unicode_tag": "\'Привет!\'"  # Hello! in Russian
+            },
+            "points": [
+                {
+                    "measurement": "test",
+                    "fields": {
+                        "unicode_val": "Привет!",  # Hello! in Russian
+                    }
+                }
+            ]
+        }
+
+        self.assertEqual(
+            line_protocol.make_lines(data),
+            'test,unicode_tag=\'Привет!\' unicode_val="Привет!"\n'
         )
