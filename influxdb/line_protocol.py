@@ -7,7 +7,7 @@ from datetime import datetime
 from numbers import Integral
 
 from dateutil.parser import parse
-from six import binary_type, text_type, integer_types
+from six import binary_type, text_type, integer_types, PY2
 
 
 def _convert_timestamp(timestamp, precision=None):
@@ -74,7 +74,10 @@ def _get_unicode(data, force=False):
     elif data is None:
         return ''
     elif force:
-        return str(data)
+        if PY2:
+            return unicode(data)
+        else:
+            return str(data)
     else:
         return data
 
