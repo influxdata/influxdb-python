@@ -295,6 +295,10 @@ class SimpleTests(SingleTestCaseWithServerMixin,
         self.assertIn('{"error":"error parsing query: ',
                       ctx.exception.content)
 
+    def test_invalid_port_fails(self):
+        with self.assertRaises(ValueError):
+            InfluxDBClient('host', '80/redir', 'username', 'password')
+
 
 @skipServerTests
 class CommonTests(ManyTestCasesWithServerMixin,
