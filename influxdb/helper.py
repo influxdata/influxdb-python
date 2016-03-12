@@ -6,6 +6,7 @@ from collections import namedtuple, defaultdict
 from warnings import warn
 
 import six
+import time
 
 
 class SeriesHelper(object):
@@ -87,8 +88,11 @@ class SeriesHelper(object):
                         ' autocommit is false.'.format(cls.__name__))
 
             cls._datapoints = defaultdict(list)
-            cls._type = namedtuple(cls.__name__, cls._fields + cls._tags)
 
+            if 'time' in cls._fields:
+                cls._fields.remove('time')
+            cls._type = namedtuple(cls.__name__,
+                                   cls._fields + cls._tags + ['time'])
         return super(SeriesHelper, cls).__new__(cls)
 
     def __init__(self, **kw):
@@ -99,6 +103,7 @@ class SeriesHelper(object):
         :warning: Data points are *immutable* (`namedtuples`).
         """
         cls = self.__class__
+        timestamp = kw.pop('time', time.time())
 
         if sorted(cls._fields + cls._tags) != sorted(kw.keys()):
             raise NameError(
@@ -106,7 +111,9 @@ class SeriesHelper(object):
                     sorted(cls._fields + cls._tags),
                     kw.keys()))
 
-        cls._datapoints[cls._series_name.format(**kw)].append(cls._type(**kw))
+        cls._datapoints[cls._series_name.format(**kw)].append(
+            cls._type(time=timestamp, **kw)
+        )
 
         if cls._autocommit and \
                 sum(len(series) for series in cls._datapoints.values()) \
@@ -140,6 +147,7 @@ class SeriesHelper(object):
                     "measurement": series_name,
                     "fields": {},
                     "tags": {},
+                    "time": getattr(point, "time")
                 }
 
                 for field in cls._fields:
