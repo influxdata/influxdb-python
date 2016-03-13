@@ -16,6 +16,9 @@ class SeriesHelper(object):
     All data points are immutable, insuring they do not get overwritten.
     Each subclass can write to its own database.
     The time series names can also be based on one or more defined fields.
+    The field "time" can be specified when creating a point, and may be any of
+    the time types supported by the client (i.e. str, datetime, int).
+    If the time is not specified, the current system time (utc) will be used.
 
     Annotated example::
 
