@@ -40,6 +40,14 @@ class TestSeriesHelper(unittest.TestCase):
 
         TestSeriesHelper.MySeriesHelper = MySeriesHelper
 
+    def tearDown(self):
+        super(TestSeriesHelper, self).tearDown()
+        TestSeriesHelper.MySeriesHelper._reset_()
+        self.assertEqual(
+            TestSeriesHelper.MySeriesHelper._json_body_(),
+            [],
+            'Resetting helper did not empty datapoints.')
+
     def test_auto_commit(self):
         """
         Tests that write_points is called after the right number of events
@@ -130,11 +138,6 @@ class TestSeriesHelper(unittest.TestCase):
                         all([el in rcvd for el in expectation]),
                         'Invalid JSON body of time series returned from '
                         '_json_body_ for one series name: {0}.'.format(rcvd))
-        TestSeriesHelper.MySeriesHelper._reset_()
-        self.assertEqual(
-            TestSeriesHelper.MySeriesHelper._json_body_(),
-            [],
-            'Resetting helper did not empty datapoints.')
 
     @patch('influxdb.helper.SeriesHelper._current_timestamp')
     def testSeveralSeriesNames(self, current_timestamp):
@@ -203,11 +206,6 @@ class TestSeriesHelper(unittest.TestCase):
                         'Invalid JSON body of time series returned from '
                         '_json_body_ for several series names: {0}.'
                         .format(rcvd))
-        TestSeriesHelper.MySeriesHelper._reset_()
-        self.assertEqual(
-            TestSeriesHelper.MySeriesHelper._json_body_(),
-            [],
-            'Resetting helper did not empty datapoints.')
 
     @patch('influxdb.helper.SeriesHelper._current_timestamp')
     def testSeriesWithoutTimeField(self, current_timestamp):
@@ -229,11 +227,6 @@ class TestSeriesHelper(unittest.TestCase):
         self.assertTrue('time' in point1 and 'time' in point2)
         self.assertEqual(point1['time'], current_date)
         self.assertEqual(point2['time'], yesterday)
-        TestSeriesHelper.MySeriesHelper._reset_()
-        self.assertEqual(
-            TestSeriesHelper.MySeriesHelper._json_body_(),
-            [],
-            'Resetting helper did not empty datapoints.')
 
     @patch('influxdb.helper.SeriesHelper._current_timestamp')
     def testSeriesWithTimeField(self, current_timestamp):
