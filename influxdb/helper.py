@@ -3,10 +3,10 @@
 Helper class for InfluxDB
 """
 from collections import namedtuple, defaultdict
+from datetime import datetime
 from warnings import warn
 
 import six
-import time
 
 
 class SeriesHelper(object):
@@ -167,4 +167,4 @@ class SeriesHelper(object):
         cls._datapoints = defaultdict(list)
 
     def _current_timestamp(self):
-        return time.time()
+        return datetime.utcnow()
