@@ -8,7 +8,7 @@ else:
 import warnings
 
 import mock
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import patch
 from influxdb import SeriesHelper, InfluxDBClient
 from requests.exceptions import ConnectionError
@@ -208,6 +208,64 @@ class TestSeriesHelper(unittest.TestCase):
             TestSeriesHelper.MySeriesHelper._json_body_(),
             [],
             'Resetting helper did not empty datapoints.')
+
+    @patch('influxdb.helper.SeriesHelper._current_timestamp')
+    def testSeriesWithoutTimeField(self, current_timestamp):
+        """
+        Tests that time is optional on a series without a time field.
+        """
+        current_date = datetime.today()
+        yesterday = current_date - timedelta(days=1)
+        current_timestamp.return_value = yesterday
+        TestSeriesHelper.MySeriesHelper(
+            server_name='us.east-1', other_tag='ello',
+            some_stat=159, time=current_date
+        )
+        TestSeriesHelper.MySeriesHelper(
+            server_name='us.east-1', other_tag='ello',
+            some_stat=158,
+        )
+        point1, point2 = TestSeriesHelper.MySeriesHelper._json_body_()
+        self.assertTrue('time' in point1 and 'time' in point2)
+        self.assertEqual(point1['time'], current_date)
+        self.assertEqual(point2['time'], yesterday)
+        TestSeriesHelper.MySeriesHelper._reset_()
+        self.assertEqual(
+            TestSeriesHelper.MySeriesHelper._json_body_(),
+            [],
+            'Resetting helper did not empty datapoints.')
+
+    @patch('influxdb.helper.SeriesHelper._current_timestamp')
+    def testSeriesWithTimeField(self, current_timestamp):
+        """
+        Test that time is optional on a series with a time field.
+        """
+        current_date = datetime.today()
+        yesterday = current_date - timedelta(days=1)
+        current_timestamp.return_value = yesterday
+
+        class MyTimeFieldSeriesHelper(SeriesHelper):
+
+            class Meta:
+                client = TestSeriesHelper.client
+                series_name = 'events.stats.{server_name}'
+                fields = ['some_stat', 'time']
+                tags = ['server_name', 'other_tag']
+                bulk_size = 5
+                autocommit = True
+
+        MyTimeFieldSeriesHelper(
+            server_name='us.east-1', other_tag='ello',
+            some_stat=159, time=current_date
+        )
+        MyTimeFieldSeriesHelper(
+            server_name='us.east-1', other_tag='ello',
+            some_stat=158,
+        )
+        point1, point2 = MyTimeFieldSeriesHelper._json_body_()
+        self.assertTrue('time' in point1 and 'time' in point2)
+        self.assertEqual(point1['time'], current_date)
+        self.assertEqual(point2['time'], yesterday)
 
     def testInvalidHelpers(self):
         '''
