@@ -103,7 +103,7 @@ class SeriesHelper(object):
         :warning: Data points are *immutable* (`namedtuples`).
         """
         cls = self.__class__
-        timestamp = kw.pop('time', time.time())
+        timestamp = kw.pop('time', self._current_timestamp())
 
         if sorted(cls._fields + cls._tags) != sorted(kw.keys()):
             raise NameError(
@@ -165,3 +165,6 @@ class SeriesHelper(object):
         Reset data storage.
         """
         cls._datapoints = defaultdict(list)
+
+    def _current_timestamp(self):
+        return time.time()
