@@ -8,6 +8,8 @@ else:
 import warnings
 
 import mock
+from datetime import datetime
+from unittest.mock import patch
 from influxdb import SeriesHelper, InfluxDBClient
 from requests.exceptions import ConnectionError
 
@@ -62,10 +64,12 @@ class TestSeriesHelper(unittest.TestCase):
         AutoCommitTest(server_name='us.east-1', some_stat=3443, other_tag='gg')
         self.assertTrue(fake_write_points.called)
 
-    def testSingleSeriesName(self):
+    @patch('influxdb.helper.SeriesHelper._current_timestamp')
+    def testSingleSeriesName(self, current_timestamp):
         """
         Tests JSON conversion when there is only one series name.
         """
+        current_timestamp.return_value = current_date = datetime.today()
         TestSeriesHelper.MySeriesHelper(
             server_name='us.east-1', other_tag='ello', some_stat=159)
         TestSeriesHelper.MySeriesHelper(
@@ -84,6 +88,7 @@ class TestSeriesHelper(unittest.TestCase):
                 "fields": {
                     "some_stat": 159
                 },
+                "time": current_date,
             },
             {
                 "measurement": "events.stats.us.east-1",
@@ -94,6 +99,7 @@ class TestSeriesHelper(unittest.TestCase):
                 "fields": {
                     "some_stat": 158
                 },
+                "time": current_date,
             },
             {
                 "measurement": "events.stats.us.east-1",
@@ -104,6 +110,7 @@ class TestSeriesHelper(unittest.TestCase):
                 "fields": {
                     "some_stat": 157
                 },
+                "time": current_date,
             },
             {
                 "measurement": "events.stats.us.east-1",
@@ -114,6 +121,7 @@ class TestSeriesHelper(unittest.TestCase):
                 "fields": {
                     "some_stat": 156
                 },
+                "time": current_date,
             }
         ]
 
@@ -128,10 +136,12 @@ class TestSeriesHelper(unittest.TestCase):
             [],
             'Resetting helper did not empty datapoints.')
 
-    def testSeveralSeriesNames(self):
-        '''
-        Tests JSON conversion when there is only one series name.
-        '''
+    @patch('influxdb.helper.SeriesHelper._current_timestamp')
+    def testSeveralSeriesNames(self, current_timestamp):
+        """
+        Tests JSON conversion when there are multiple series names.
+        """
+        current_timestamp.return_value = current_date = datetime.today()
         TestSeriesHelper.MySeriesHelper(
             server_name='us.east-1', some_stat=159, other_tag='ello')
         TestSeriesHelper.MySeriesHelper(
@@ -149,7 +159,8 @@ class TestSeriesHelper(unittest.TestCase):
                 'tags': {
                     'other_tag': 'ello',
                     'server_name': 'lu.lux'
-                }
+                },
+                "time": current_date,
             },
             {
                 'fields': {
@@ -159,7 +170,8 @@ class TestSeriesHelper(unittest.TestCase):
                 'tags': {
                     'other_tag': 'ello',
                     'server_name': 'uk.london'
-                }
+                },
+                "time": current_date,
             },
             {
                 'fields': {
@@ -169,7 +181,8 @@ class TestSeriesHelper(unittest.TestCase):
                 'tags': {
                     'other_tag': 'ello',
                     'server_name': 'fr.paris-10'
-                }
+                },
+                "time": current_date,
             },
             {
                 'fields': {
@@ -179,7 +192,8 @@ class TestSeriesHelper(unittest.TestCase):
                 'tags': {
                     'other_tag': 'ello',
                     'server_name': 'us.east-1'
-                }
+                },
+                "time": current_date,
             }
         ]
 
