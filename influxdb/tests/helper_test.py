@@ -9,7 +9,6 @@ import warnings
 
 import mock
 from datetime import datetime, timedelta
-from unittest.mock import patch
 from influxdb import SeriesHelper, InfluxDBClient
 from requests.exceptions import ConnectionError
 
@@ -72,7 +71,7 @@ class TestSeriesHelper(unittest.TestCase):
         AutoCommitTest(server_name='us.east-1', some_stat=3443, other_tag='gg')
         self.assertTrue(fake_write_points.called)
 
-    @patch('influxdb.helper.SeriesHelper._current_timestamp')
+    @mock.patch('influxdb.helper.SeriesHelper._current_timestamp')
     def testSingleSeriesName(self, current_timestamp):
         """
         Tests JSON conversion when there is only one series name.
@@ -139,7 +138,7 @@ class TestSeriesHelper(unittest.TestCase):
                         'Invalid JSON body of time series returned from '
                         '_json_body_ for one series name: {0}.'.format(rcvd))
 
-    @patch('influxdb.helper.SeriesHelper._current_timestamp')
+    @mock.patch('influxdb.helper.SeriesHelper._current_timestamp')
     def testSeveralSeriesNames(self, current_timestamp):
         """
         Tests JSON conversion when there are multiple series names.
@@ -207,7 +206,7 @@ class TestSeriesHelper(unittest.TestCase):
                         '_json_body_ for several series names: {0}.'
                         .format(rcvd))
 
-    @patch('influxdb.helper.SeriesHelper._current_timestamp')
+    @mock.patch('influxdb.helper.SeriesHelper._current_timestamp')
     def testSeriesWithoutTimeField(self, current_timestamp):
         """
         Tests that time is optional on a series without a time field.
@@ -228,7 +227,7 @@ class TestSeriesHelper(unittest.TestCase):
         self.assertEqual(point1['time'], current_date)
         self.assertEqual(point2['time'], yesterday)
 
-    @patch('influxdb.helper.SeriesHelper._current_timestamp')
+    @mock.patch('influxdb.helper.SeriesHelper._current_timestamp')
     def testSeriesWithTimeField(self, current_timestamp):
         """
         Test that time is optional on a series with a time field.
