@@ -3,6 +3,7 @@
 Helper class for InfluxDB
 """
 from collections import namedtuple, defaultdict
+from datetime import datetime
 from warnings import warn
 
 import six
@@ -15,6 +16,16 @@ class SeriesHelper(object):
     All data points are immutable, insuring they do not get overwritten.
     Each subclass can write to its own database.
     The time series names can also be based on one or more defined fields.
+
+    A field "time" can be used to write data points at a specific time,
+    rather than the default current time. The time field can take any of
+    the following forms:
+     * An integer unix timestamp in nanoseconds, assumed to be in UTC.
+     * A string in the ISO time format, including a timezone.
+     * A naive python datetime, which will be treated as UTC.
+     * A localized python datetime, which will use the chosen timezone.
+    If no time field is provided, the current UTC system time in microseconds
+    at the time of assembling the point data will be used.
 
     Annotated example::
 
@@ -142,8 +153,23 @@ class SeriesHelper(object):
                     "tags": {},
                 }
 
+                ts = getattr(point, 'time', None)
+                if not ts:
+                    # No time provided. Use current UTC time.
+                    ts = datetime.utcnow().isoformat() + "+00:00"
+                elif isinstance(ts, datetime):
+                    if ts.tzinfo is None or ts.tzinfo.utcoffset(ts) is None:
+                        # Assuming naive datetime provided. Format with UTC tz.
+                        ts = ts.isoformat() + "+00:00"
+                    else:
+                        # Assuming localized datetime provided.
+                        ts = ts.isoformat()
+                # Neither of the above match. Assuming correct string or int.
+                json_point['time'] = ts
+
                 for field in cls._fields:
-                    json_point['fields'][field] = getattr(point, field)
+                    if field != 'time':
+                        json_point['fields'][field] = getattr(point, field)
 
                 for tag in cls._tags:
                     json_point['tags'][tag] = getattr(point, tag)
