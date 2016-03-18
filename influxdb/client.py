@@ -76,7 +76,7 @@ class InfluxDBClient(object):
                  ):
         """Construct a new InfluxDBClient object."""
         self.__host = host
-        self.__port = port
+        self.__port = int(port)
         self._username = username
         self._password = password
         self._database = database

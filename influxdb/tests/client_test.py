@@ -794,6 +794,10 @@ class TestInfluxDBClient(unittest.TestCase):
         with _mocked_session(cli, 'get', 400):
             self.cli.revoke_privilege('', 'testdb', 'test')
 
+    def test_invalid_port_fails(self):
+        with self.assertRaises(ValueError):
+            InfluxDBClient('host', '80/redir', 'username', 'password')
+
 
 class FakeClient(InfluxDBClient):
 
