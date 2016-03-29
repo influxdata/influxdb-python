@@ -54,7 +54,7 @@ class InfluxDBClient(object):
         establish a connection, defaults to None
     :type timeout: int
     :param use_udp: use UDP to connect to InfluxDB, defaults to False
-    :type use_udp: int
+    :type use_udp: bool
     :param udp_port: UDP port to connect to InfluxDB, defaults to 4444
     :type udp_port: int
     :param proxies: HTTP(S) proxy to use for Requests, defaults to {}
