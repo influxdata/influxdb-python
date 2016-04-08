@@ -548,6 +548,20 @@ localhost:8086/databasename', timeout=5, udp_port=159)
 
         self.query(query_string)
 
+    def drop_retention_policy(self, name, database=None):
+        """Drop an existing retention policy for a database.
+
+        :param name: the name of the retention policy to drop
+        :type name: str
+        :param database: the database for which the retention policy is
+            dropped. Defaults to current client's database
+        :type database: str
+        """
+        query_string = (
+            "DROP RETENTION POLICY {0} ON {1}"
+        ).format(name, database or self._database)
+        self.query(query_string)
+
     def get_list_retention_policies(self, database=None):
         """Get the list of retention policies for a database.
 

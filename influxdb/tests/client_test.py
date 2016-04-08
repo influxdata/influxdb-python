@@ -632,6 +632,27 @@ class TestInfluxDBClient(unittest.TestCase):
         with _mocked_session(cli, 'get', 400):
             self.cli.alter_retention_policy('somename', 'db')
 
+    def test_drop_retention_policy(self):
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.cli.drop_retention_policy('somename', 'db')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'drop retention policy somename on db'
+            )
+
+    @raises(Exception)
+    def test_drop_retention_policy_fails(self):
+        cli = InfluxDBClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'delete', 401):
+            cli.drop_retention_policy('default', 'db')
+
     def test_get_list_retention_policies(self):
         example_response = \
             '{"results": [{"series": [{"values": [["fsfdsdf", "24h0m0s", 2]],'\
