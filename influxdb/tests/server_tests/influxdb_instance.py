@@ -159,7 +159,7 @@ class InfluxDbInstance(object):
             if not influxdb_bin_path:
                 try:
                     influxdb_bin_path = subprocess.check_output(
-                        ['which', 'influxdb']
+                        ['which', 'influxd']
                     ).strip()
                 except subprocess.CalledProcessError:
                     # fallback on :
