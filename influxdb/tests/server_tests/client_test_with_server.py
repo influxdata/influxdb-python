@@ -622,8 +622,9 @@ class CommonTests(ManyTestCasesWithServerMixin,
             self.cli.drop_retention_policy('default', 'db')
 
         self.assertEqual(400, ctx.exception.code)
-        self.assertIn('{"error":"error parsing query: found DEFAULT, expected POLICY',
-                      ctx.exception.content)
+        self.assertIn(
+            '{"error":"error parsing query: found DEFAULT, expected POLICY',
+            ctx.exception.content)
 
     def test_issue_143(self):
         pt = partial(point, 'a_serie_name', timestamp='2015-03-30T16:16:37Z')
