@@ -73,7 +73,7 @@ class InfluxDBClient(object):
                  use_udp=False,
                  udp_port=4444,
                  proxies=None,
-                 ):
+                 session=requests.Session()):
         """Construct a new InfluxDBClient object."""
         self.__host = host
         self.__port = int(port)
@@ -86,7 +86,7 @@ class InfluxDBClient(object):
 
         self.use_udp = use_udp
         self.udp_port = udp_port
-        self._session = requests.Session()
+        self._session = session
         if use_udp:
             self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
