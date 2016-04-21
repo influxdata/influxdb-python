@@ -16,16 +16,9 @@ class SeriesHelper(object):
     All data points are immutable, insuring they do not get overwritten.
     Each subclass can write to its own database.
     The time series names can also be based on one or more defined fields.
-
-    A field "time" can be used to write data points at a specific time,
-    rather than the default current time. The time field can take any of
-    the following forms:
-     * An integer unix timestamp in nanoseconds, assumed to be in UTC.
-     * A string in the ISO time format, including a timezone.
-     * A naive python datetime, which will be treated as UTC.
-     * A localized python datetime, which will use the chosen timezone.
-    If no time field is provided, the current UTC system time in microseconds
-    at the time of assembling the point data will be used.
+    The field "time" can be specified when creating a point, and may be any of
+    the time types supported by the client (i.e. str, datetime, int).
+    If the time is not specified, the current system time (utc) will be used.
 
     Annotated example::
 
@@ -98,8 +91,11 @@ class SeriesHelper(object):
                         ' autocommit is false.'.format(cls.__name__))
 
             cls._datapoints = defaultdict(list)
-            cls._type = namedtuple(cls.__name__, cls._fields + cls._tags)
 
+            if 'time' in cls._fields:
+                cls._fields.remove('time')
+            cls._type = namedtuple(cls.__name__,
+                                   cls._fields + cls._tags + ['time'])
         return super(SeriesHelper, cls).__new__(cls)
 
     def __init__(self, **kw):
@@ -110,6 +106,7 @@ class SeriesHelper(object):
         :warning: Data points are *immutable* (`namedtuples`).
         """
         cls = self.__class__
+        timestamp = kw.pop('time', self._current_timestamp())
 
         if sorted(cls._fields + cls._tags) != sorted(kw.keys()):
             raise NameError(
@@ -117,7 +114,9 @@ class SeriesHelper(object):
                     sorted(cls._fields + cls._tags),
                     kw.keys()))
 
-        cls._datapoints[cls._series_name.format(**kw)].append(cls._type(**kw))
+        cls._datapoints[cls._series_name.format(**kw)].append(
+            cls._type(time=timestamp, **kw)
+        )
 
         if cls._autocommit and \
                 sum(len(series) for series in cls._datapoints.values()) \
@@ -151,25 +150,11 @@ class SeriesHelper(object):
                     "measurement": series_name,
                     "fields": {},
                     "tags": {},
+                    "time": getattr(point, "time")
                 }
 
-                ts = getattr(point, 'time', None)
-                if not ts:
-                    # No time provided. Use current UTC time.
-                    ts = datetime.utcnow().isoformat() + "+00:00"
-                elif isinstance(ts, datetime):
-                    if ts.tzinfo is None or ts.tzinfo.utcoffset(ts) is None:
-                        # Assuming naive datetime provided. Format with UTC tz.
-                        ts = ts.isoformat() + "+00:00"
-                    else:
-                        # Assuming localized datetime provided.
-                        ts = ts.isoformat()
-                # Neither of the above match. Assuming correct string or int.
-                json_point['time'] = ts
-
                 for field in cls._fields:
-                    if field != 'time':
-                        json_point['fields'][field] = getattr(point, field)
+                    json_point['fields'][field] = getattr(point, field)
 
                 for tag in cls._tags:
                     json_point['tags'][tag] = getattr(point, tag)
@@ -183,3 +168,6 @@ class SeriesHelper(object):
         Reset data storage.
         """
         cls._datapoints = defaultdict(list)
+
+    def _current_timestamp(self):
+        return datetime.utcnow()

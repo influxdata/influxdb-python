@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import datetime
-import pytz
 import sys
 if sys.version_info < (2, 7):
     import unittest2 as unittest
@@ -10,6 +8,7 @@ else:
 import warnings
 
 import mock
+from datetime import datetime, timedelta
 from influxdb import SeriesHelper, InfluxDBClient
 from requests.exceptions import ConnectionError
 
@@ -40,17 +39,13 @@ class TestSeriesHelper(unittest.TestCase):
 
         TestSeriesHelper.MySeriesHelper = MySeriesHelper
 
-        class MySeriesTimeHelper(SeriesHelper):
-
-            class Meta:
-                client = TestSeriesHelper.client
-                series_name = 'events.stats.{server_name}'
-                fields = ['time', 'some_stat']
-                tags = ['server_name', 'other_tag']
-                bulk_size = 5
-                autocommit = True
-
-        TestSeriesHelper.MySeriesTimeHelper = MySeriesTimeHelper
+    def tearDown(self):
+        super(TestSeriesHelper, self).tearDown()
+        TestSeriesHelper.MySeriesHelper._reset_()
+        self.assertEqual(
+            TestSeriesHelper.MySeriesHelper._json_body_(),
+            [],
+            'Resetting helper did not empty datapoints.')
 
     def test_auto_commit(self):
         """
@@ -76,24 +71,20 @@ class TestSeriesHelper(unittest.TestCase):
         AutoCommitTest(server_name='us.east-1', some_stat=3443, other_tag='gg')
         self.assertTrue(fake_write_points.called)
 
-    def testSingleSeriesName(self):
+    @mock.patch('influxdb.helper.SeriesHelper._current_timestamp')
+    def testSingleSeriesName(self, current_timestamp):
         """
         Tests JSON conversion when there is only one series name.
         """
-        dt = datetime.datetime(2016, 1, 2, 3, 4, 5, 678912)
-        ts1 = dt
-        ts2 = "2016-10-11T01:02:03.123456789-04:00"
-        ts3 = 1234567890123456789
-        ts4 = pytz.timezone("Europe/Berlin").localize(dt)
-
-        TestSeriesHelper.MySeriesTimeHelper(
-            time=ts1, server_name='us.east-1', other_tag='ello', some_stat=159)
-        TestSeriesHelper.MySeriesTimeHelper(
-            time=ts2, server_name='us.east-1', other_tag='ello', some_stat=158)
-        TestSeriesHelper.MySeriesTimeHelper(
-            time=ts3, server_name='us.east-1', other_tag='ello', some_stat=157)
-        TestSeriesHelper.MySeriesTimeHelper(
-            time=ts4, server_name='us.east-1', other_tag='ello', some_stat=156)
+        current_timestamp.return_value = current_date = datetime.today()
+        TestSeriesHelper.MySeriesHelper(
+            server_name='us.east-1', other_tag='ello', some_stat=159)
+        TestSeriesHelper.MySeriesHelper(
+            server_name='us.east-1', other_tag='ello', some_stat=158)
+        TestSeriesHelper.MySeriesHelper(
+            server_name='us.east-1', other_tag='ello', some_stat=157)
+        TestSeriesHelper.MySeriesHelper(
+            server_name='us.east-1', other_tag='ello', some_stat=156)
         expectation = [
             {
                 "measurement": "events.stats.us.east-1",
@@ -104,7 +95,7 @@ class TestSeriesHelper(unittest.TestCase):
                 "fields": {
                     "some_stat": 159
                 },
-                "time": "2016-01-02T03:04:05.678912+00:00",
+                "time": current_date,
             },
             {
                 "measurement": "events.stats.us.east-1",
@@ -115,7 +106,7 @@ class TestSeriesHelper(unittest.TestCase):
                 "fields": {
                     "some_stat": 158
                 },
-                "time": "2016-10-11T01:02:03.123456789-04:00",
+                "time": current_date,
             },
             {
                 "measurement": "events.stats.us.east-1",
@@ -126,7 +117,7 @@ class TestSeriesHelper(unittest.TestCase):
                 "fields": {
                     "some_stat": 157
                 },
-                "time": 1234567890123456789,
+                "time": current_date,
             },
             {
                 "measurement": "events.stats.us.east-1",
@@ -137,25 +128,22 @@ class TestSeriesHelper(unittest.TestCase):
                 "fields": {
                     "some_stat": 156
                 },
-                "time": "2016-01-02T03:04:05.678912+01:00",
+                "time": current_date,
             }
         ]
 
-        rcvd = TestSeriesHelper.MySeriesTimeHelper._json_body_()
+        rcvd = TestSeriesHelper.MySeriesHelper._json_body_()
         self.assertTrue(all([el in expectation for el in rcvd]) and
                         all([el in rcvd for el in expectation]),
                         'Invalid JSON body of time series returned from '
                         '_json_body_ for one series name: {0}.'.format(rcvd))
-        TestSeriesHelper.MySeriesTimeHelper._reset_()
-        self.assertEqual(
-            TestSeriesHelper.MySeriesTimeHelper._json_body_(),
-            [],
-            'Resetting helper did not empty datapoints.')
 
-    def testSeveralSeriesNames(self):
-        '''
+    @mock.patch('influxdb.helper.SeriesHelper._current_timestamp')
+    def testSeveralSeriesNames(self, current_timestamp):
+        """
         Tests JSON conversion when there are multiple series names.
-        '''
+        """
+        current_timestamp.return_value = current_date = datetime.today()
         TestSeriesHelper.MySeriesHelper(
             server_name='us.east-1', some_stat=159, other_tag='ello')
         TestSeriesHelper.MySeriesHelper(
@@ -173,7 +161,8 @@ class TestSeriesHelper(unittest.TestCase):
                 'tags': {
                     'other_tag': 'ello',
                     'server_name': 'lu.lux'
-                }
+                },
+                "time": current_date,
             },
             {
                 'fields': {
@@ -183,7 +172,8 @@ class TestSeriesHelper(unittest.TestCase):
                 'tags': {
                     'other_tag': 'ello',
                     'server_name': 'uk.london'
-                }
+                },
+                "time": current_date,
             },
             {
                 'fields': {
@@ -193,7 +183,8 @@ class TestSeriesHelper(unittest.TestCase):
                 'tags': {
                     'other_tag': 'ello',
                     'server_name': 'fr.paris-10'
-                }
+                },
+                "time": current_date,
             },
             {
                 'fields': {
@@ -203,25 +194,70 @@ class TestSeriesHelper(unittest.TestCase):
                 'tags': {
                     'other_tag': 'ello',
                     'server_name': 'us.east-1'
-                }
+                },
+                "time": current_date,
             }
         ]
 
         rcvd = TestSeriesHelper.MySeriesHelper._json_body_()
-        for r in rcvd:
-            self.assertTrue(r.get('time'),
-                            "No time field in received JSON body.")
-            del(r["time"])
         self.assertTrue(all([el in expectation for el in rcvd]) and
                         all([el in rcvd for el in expectation]),
                         'Invalid JSON body of time series returned from '
                         '_json_body_ for several series names: {0}.'
                         .format(rcvd))
-        TestSeriesHelper.MySeriesHelper._reset_()
-        self.assertEqual(
-            TestSeriesHelper.MySeriesHelper._json_body_(),
-            [],
-            'Resetting helper did not empty datapoints.')
+
+    @mock.patch('influxdb.helper.SeriesHelper._current_timestamp')
+    def testSeriesWithoutTimeField(self, current_timestamp):
+        """
+        Tests that time is optional on a series without a time field.
+        """
+        current_date = datetime.today()
+        yesterday = current_date - timedelta(days=1)
+        current_timestamp.return_value = yesterday
+        TestSeriesHelper.MySeriesHelper(
+            server_name='us.east-1', other_tag='ello',
+            some_stat=159, time=current_date
+        )
+        TestSeriesHelper.MySeriesHelper(
+            server_name='us.east-1', other_tag='ello',
+            some_stat=158,
+        )
+        point1, point2 = TestSeriesHelper.MySeriesHelper._json_body_()
+        self.assertTrue('time' in point1 and 'time' in point2)
+        self.assertEqual(point1['time'], current_date)
+        self.assertEqual(point2['time'], yesterday)
+
+    @mock.patch('influxdb.helper.SeriesHelper._current_timestamp')
+    def testSeriesWithTimeField(self, current_timestamp):
+        """
+        Test that time is optional on a series with a time field.
+        """
+        current_date = datetime.today()
+        yesterday = current_date - timedelta(days=1)
+        current_timestamp.return_value = yesterday
+
+        class MyTimeFieldSeriesHelper(SeriesHelper):
+
+            class Meta:
+                client = TestSeriesHelper.client
+                series_name = 'events.stats.{server_name}'
+                fields = ['some_stat', 'time']
+                tags = ['server_name', 'other_tag']
+                bulk_size = 5
+                autocommit = True
+
+        MyTimeFieldSeriesHelper(
+            server_name='us.east-1', other_tag='ello',
+            some_stat=159, time=current_date
+        )
+        MyTimeFieldSeriesHelper(
+            server_name='us.east-1', other_tag='ello',
+            some_stat=158,
+        )
+        point1, point2 = MyTimeFieldSeriesHelper._json_body_()
+        self.assertTrue('time' in point1 and 'time' in point2)
+        self.assertEqual(point1['time'], current_date)
+        self.assertEqual(point2['time'], yesterday)
 
     def testInvalidHelpers(self):
         '''
