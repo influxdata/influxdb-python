@@ -1,6 +1,9 @@
 language: python
 env:
-    - TOX_ENV=py26
+#    - TOX_ENV=py26
+# If someone opens a PR to re-enable py26 tests, I will merge it.
+# However, that cannot be at the cost of disabling pandas tests in other
+# environments.
     - TOX_ENV=py27
 #    - TOX_ENV=py32
 # Disabling py32 tests until the following issue is fixed:
