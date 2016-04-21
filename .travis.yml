@@ -20,10 +20,10 @@ install:
     - pip install tox
     - pip install coveralls
     - mkdir influxdb_install
-    - wget https://s3.amazonaws.com/influxdb/influxdb_0.9.6.1_amd64.deb
-    - dpkg -x influxdb_*_amd64.deb influxdb_install
+    - wget https://s3.amazonaws.com/influxdb/influxdb_0.12.1-1_amd64.deb
+    - dpkg -x influxdb*.deb influxdb_install
 script:
-    - export INFLUXDB_PYTHON_INFLUXD_PATH=$(pwd)/influxdb_install/opt/influxdb/versions/0.9.6.1/influxd
+    - export INFLUXDB_PYTHON_INFLUXD_PATH=$(pwd)/influxdb_install/usr/bin/influxd
     - travis_wait 30 tox -e $TOX_ENV
 after_success:
     - if [ "$TOX_ENV" == "coverage" ] ; then coveralls; fi
