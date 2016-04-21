@@ -2,31 +2,10 @@
   dir = "{meta_dir}"
   hostname = "localhost"
   bind-address = ":{meta_port}"
-  retention-autocreate = true
-  election-timeout = "1s"
-  heartbeat-timeout = "1s"
-  leader-lease-timeout = "500ms"
-  commit-timeout = "50ms"
 
 [data]
   dir = "{data_dir}"
   wal-dir = "{wal_dir}"
-  retention-auto-create = true
-  retention-check-enabled = true
-  retention-check-period = "10m0s"
-  retention-create-period = "45m0s"
-
-[cluster]
-  shard-writer-timeout = "5s"
-
-[retention]
-  enabled = true
-  check-interval = "10m0s"
-
-[shard-precreation]
-  enabled = true
-  check-interval = "10m0s"
-  advance-period = "30m0s"
 
 [admin]
   enabled = true
@@ -36,24 +15,6 @@
   enabled = true
   bind-address = ":{http_port}"
   auth-enabled = false
-  log-enabled = true
-  write-tracing = false
-
-[collectd]
-  enabled = false
-  bind-address = ":25826"
-  database = "collectd"
-  retention-policy = ""
-  batch-size = 5000
-  batch-timeout = "10s"
-  typesdb = "/usr/share/collectd/types.db"
-
-[opentsdb]
-  enabled = false
-  bind-address = ":4242"
-  database = "opentsdb"
-  retention-policy = ""
-  consistency-level = "one"
 
 [[udp]]
   enabled = {udp_enabled}
@@ -65,18 +26,5 @@
 [monitor]
   store-enabled = false
 
-[continuous_queries]
-  enabled = true
-  recompute-previous-n = 2
-  recompute-no-older-than = "10m0s"
-  compute-runs-per-interval = 10
-  compute-no-more-than = "2m0s"
-
 [hinted-handoff]
-  enabled = false
   dir = "{handoff_dir}"
-  max-size = 1073741824
-  max-age = "168h0m0s"
-  retry-rate-limit = 0
-  retry-interval = "1s"
-
