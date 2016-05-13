@@ -712,6 +712,17 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                                                    for k, v in tags.items()])
         self.query(query_str, database=database)
 
+    def grant_admin_privileges(self, username):
+        """Grant administration privileges to an existing user.
+
+        :param username: the username to grant admin privileges to
+        :type username: str
+
+        .. note:: Only a cluster administrator can manage user privileges.
+        """
+        text = "GRANT ALL PRIVILEGES TO {0}".format(username)
+        self.query(text)
+
     def revoke_admin_privileges(self, username):
         """Revoke cluster administration privileges from an user.
 
@@ -755,6 +766,26 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                                                    database,
                                                    username)
         self.query(text)
+
+    def get_list_grants(self, username):
+        """Get the list of privileges granted to a user.
+
+        :param username: the username whose grants to list
+        :type username: str
+
+        :returns: all privileges granted to the user in InfluxDB
+        :rtype: list of dictionaries
+
+        :Example:
+
+        ::
+
+            >> grants = client.get_list_grants("todd")
+            >> grants
+            [{u'database': u'db1', u'privilege': u'READ'}, {u'database': u'db2', u'privilege': u'ALL PRIVILEGES'}]
+        """
+        text = "SHOW GRANTS FOR {0}".format(username)
+        return list(self.query(text).get_points())
 
     def send_packet(self, packet):
         """Send an UDP packet.
@@ -803,7 +834,7 @@ class InfluxDBClusterClient(object):
                  ):
         self.clients = [self]  # Keep it backwards compatible
         self.hosts = hosts
-        self.bad_hosts = []   # Corresponding server has failures in history
+        self.bad_hosts = []  # Corresponding server has failures in history
         self.shuffle = shuffle
         self.healing_delay = healing_delay
         self._last_healing = time.time()

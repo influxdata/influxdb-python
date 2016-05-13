@@ -749,6 +749,28 @@ class TestInfluxDBClient(unittest.TestCase):
 
             self.assertListEqual(self.cli.get_list_users(), [])
 
+    @raises(Exception)
+    def test_grant_admin_privileges_invalid(self):
+        cli = InfluxDBClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'get', 400):
+            self.cli.grant_admin_privileges('')
+
+    def test_grant_admin_privileges(self):
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.cli.grant_admin_privileges('test')
+
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'grant all privileges to test'
+            )
+
     def test_revoke_admin_privileges(self):
         example_response = '{"results":[{}]}'
 
@@ -818,6 +840,29 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_invalid_port_fails(self):
         with self.assertRaises(ValueError):
             InfluxDBClient('host', '80/redir', 'username', 'password')
+
+    def test_get_list_grants(self):
+        data = {'results': [
+            {'series': [
+                {'columns': ['database', 'privilege'],
+                 'values': [
+                    ['db1', 'READ'],
+                    ['db2', 'ALL PRIVILEGES']]}
+            ]}
+        ]}
+
+        with _mocked_session(self.cli, 'get', 200, json.dumps(data)):
+            self.assertListEqual(
+                self.cli.get_list_grants('test'),
+                [{'database': 'db1', 'privilege': 'READ'},
+                 {'database': 'db2', 'privilege': 'ALL PRIVILEGES'}, ]
+            )
+
+    @raises(Exception)
+    def test_get_list_grants_fails(self):
+        cli = InfluxDBClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'get', 401):
+            cli.get_list_grants('test')
 
 
 class FakeClient(InfluxDBClient):
