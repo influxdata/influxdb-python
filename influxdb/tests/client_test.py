@@ -571,8 +571,8 @@ class TestInfluxDBClient(unittest.TestCase):
 
             self.assertEqual(
                 m.last_request.qs['q'][0],
-                'create retention policy somename on '
-                'db duration 1d replication 4 default'
+                'create retention policy "somename" on '
+                '"db" duration 1d replication 4 default'
             )
 
     def test_create_retention_policy(self):
@@ -590,8 +590,8 @@ class TestInfluxDBClient(unittest.TestCase):
 
             self.assertEqual(
                 m.last_request.qs['q'][0],
-                'create retention policy somename on '
-                'db duration 1d replication 4'
+                'create retention policy "somename" on '
+                '"db" duration 1d replication 4'
             )
 
     def test_alter_retention_policy(self):
@@ -608,14 +608,14 @@ class TestInfluxDBClient(unittest.TestCase):
                                             duration='4d')
             self.assertEqual(
                 m.last_request.qs['q'][0],
-                'alter retention policy somename on db duration 4d'
+                'alter retention policy "somename" on "db" duration 4d'
             )
             # Test alter replication
             self.cli.alter_retention_policy('somename', 'db',
                                             replication=4)
             self.assertEqual(
                 m.last_request.qs['q'][0],
-                'alter retention policy somename on db replication 4'
+                'alter retention policy "somename" on "db" replication 4'
             )
 
             # Test alter default
@@ -623,7 +623,7 @@ class TestInfluxDBClient(unittest.TestCase):
                                             default=True)
             self.assertEqual(
                 m.last_request.qs['q'][0],
-                'alter retention policy somename on db default'
+                'alter retention policy "somename" on "db" default'
             )
 
     @raises(Exception)
@@ -644,7 +644,7 @@ class TestInfluxDBClient(unittest.TestCase):
             self.cli.drop_retention_policy('somename', 'db')
             self.assertEqual(
                 m.last_request.qs['q'][0],
-                'drop retention policy somename on db'
+                'drop retention policy "somename" on "db"'
             )
 
     @raises(Exception)
