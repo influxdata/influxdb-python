@@ -502,7 +502,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :type default: bool
         """
         query_string = \
-            "CREATE RETENTION POLICY %s ON %s " \
+            "CREATE RETENTION POLICY \"%s\" ON \"%s\" " \
             "DURATION %s REPLICATION %s" % \
             (name, database or self._database, duration, replication)
 
@@ -537,7 +537,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             should be set. Otherwise the operation will fail.
         """
         query_string = (
-            "ALTER RETENTION POLICY {0} ON {1}"
+            "ALTER RETENTION POLICY \"{0}\" ON \"{1}\""
         ).format(name, database or self._database)
         if duration:
             query_string += " DURATION {0}".format(duration)
@@ -558,7 +558,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :type database: str
         """
         query_string = (
-            "DROP RETENTION POLICY {0} ON {1}"
+            "DROP RETENTION POLICY \"{0}\" ON \"{1}\""
         ).format(name, database or self._database)
         self.query(query_string)
 
@@ -583,7 +583,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
               u'replicaN': 1}]
             """
         rsp = self.query(
-            "SHOW RETENTION POLICIES ON %s" % (database or self._database)
+            "SHOW RETENTION POLICIES ON \"%s\"" % (database or self._database)
         )
         return list(rsp.get_points())
 
