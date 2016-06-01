@@ -58,6 +58,8 @@ def _escape_value(value):
     if isinstance(value, text_type) and value != '':
         return "\"{0}\"".format(
             value.replace(
+                "\\", "\\\\"
+            ).replace(
                 "\"", "\\\""
             ).replace(
                 "\n", "\\n"
