@@ -671,7 +671,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         self.query(text)
 
     def drop_user(self, username):
-        """Drop an user from InfluxDB.
+        """Drop a user from InfluxDB.
 
         :param username: the username to drop
         :type username: str
@@ -713,7 +713,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         self.query(query_str, database=database)
 
     def revoke_admin_privileges(self, username):
-        """Revoke cluster administration privileges from an user.
+        """Revoke cluster administration privileges from a user.
 
         :param username: the username to revoke privileges from
         :type username: str
@@ -725,7 +725,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         self.query(text)
 
     def grant_privilege(self, privilege, database, username):
-        """Grant a privilege on a database to an user.
+        """Grant a privilege on a database to a user.
 
         :param privilege: the privilege to grant, one of 'read', 'write'
             or 'all'. The string is case-insensitive
@@ -741,7 +741,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         self.query(text)
 
     def revoke_privilege(self, privilege, database, username):
-        """Revoke a privilege on a database from an user.
+        """Revoke a privilege on a database from a user.
 
         :param privilege: the privilege to revoke, one of 'read', 'write'
             or 'all'. The string is case-insensitive
