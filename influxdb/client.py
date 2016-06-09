@@ -684,6 +684,18 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                                                    for k, v in tags.items()])
         self.query(query_str, database=database)
 
+    def grant_admin_privileges(self, username):
+        """Grant cluster administration privileges to a user.
+
+        :param username: the username to grant privileges to
+        :type username: str
+
+        .. note:: Only a cluster administrator can create/drop databases
+            and manage users.
+        """
+        text = "GRANT ALL PRIVILEGES TO {0}".format(username)
+        self.query(text)
+
     def revoke_admin_privileges(self, username):
         """Revoke cluster administration privileges from a user.
 
