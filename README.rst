@@ -2,7 +2,7 @@
 
 InfluxDB-Python is a client for interacting with InfluxDB_. Maintained by @aviau (https://github.com/aviau).
 
-**Help needed:** Development of this library is made by the community and help is needed. To contribute, take a look at the issues list of simply contact @aviau.
+**Help needed:** Development of this library is made by the community and help is needed. A co-maintainer would be welcome. To contribute, take a look at the issues list of simply contact @aviau.
 
 .. image:: https://travis-ci.org/influxdata/influxdb-python.svg?branch=master
     :target: https://travis-ci.org/influxdata/influxdb-python
