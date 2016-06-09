@@ -776,6 +776,31 @@ class TestInfluxDBClient(unittest.TestCase):
         with _mocked_session(cli, 'get', 400):
             self.cli.revoke_privilege('', 'testdb', 'test')
 
+    def test_get_list_privileges(self):
+        data = {'results': [
+            {'series': [
+                {'columns': ['database', 'privilege'],
+                 'values': [
+                     ['db1', 'READ'],
+                     ['db2', 'ALL PRIVILEGES'],
+                     ['db3', 'NO PRIVILEGES']]}
+            ]}
+        ]}
+
+        with _mocked_session(self.cli, 'get', 200, json.dumps(data)):
+            self.assertListEqual(
+                self.cli.get_list_privileges('test'),
+                [{'database': 'db1', 'privilege': 'READ'},
+                 {'database': 'db2', 'privilege': 'ALL PRIVILEGES'},
+                 {'database': 'db3', 'privilege': 'NO PRIVILEGES'}]
+            )
+
+    @raises(Exception)
+    def test_get_list_privileges_fails(self):
+        cli = InfluxDBClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'get', 401):
+            cli.get_list_privileges('test')
+
     def test_invalid_port_fails(self):
         with self.assertRaises(ValueError):
             InfluxDBClient('host', '80/redir', 'username', 'password')
