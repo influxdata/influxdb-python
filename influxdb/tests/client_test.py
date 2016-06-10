@@ -14,6 +14,11 @@ detected by this module.
 See client_test_with_server.py for tests against a running server instance.
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import json
 import requests
 import requests.exceptions
