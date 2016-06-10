@@ -627,7 +627,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         self.assertEqual(
             [
                 {'duration': '0',
-                 'default': True,
+                 'default': False,
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
                  'name': 'default'},
