@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+
 class InfluxDBClientError(Exception):
     """Raised when an error occurs in the request."""
     def __init__(self, content, code=None):
