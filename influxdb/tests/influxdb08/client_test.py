@@ -7,10 +7,7 @@ import requests
 import requests.exceptions
 import socket
 import sys
-if sys.version_info < (2, 7):
-    import unittest2 as unittest
-else:
-    import unittest
+import unittest
 import requests_mock
 import random
 from nose.tools import raises
@@ -21,7 +18,6 @@ import mock
 from influxdb.influxdb08 import InfluxDBClient
 from influxdb.influxdb08.client import session
 
-import sys
 if sys.version < '3':
     import codecs
 

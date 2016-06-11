@@ -8,10 +8,7 @@ from __future__ import unicode_literals
 import sys
 import os
 
-if sys.version_info < (2, 7):
-    import unittest2 as unittest
-else:
-    import unittest
+import unittest
 
 using_pypy = hasattr(sys, "pypy_version_info")
 skipIfPYpy = unittest.skipIf(using_pypy, "Skipping this test on pypy.")

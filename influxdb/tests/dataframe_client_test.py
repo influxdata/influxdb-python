@@ -9,11 +9,7 @@ from __future__ import unicode_literals
 
 from .client_test import _mocked_session
 
-import sys
-if sys.version_info < (2, 7):
-    import unittest2 as unittest
-else:
-    import unittest
+import unittest
 import json
 import requests_mock
 from nose.tools import raises

@@ -17,11 +17,7 @@ from __future__ import unicode_literals
 from functools import partial
 import os
 import time
-import sys
-if sys.version_info < (2, 7):
-    import unittest2 as unittest
-else:
-    import unittest
+import unittest
 import warnings
 
 # By default, raise exceptions on warnings

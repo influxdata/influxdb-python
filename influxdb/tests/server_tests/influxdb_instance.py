@@ -13,11 +13,7 @@ import time
 import shutil
 import subprocess
 import sys
-
-if sys.version_info < (2, 7):
-    import unittest2 as unittest
-else:
-    import unittest
+import unittest
 
 from influxdb.tests.misc import is_port_open, get_free_ports
 

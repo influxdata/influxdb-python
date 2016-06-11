@@ -5,14 +5,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import sys
-
 from influxdb import chunked_json
 
-if sys.version_info < (2, 7):
-    import unittest2 as unittest
-else:
-    import unittest
+import unittest
 
 
 class TestChunkJson(unittest.TestCase):
