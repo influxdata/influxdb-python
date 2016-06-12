@@ -1,4 +1,8 @@
 language: python
+addons:
+  apt:
+    packages:
+    - wget
 env:
 #    - TOX_ENV=py26
 # If someone opens a PR to re-enable py26 tests, I will merge it.
