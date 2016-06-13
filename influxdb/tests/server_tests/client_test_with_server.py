@@ -199,16 +199,6 @@ class SimpleTests(SingleTestCaseWithServerMixin,
         rsp = list(self.cli.query("SHOW USERS")['results'])
         self.assertEqual(rsp, [])
 
-    def test_create_user_invalid_username(self):
-        with self.assertRaises(InfluxDBClientError) as ctx:
-            self.cli.create_user('very invalid', 'secret_password')
-        self.assertEqual(400, ctx.exception.code)
-        self.assertIn('{"error":"error parsing query: '
-                      'found invalid, expected WITH',
-                      ctx.exception.content)
-        rsp = list(self.cli.query("SHOW USERS")['results'])
-        self.assertEqual(rsp, [])
-
     def test_drop_user(self):
         self.cli.query("CREATE USER test WITH PASSWORD 'test'")
         self.cli.drop_user('test')
