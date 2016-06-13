@@ -133,18 +133,6 @@ class SimpleTests(SingleTestCaseWithServerMixin,
             [{'name': 'new_db_1'}, {'name': 'new_db_2'}]
         )
 
-    def test_create_database_twice_if_not_exist(self):
-        self.assertIsNone(self.cli.create_database('new_db'))
-        self.assertIsNone(
-            self.cli.create_database('new_db', if_not_exists=True))
-
-    def test_create_database_twice_fails(self):
-        self.assertIsNone(self.cli.create_database('new_db'))
-        with self.assertRaises(InfluxDBClientError) as ctx:
-            self.cli.create_database('new_db')
-        self.assertEqual('database already exists',
-                         ctx.exception.content)
-
     def test_get_list_series_empty(self):
         rsp = self.cli.get_list_series()
         self.assertEqual([], rsp)
