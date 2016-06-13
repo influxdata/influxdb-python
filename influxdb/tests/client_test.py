@@ -14,6 +14,11 @@ detected by this module.
 See client_test_with_server.py for tests against a running server instance.
 
 """
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import json
 import requests
 import requests.exceptions
@@ -25,11 +30,7 @@ from nose.tools import raises
 from mock import patch
 import warnings
 import mock
-import sys
-if sys.version_info < (2, 7):
-    import unittest2 as unittest
-else:
-    import unittest
+import unittest
 
 from influxdb import InfluxDBClient, InfluxDBClusterClient
 from influxdb.client import InfluxDBServerError

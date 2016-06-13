@@ -9,17 +9,15 @@ This basically duplicates what's in client_test.py
  but without mocking around every call.
 
 """
-
+from __future__ import absolute_import
+from __future__ import division
 from __future__ import print_function
+from __future__ import unicode_literals
 
 from functools import partial
 import os
 import time
-import sys
-if sys.version_info < (2, 7):
-    import unittest2 as unittest
-else:
-    import unittest
+import unittest
 import warnings
 
 # By default, raise exceptions on warnings
@@ -341,8 +339,12 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
         self.assertEqual(
             list(rsp),
-            [[{'value': 0.64, 'time': '2009-11-10T23:00:00Z',
-               "host": "server01", "region": "us-west"}]]
+            [[
+                {'value': 0.64,
+                 'time': '2009-11-10T23:00:00Z',
+                 "host": "server01",
+                 "region": "us-west"}
+            ]]
         )
 
         rsp2 = list(rsp.get_points())
@@ -351,8 +353,10 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
         self.assertEqual(
             pt,
-            {'time': '2009-11-10T23:00:00Z', 'value': 0.64,
-             "host": "server01", "region": "us-west"}
+            {'time': '2009-11-10T23:00:00Z',
+             'value': 0.64,
+             "host": "server01",
+             "region": "us-west"}
         )
 
     @unittest.skip("Broken as of 0.9.0")
@@ -382,8 +386,12 @@ class CommonTests(ManyTestCasesWithServerMixin,
         lrsp = list(rsp)
 
         self.assertEqual(
-            [[{'value': 0.64, 'time': '2009-11-10T23:00:00Z',
-               "host": "server01", "region": "us-west"}]],
+            [[
+                {'value': 0.64,
+                 'time': '2009-11-10T23:00:00Z',
+                 "host": "server01",
+                 "region": "us-west"}
+            ]],
             lrsp
         )
 
@@ -391,8 +399,12 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
         self.assertEqual(
             rsp,
-            [[{'value': 33, 'time': '2009-11-10T23:01:35Z',
-               "host": "server01", "region": "us-west"}]]
+            [[
+                {'value': 33,
+                 'time': '2009-11-10T23:01:35Z',
+                 "host": "server01",
+                 "region": "us-west"}
+            ]]
         )
 
     @unittest.skip("Broken as of 0.9.0")
@@ -510,6 +522,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
                 {'name': 'default',
                  'duration': '0',
                  'replicaN': 1,
+                 'shardGroupDuration': u'168h0m0s',
                  'default': True}
             ],
             rsp
@@ -525,14 +538,17 @@ class CommonTests(ManyTestCasesWithServerMixin,
                 {'duration': '0',
                  'default': False,
                  'replicaN': 1,
+                 'shardGroupDuration': u'168h0m0s',
                  'name': 'default'},
                 {'duration': '24h0m0s',
                  'default': True,
                  'replicaN': 1,
+                 'shardGroupDuration': u'1h0m0s',
                  'name': 'somename'},
                 {'duration': '48h0m0s',
                  'default': False,
                  'replicaN': 1,
+                 'shardGroupDuration': u'24h0m0s',
                  'name': 'another'}
             ],
             rsp
@@ -542,10 +558,18 @@ class CommonTests(ManyTestCasesWithServerMixin,
         self.cli.create_retention_policy('somename', '1d', 1)
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
-            [{'duration': '0', 'default': True,
-              'replicaN': 1, 'name': 'default'},
-             {'duration': '24h0m0s', 'default': False,
-              'replicaN': 1, 'name': 'somename'}],
+            [
+                {'duration': '0',
+                 'default': True,
+                 'replicaN': 1,
+                 'shardGroupDuration': u'168h0m0s',
+                 'name': 'default'},
+                {'duration': '24h0m0s',
+                 'default': False,
+                 'replicaN': 1,
+                 'shardGroupDuration': u'1h0m0s',
+                 'name': 'somename'}
+            ],
             rsp
         )
 
@@ -557,10 +581,18 @@ class CommonTests(ManyTestCasesWithServerMixin,
                                         duration='4d')
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
-            [{'duration': '0', 'default': True,
-              'replicaN': 1, 'name': 'default'},
-             {'duration': '96h0m0s', 'default': False,
-              'replicaN': 1, 'name': 'somename'}],
+            [
+                {'duration': '0',
+                 'default': True,
+                 'replicaN': 1,
+                 'shardGroupDuration': u'168h0m0s',
+                 'name': 'default'},
+                {'duration': '96h0m0s',
+                 'default': False,
+                 'replicaN': 1,
+                 'shardGroupDuration': u'24h0m0s',
+                 'name': 'somename'}
+            ],
             rsp
         )
 
@@ -569,10 +601,18 @@ class CommonTests(ManyTestCasesWithServerMixin,
                                         replication=4)
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
-            [{'duration': '0', 'default': True,
-              'replicaN': 1, 'name': 'default'},
-             {'duration': '96h0m0s', 'default': False,
-              'replicaN': 4, 'name': 'somename'}],
+            [
+                {'duration': '0',
+                 'default': True,
+                 'replicaN': 1,
+                 'shardGroupDuration': u'168h0m0s',
+                 'name': 'default'},
+                {'duration': '96h0m0s',
+                 'default': False,
+                 'replicaN': 4,
+                 'shardGroupDuration': u'24h0m0s',
+                 'name': 'somename'}
+            ],
             rsp
         )
 
@@ -581,10 +621,18 @@ class CommonTests(ManyTestCasesWithServerMixin,
                                         default=True)
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
-            [{'duration': '0', 'default': False,
-              'replicaN': 1, 'name': 'default'},
-             {'duration': '96h0m0s', 'default': True,
-              'replicaN': 4, 'name': 'somename'}],
+            [
+                {'duration': '0',
+                 'default': False,
+                 'replicaN': 1,
+                 'shardGroupDuration': u'168h0m0s',
+                 'name': 'default'},
+                {'duration': '96h0m0s',
+                 'default': True,
+                 'replicaN': 4,
+                 'shardGroupDuration': u'24h0m0s',
+                 'name': 'somename'}
+            ],
             rsp
         )
 
@@ -597,10 +645,18 @@ class CommonTests(ManyTestCasesWithServerMixin,
                       ctx.exception.content)
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
-            [{'duration': '0', 'default': True,
-              'replicaN': 1, 'name': 'default'},
-             {'duration': '24h0m0s', 'default': False,
-              'replicaN': 1, 'name': 'somename'}],
+            [
+                {'duration': '0',
+                 'default': True,
+                 'replicaN': 1,
+                 'shardGroupDuration': u'168h0m0s',
+                 'name': 'default'},
+                {'duration': '24h0m0s',
+                 'default': False,
+                 'replicaN': 1,
+                 'shardGroupDuration': u'1h0m0s',
+                 'name': 'somename'}
+            ],
             rsp
         )
 
@@ -611,8 +667,13 @@ class CommonTests(ManyTestCasesWithServerMixin,
         self.cli.drop_retention_policy('somename', 'db')
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
-            [{'duration': '0', 'default': True,
-              'replicaN': 1, 'name': 'default'}],
+            [
+                {'duration': '0',
+                 'default': True,
+                 'replicaN': 1,
+                 'shardGroupDuration': u'168h0m0s',
+                 'name': 'default'}
+            ],
             rsp
         )
 
@@ -717,7 +778,11 @@ class UdpTests(ManyTestCasesWithServerMixin,
 
         self.assertEqual(
             # this is dummy_points :
-            [{'value': 0.64, 'time': '2009-11-10T23:00:00Z',
-              "host": "server01", "region": "us-west"}],
+            [
+                {'value': 0.64,
+                 'time': '2009-11-10T23:00:00Z',
+                 "host": "server01",
+                 "region": "us-west"}
+            ],
             list(rsp['cpu_load_short'])
         )

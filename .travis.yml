@@ -1,9 +1,9 @@
 language: python
+addons:
+  apt:
+    packages:
+    - wget
 env:
-#    - TOX_ENV=py26
-# If someone opens a PR to re-enable py26 tests, I will merge it.
-# However, that cannot be at the cost of disabling pandas tests in other
-# environments.
     - TOX_ENV=py27
 #    - TOX_ENV=py32
 # Disabling py32 tests until the following issue is fixed:
@@ -20,7 +20,7 @@ install:
     - pip install tox
     - pip install coveralls
     - mkdir influxdb_install
-    - wget https://s3.amazonaws.com/influxdb/influxdb_0.12.1-1_amd64.deb
+    - wget https://dl.influxdata.com/influxdb/releases/influxdb_0.13.0_amd64.deb
     - dpkg -x influxdb*.deb influxdb_install
 script:
     - export INFLUXDB_PYTHON_INFLUXD_PATH=$(pwd)/influxdb_install/usr/bin/influxd
