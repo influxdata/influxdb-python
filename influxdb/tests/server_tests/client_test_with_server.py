@@ -147,12 +147,6 @@ class SimpleTests(SingleTestCaseWithServerMixin,
         self.assertIsNone(self.cli.drop_database('new_db_1'))
         self.assertEqual([{'name': 'new_db_2'}], self.cli.get_list_database())
 
-    def test_drop_database_fails(self):
-        with self.assertRaises(InfluxDBClientError) as ctx:
-            self.cli.drop_database('db')
-        self.assertIn('database not found: db',
-                      ctx.exception.content)
-
     def test_query_fail(self):
         with self.assertRaises(InfluxDBClientError) as ctx:
             self.cli.query('select column_one from foo')

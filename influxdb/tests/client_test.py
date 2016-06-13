@@ -462,12 +462,6 @@ class TestInfluxDBClient(unittest.TestCase):
                 'drop database "123"'
             )
 
-    @raises(Exception)
-    def test_drop_database_fails(self):
-        cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-        with _mocked_session(cli, 'delete', 401):
-            cli.drop_database('old_db')
-
     def test_get_list_database(self):
         data = {'results': [
             {'series': [
