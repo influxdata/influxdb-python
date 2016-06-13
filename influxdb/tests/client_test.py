@@ -517,27 +517,6 @@ class TestInfluxDBClient(unittest.TestCase):
         with _mocked_session(cli, 'get', 401):
             cli.get_list_servers()
 
-    def test_get_list_series(self):
-        example_response = \
-            '{"results": [{"series": [{"name": "cpu_load_short", "columns": ' \
-            '["_id", "host", "region"], "values": ' \
-            '[[1, "server01", "us-west"]]}]}]}'
-
-        with requests_mock.Mocker() as m:
-            m.register_uri(
-                requests_mock.GET,
-                "http://localhost:8086/query",
-                text=example_response
-            )
-
-            self.assertListEqual(
-                self.cli.get_list_series(),
-                [{'name': 'cpu_load_short',
-                  'tags': [
-                      {'host': 'server01', '_id': 1, 'region': 'us-west'}
-                  ]}]
-            )
-
     def test_create_retention_policy_default(self):
         example_response = '{"results":[{}]}'
 

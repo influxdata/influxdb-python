@@ -133,15 +133,6 @@ class SimpleTests(SingleTestCaseWithServerMixin,
             [{'name': 'new_db_1'}, {'name': 'new_db_2'}]
         )
 
-    def test_get_list_series_empty(self):
-        rsp = self.cli.get_list_series()
-        self.assertEqual([], rsp)
-
-    @unittest.skip("Broken as of 0.9.0")
-    def test_get_list_series_empty_DF(self):
-        rsp = self.cliDF.get_list_series()
-        self.assertEqual({}, rsp)
-
     def test_drop_database(self):
         self.test_create_database()
         self.assertIsNone(self.cli.drop_database('new_db_1'))
@@ -449,43 +440,9 @@ class CommonTests(ManyTestCasesWithServerMixin,
         del example_object
         # TODO ?
 
-    def test_get_list_series_and_delete(self):
-        self.cli.write_points(dummy_point)
-        rsp = self.cli.get_list_series()
-        self.assertEqual(
-            [
-                {'name': 'cpu_load_short',
-                 'tags': [
-                     {'host': 'server01',
-                      'region': 'us-west',
-                      '_key':
-                          'cpu_load_short,host=server01,region=us-west'}]}
-            ],
-            rsp
-        )
-
     def test_delete_series_invalid(self):
         with self.assertRaises(InfluxDBClientError):
             self.cli.delete_series()
-
-    def test_delete_series(self):
-        self.assertEqual(len(self.cli.get_list_series()), 0)
-        self.cli.write_points(dummy_points)
-        self.assertEqual(len(self.cli.get_list_series()), 2)
-        self.cli.delete_series(measurement='cpu_load_short')
-        self.assertEqual(len(self.cli.get_list_series()), 1)
-        self.cli.delete_series(tags={'region': 'us-west'})
-        self.assertEqual(len(self.cli.get_list_series()), 0)
-
-    @unittest.skip("Broken as of 0.9.0")
-    def test_get_list_series_DF(self):
-        self.cli.write_points(dummy_point)
-        rsp = self.cliDF.get_list_series()
-
-        expected = pd.DataFrame(
-            [[1, 'server01', 'us-west']],
-            columns=['_id', 'host', 'region'])
-        assert_frame_equal(rsp['cpu_load_short'], expected)
 
     def test_default_retention_policy(self):
         rsp = self.cli.get_list_retention_policies()
