@@ -740,6 +740,28 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                                                    username)
         self.query(text)
 
+    def get_list_privileges(self, username):
+        """Get the list of all privileges granted to given user.
+
+        :param username: the username to get privileges of
+        :type username: str
+
+        :returns: all privileges granted to given user
+        :rtype: list of dictionaries
+
+        :Example:
+
+        ::
+
+            >> privileges = client.get_list_privileges('user1')
+            >> privileges
+            [{u'privilege': u'WRITE', u'database': u'db1'},
+             {u'privilege': u'ALL PRIVILEGES', u'database': u'db2'},
+             {u'privilege': u'NO PRIVILEGES', u'database': u'db3'}]
+        """
+        text = "SHOW GRANTS FOR {0}".format(username)
+        return list(self.query(text).get_points())
+
     def send_packet(self, packet):
         """Send an UDP packet.
 
