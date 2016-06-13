@@ -90,20 +90,6 @@ class DataFrameClient(InfluxDBClient):
         else:
             return results
 
-    def get_list_series(self, database=None):
-        """
-        Get the list of series, in DataFrame
-
-        """
-        results = super(DataFrameClient, self)\
-            .query("SHOW SERIES", database=database)
-        if len(results):
-            return dict(
-                (key[0], pd.DataFrame(data)) for key, data in results.items()
-            )
-        else:
-            return {}
-
     def _to_dataframe(self, rs):
         result = {}
         if isinstance(rs, list):

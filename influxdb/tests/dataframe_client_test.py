@@ -301,49 +301,6 @@ class TestDataFrameClient(unittest.TestCase):
             result = cli.query('select column_one from foo;')
             self.assertEqual(result, {})
 
-    def test_list_series(self):
-        response = {
-            'results': [
-                {'series': [
-                    {
-                        'columns': ['host'],
-                        'measurement': 'cpu',
-                        'values': [
-                            ['server01']]
-                    },
-                    {
-                        'columns': [
-                            'host',
-                            'region'
-                        ],
-                        'measurement': 'network',
-                        'values': [
-                            [
-                                'server01',
-                                'us-west'
-                            ],
-                            [
-                                'server01',
-                                'us-east'
-                            ]
-                        ]
-                    }
-                ]}
-            ]
-        }
-
-        expected = {
-            'cpu': pd.DataFrame([['server01']], columns=['host']),
-            'network': pd.DataFrame(
-                [['server01', 'us-west'], ['server01', 'us-east']],
-                columns=['host', 'region'])}
-
-        cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
-        with _mocked_session(cli, 'GET', 200, response):
-            series = cli.get_list_series()
-            assert_frame_equal(series['cpu'], expected['cpu'])
-            assert_frame_equal(series['network'], expected['network'])
-
     def test_get_list_database(self):
         data = {'results': [
             {'series': [

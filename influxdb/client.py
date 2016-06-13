@@ -588,35 +588,6 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         )
         return list(rsp.get_points())
 
-    def get_list_series(self, database=None):
-        """Get the list of series for a database.
-
-        :param database: the name of the database, defaults to the client's
-            current database
-        :type database: str
-        :returns: all series in the specified database
-        :rtype: list of dictionaries
-
-        :Example:
-
-        >> series = client.get_list_series('my_database')
-        >> series
-        [{'name': u'cpu_usage',
-          'tags': [{u'_id': 1,
-                    u'host': u'server01',
-                    u'region': u'us-west'}]}]
-        """
-        rsp = self.query("SHOW SERIES", database=database)
-        series = []
-        for serie in rsp.items():
-            series.append(
-                {
-                    "name": serie[0][0],
-                    "tags": list(serie[1])
-                }
-            )
-        return series
-
     def get_list_servers(self):
         """Get the list of servers in InfluxDB cluster.
 
