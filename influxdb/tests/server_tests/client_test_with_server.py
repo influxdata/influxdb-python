@@ -210,9 +210,7 @@ class SimpleTests(SingleTestCaseWithServerMixin,
     def test_create_user_blank_username(self):
         with self.assertRaises(InfluxDBClientError) as ctx:
             self.cli.create_user('', 'secret_password')
-        self.assertEqual(400, ctx.exception.code)
-        self.assertIn('{"error":"error parsing query: '
-                      'found WITH, expected identifier',
+        self.assertIn('username required',
                       ctx.exception.content)
         rsp = list(self.cli.query("SHOW USERS")['results'])
         self.assertEqual(rsp, [])
