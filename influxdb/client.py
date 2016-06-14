@@ -482,7 +482,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         self.query("DROP DATABASE \"%s\"" % dbname)
 
     def create_retention_policy(self, name, duration, replication,
-                                database=None, default=False):
+                                database=None, default=False,
+                                shard_duration=None):
         """Create a retention policy for a database.
 
         :param name: the name of the new retention policy
@@ -501,11 +502,17 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :type database: str
         :param default: whether or not to set the policy as default
         :type default: bool
+        :param shard_duration: the shard duration of the retention policy.
+            Durations are similar to those allowed in the duration param.
+        :type shard_duration: str
         """
         query_string = \
             "CREATE RETENTION POLICY \"%s\" ON \"%s\" " \
             "DURATION %s REPLICATION %s" % \
             (name, database or self._database, duration, replication)
+
+        if shard_duration:
+            query_string += " SHARD DURATION %s" % shard_duration
 
         if default is True:
             query_string += " DEFAULT"
@@ -513,7 +520,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         self.query(query_string)
 
     def alter_retention_policy(self, name, database=None,
-                               duration=None, replication=None, default=None):
+                               duration=None, replication=None, default=None,
+                               shard_duration=None):
         """Mofidy an existing retention policy for a database.
 
         :param name: the name of the retention policy to modify
@@ -533,9 +541,13 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :type replication: str
         :param default: whether or not to set the modified policy as default
         :type default: bool
+        :param shard_duration: the shard duration of the retention policy.
+            Durations are similar to those allowed in the duration param.
+        :type shard_duration: str
 
-        .. note:: at least one of duration, replication, or default flag
-            should be set. Otherwise the operation will fail.
+        .. note:: at least one of duration, replication, default or
+            shard_duration flag should be set. Otherwise the operation
+            will fail.
         """
         query_string = (
             "ALTER RETENTION POLICY \"{0}\" ON \"{1}\""
@@ -544,6 +556,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             query_string += " DURATION {0}".format(duration)
         if replication:
             query_string += " REPLICATION {0}".format(replication)
+        if shard_duration:
+            query_string += " SHARD DURATION {0}".format(shard_duration)
         if default is True:
             query_string += " DEFAULT"
 

@@ -555,6 +555,47 @@ class TestInfluxDBClient(unittest.TestCase):
                 '"db" duration 1d replication 4'
             )
 
+    def test_create_retention_policy_shard_duration(self):
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.cli.create_retention_policy(
+                'somename2', '1d', 4, database='db',
+                shard_duration='1h'
+            )
+
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create retention policy "somename2" on '
+                '"db" duration 1d replication 4 shard duration 1h'
+            )
+
+    def test_create_retention_policy_shard_duration_default(self):
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.cli.create_retention_policy(
+                'somename3', '1d', 4, database='db',
+                shard_duration='1h', default=True
+            )
+
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create retention policy "somename3" on '
+                '"db" duration 1d replication 4 shard duration 1h '
+                'default'
+            )
+
     def test_alter_retention_policy(self):
         example_response = '{"results":[{}]}'
 
