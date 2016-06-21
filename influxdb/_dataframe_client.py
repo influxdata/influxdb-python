@@ -142,7 +142,8 @@ class DataFrameClient(InfluxDBClient):
             {'measurement': measurement,
              'tags': tags if tags else {},
              'fields': rec,
-             'time': int(ts.value / precision_factor)
+             'time': ts.value if (precision_factor == 1)
+                else int(ts.value / precision_factor)
              }
             for ts, rec in zip(dataframe.index, dataframe.to_dict('record'))]
         return points
