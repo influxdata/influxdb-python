@@ -19,7 +19,10 @@ def main(host='localhost', port=8086):
             },
             "time": "2009-11-10T23:00:00Z",
             "fields": {
-                "value": 0.64
+                "Float_value": 0.64,
+                "Int_value": 3,
+                "String_value": "Text",
+                "Bool_value": True
             }
         }
     ]
