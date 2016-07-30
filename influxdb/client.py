@@ -479,7 +479,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :type database: str
         """
         database = database or self._database
-        qry_str = 'SHOW SERIES'
+        query_str = 'SHOW SERIES'
 
         if measurement:
             query_str += ' FROM "{0}"'.format(measurement)
@@ -488,7 +488,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             query_str += ' WHERE ' + ' and '.join(["{0}='{1}'".format(k, v)
                                                    for k, v in tags.items()])
 
-        return self.query(query_str, database=database)
+        return list(self.query(query_str, database=database).get_points())
 
     def create_database(self, dbname):
         """Create a new database in InfluxDB.
