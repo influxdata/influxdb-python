@@ -465,6 +465,31 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         """
         return list(self.query("SHOW DATABASES").get_points())
 
+    def get_list_series(self, database=None, measurement=None, tags=None):
+        """
+        The SHOW SERIES query returns the distinct series in your database.
+        FROM and WHERE clauses are optional.
+
+        :param measurement: Show all series from a measurement
+        :type id: string
+        :param tags: Show all series that match given tags
+        :type id: dict
+        :param database: the database from which the series should be
+            shows, defaults to client's current database
+        :type database: str
+        """
+        database = database or self._database
+        qry_str = 'SHOW SERIES'
+
+        if measurement:
+            query_str += ' FROM "{0}"'.format(measurement)
+
+        if tags:
+            query_str += ' WHERE ' + ' and '.join(["{0}='{1}'".format(k, v)
+                                                   for k, v in tags.items()])
+
+        return self.query(query_str, database=database)
+
     def create_database(self, dbname):
         """Create a new database in InfluxDB.
 
