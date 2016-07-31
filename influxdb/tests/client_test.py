@@ -484,39 +484,6 @@ class TestInfluxDBClient(unittest.TestCase):
         with _mocked_session(cli, 'get', 401):
             cli.get_list_database()
 
-    def test_get_list_servers(self):
-        data = {'results': [
-            {'series': [
-                {'columns': ['id', 'cluster_addr', 'raft', 'raft-leader'],
-                 'values': [
-                    [1, 'server01:8088', True, True],
-                    [2, 'server02:8088', True, False],
-                    [3, 'server03:8088', True, False]]}]}
-        ]}
-
-        with _mocked_session(self.cli, 'get', 200, json.dumps(data)):
-            self.assertListEqual(
-                self.cli.get_list_servers(),
-                [{'cluster_addr': 'server01:8088',
-                  'id': 1,
-                  'raft': True,
-                  'raft-leader': True},
-                 {'cluster_addr': 'server02:8088',
-                  'id': 2,
-                  'raft': True,
-                  'raft-leader': False},
-                 {'cluster_addr': 'server03:8088',
-                  'id': 3,
-                  'raft': True,
-                  'raft-leader': False}]
-            )
-
-    @raises(Exception)
-    def test_get_list_servers_fails(self):
-        cli = InfluxDBClient('host', 8086, 'username', 'password')
-        with _mocked_session(cli, 'get', 401):
-            cli.get_list_servers()
-
     def test_create_retention_policy_default(self):
         example_response = '{"results":[{}]}'
 
