@@ -484,6 +484,7 @@ class TestInfluxDBClient(unittest.TestCase):
         with _mocked_session(cli, 'get', 401):
             cli.get_list_database()
 
+<<<<<<< HEAD
     def test_get_list_servers(self):
         data = {'results': [
             {'series': [
