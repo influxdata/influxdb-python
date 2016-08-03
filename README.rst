@@ -108,20 +108,6 @@ Here's a basic example (for more see the examples directory)::
 
     >>> print("Result: {0}".format(result))
 
-If you want to connect to a cluster, you could initialize a ``InfluxDBClusterClient``::
-
-    $ python
-
-    >>> from influxdb import InfluxDBClusterClient
-
-    >>> cc = InfluxDBClusterClient(hosts = [('192.168.0.1', 8086),
-                                            ('192.168.0.2', 8086),
-                                            ('192.168.0.3', 8086)],
-                                   username='root',
-                                   password='root',
-                                   database='example')
-
-``InfluxDBClusterClient`` has the same methods as ``InfluxDBClient``, it basically is a proxy to multiple InfluxDBClients.
 
 Testing
 =======

@@ -6,14 +6,12 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from .client import InfluxDBClient
-from .client import InfluxDBClusterClient
 from .dataframe_client import DataFrameClient
 from .helper import SeriesHelper
 
 
 __all__ = [
     'InfluxDBClient',
-    'InfluxDBClusterClient',
     'DataFrameClient',
     'SeriesHelper',
 ]
