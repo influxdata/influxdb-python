@@ -1,3 +1,5 @@
+
+from __future__ import print_function
 import argparse
 
 from influxdb import InfluxDBClient
@@ -38,7 +40,8 @@ def main(host='localhost', port=8086, nb_day=15):
                 },
             }
         series.append(pointValues)
-    print series
+
+    print(series)
 
     client = InfluxDBClient(host, port, USER, PASSWORD, DBNAME)
 
@@ -51,7 +54,7 @@ def main(host='localhost', port=8086, nb_day=15):
         client.create_database(DBNAME)
 
     print("Create a retention policy")
-    retention_policy = 'awesome_policy'
+    retention_policy = 'server_data'
     client.create_retention_policy(retention_policy, '3d', 3, default=True)
 
     print("Write points #: {0}".format(total_records))
@@ -59,12 +62,12 @@ def main(host='localhost', port=8086, nb_day=15):
 
     time.sleep(2)
 
-    query = "SELECT MEAN(value) FROM %s WHERE time > now() - 10d GROUP BY time(500m)" % (metric)
-    result = client.query(query, database=DBNAME, raw=False)
-    print (result)
+    query = "SELECT MEAN(value) FROM {} WHERE time > now() - 10d GROUP BY time(500m)".format(metric)
+    result = client.query(query, database=DBNAME)
+    print(result)
     print("Result: {0}".format(result))
 
-    print("Drop database: " + DBNAME)
+    print("Drop database: {}".format(DBNAME))
     client.drop_database(DBNAME)
 
 
