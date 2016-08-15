@@ -76,3 +76,15 @@ class TestLineProtocol(unittest.TestCase):
             line_protocol.make_lines(data),
             'test,unicode_tag=\'Привет!\' unicode_val="Привет!"\n'
         )
+
+    def test_quote_ident(self):
+        self.assertEqual(
+            line_protocol.quote_ident(r"""\foo ' bar " Örf"""),
+            r'''"\\foo ' bar \" Örf"'''
+        )
+
+    def test_quote_literal(self):
+        self.assertEqual(
+            line_protocol.quote_literal(r"""\foo ' bar " Örf"""),
+            r"""'\\foo \' bar " Örf'"""
+        )
