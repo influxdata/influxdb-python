@@ -19,7 +19,6 @@ import os
 import time
 import unittest
 import warnings
-import subprocess
 
 # By default, raise exceptions on warnings
 warnings.simplefilter('error', FutureWarning)
@@ -30,7 +29,6 @@ from influxdb.exceptions import InfluxDBClientError
 from influxdb.tests import skipIfPYpy, using_pypy, skipServerTests
 from influxdb.tests.server_tests.base import ManyTestCasesWithServerMixin
 from influxdb.tests.server_tests.base import SingleTestCaseWithServerMixin
-from influxdb.tests.misc import find_influxd_path
 
 if not using_pypy:
     import pandas as pd
@@ -38,15 +36,6 @@ if not using_pypy:
 
 
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
-INFLUXDB_BIN_PATH = find_influxd_path()
-INFLUXDB_VERSION = (subprocess.check_output([INFLUXDB_BIN_PATH, 'version'])
-                    .split()[1])
-
-# Version-specific differences between 0.9 and 0.13
-if (INFLUXDB_VERSION.split(b'.')[:2] == [b'v0', b'13']):
-    rp_duration = '0s'
-elif (INFLUXDB_VERSION.split(b'.')[:2] == [b'v0', b'9']):
-    rp_duration = '0'
 
 
 def point(serie_name, timestamp=None, tags=None, **fields):
@@ -458,7 +447,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         self.assertEqual(
             [
                 {'name': 'default',
-                 'duration': rp_duration,
+                 'duration': '0',
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
                  'default': True}
@@ -473,7 +462,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
         self.assertEqual(
             [
-                {'duration': rp_duration,
+                {'duration': '0',
                  'default': False,
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
@@ -497,7 +486,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
-                {'duration': rp_duration,
+                {'duration': '0',
                  'default': True,
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
@@ -520,7 +509,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
-                {'duration': rp_duration,
+                {'duration': '0',
                  'default': True,
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
@@ -540,7 +529,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
-                {'duration': rp_duration,
+                {'duration': '0',
                  'default': True,
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
@@ -560,7 +549,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
-                {'duration': rp_duration,
+                {'duration': '0',
                  'default': False,
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
@@ -584,7 +573,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
-                {'duration': rp_duration,
+                {'duration': '0',
                  'default': True,
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
@@ -606,7 +595,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
-                {'duration': rp_duration,
+                {'duration': '0',
                  'default': True,
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
