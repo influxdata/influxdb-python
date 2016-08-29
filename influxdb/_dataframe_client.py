@@ -45,7 +45,8 @@ class DataFrameClient(InfluxDBClient):
                      database=None,
                      retention_policy=None,
                      batch_size=None,
-                     protocol='line'):
+                     protocol='line',
+                     numeric_precision=None):
         """
         Write to multiple time series names.
 
@@ -59,6 +60,11 @@ class DataFrameClient(InfluxDBClient):
             one database to another or when doing a massive write operation
         :type batch_size: int
         :param protocol: Protocol for writing data. Either 'line' or 'json'.
+        :param numeric_precision: Precision for float or int datatypes.
+            Either None, 'full' or some int, where int is the desired decimal
+            precision. 'full' preserves full precision for int and float
+            datatypes. Defaults to None, which preserves 14-15 significant
+            figures for float and all significant figures for int datatypes.
 
         """
         if batch_size:
@@ -73,7 +79,8 @@ class DataFrameClient(InfluxDBClient):
                         global_tags=tags,
                         time_precision=time_precision,
                         tag_columns=tag_columns,
-                        field_columns=field_columns)
+                        field_columns=field_columns,
+                        numeric_precision=numeric_precision)
                 else:
                     points = self._convert_dataframe_to_json(
                         dataframe.ix[start_index:end_index].copy(),
@@ -97,7 +104,8 @@ class DataFrameClient(InfluxDBClient):
                     global_tags=tags,
                     tag_columns=tag_columns,
                     field_columns=field_columns,
-                    time_precision=time_precision)
+                    time_precision=time_precision,
+                    numeric_precision=numeric_precision)
             else:
                 points = self._convert_dataframe_to_json(
                     dataframe,
@@ -229,6 +237,7 @@ class DataFrameClient(InfluxDBClient):
         if tag_columns is None:
             tag_columns = []
 
+        # Make sure field_columns and tag_columns are lists
         field_columns = list(field_columns) if list(field_columns) else []
         tag_columns = list(tag_columns) if list(tag_columns) else []
 
@@ -237,7 +246,7 @@ class DataFrameClient(InfluxDBClient):
             tag_columns = list(column_series[~column_series.isin(
                 field_columns)])
 
-        # Assume that all columns not listed as tag columns are field columns
+        # If no field columns, assume non-tag columns are fields
         if not field_columns:
             field_columns = list(column_series[~column_series.isin(
                 tag_columns)])
@@ -293,21 +302,27 @@ class DataFrameClient(InfluxDBClient):
                              dataframe,
                              numeric_precision,
                              datatype='field'):
+
         int_columns = dataframe.select_dtypes(include=['int']).columns
-        float_columns = dataframe.select_dtypes(include=['floating']).columns
-        nonfloat_columns = dataframe.columns[~dataframe.columns.isin(
-            float_columns)]
-        numeric_columns = dataframe.select_dtypes(include=['number']).columns
         string_columns = dataframe.select_dtypes(include=['object']).columns
 
         # Convert dataframe to string
         if numeric_precision is None:
+            # If no precision specified, convert directly to string (fast)
             dataframe = dataframe.astype(str)
         elif numeric_precision == 'full':
+            # If full precision, use repr to get full float precision
+            float_columns = (dataframe.select_dtypes(include=['floating'])
+                             .columns)
+            nonfloat_columns = dataframe.columns[~dataframe.columns.isin(
+                float_columns)]
             dataframe[float_columns] = dataframe[float_columns].applymap(repr)
             dataframe[nonfloat_columns] = (dataframe[nonfloat_columns]
                                            .astype(str))
         elif isinstance(numeric_precision, int):
+            # If precision is specified, round to appropriate precision
+            numeric_columns = (dataframe.select_dtypes(include=['number'])
+                               .columns)
             dataframe[numeric_columns] = (dataframe[numeric_columns]
                                           .round(numeric_precision))
             dataframe = dataframe.astype(str)
@@ -315,6 +330,7 @@ class DataFrameClient(InfluxDBClient):
             raise ValueError('Invalid numeric precision')
 
         if datatype == 'field':
+            # If dealing with fields, format ints and strings correctly
             dataframe[int_columns] = dataframe[int_columns] + 'i'
             dataframe[string_columns] = '"' + dataframe[string_columns] + '"'
 
