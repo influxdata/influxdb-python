@@ -232,6 +232,11 @@ class DataFrameClient(InfluxDBClient):
         field_columns = list(field_columns) if list(field_columns) else []
         tag_columns = list(tag_columns) if list(tag_columns) else []
 
+        # If field columns but no tag columns, assume rest of columns are tags
+        if field_columns and (not tag_columns):
+            tag_columns = list(column_series[~column_series.isin(
+                field_columns)])
+
         # Assume that all columns not listed as tag columns are field columns
         if not field_columns:
             field_columns = list(column_series[~column_series.isin(
