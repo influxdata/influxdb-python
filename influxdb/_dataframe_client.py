@@ -230,6 +230,7 @@ class DataFrameClient(InfluxDBClient):
             raise TypeError('Must be DataFrame with DatetimeIndex or \
                             PeriodIndex.')
 
+        # Create a Series of columns for easier indexing
         column_series = pd.Series(dataframe.columns)
 
         if field_columns is None:
@@ -303,6 +304,7 @@ class DataFrameClient(InfluxDBClient):
                              numeric_precision,
                              datatype='field'):
 
+        # Find int and string columns for field-type data
         int_columns = dataframe.select_dtypes(include=['int']).columns
         string_columns = dataframe.select_dtypes(include=['object']).columns
 
