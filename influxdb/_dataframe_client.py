@@ -305,7 +305,7 @@ class DataFrameClient(InfluxDBClient):
                              datatype='field'):
 
         # Find int and string columns for field-type data
-        int_columns = dataframe.select_dtypes(include=['int']).columns
+        int_columns = dataframe.select_dtypes(include=['integer']).columns
         string_columns = dataframe.select_dtypes(include=['object']).columns
 
         # Convert dataframe to string
@@ -323,11 +323,20 @@ class DataFrameClient(InfluxDBClient):
                                            .astype(str))
         elif isinstance(numeric_precision, int):
             # If precision is specified, round to appropriate precision
-            numeric_columns = (dataframe.select_dtypes(include=['number'])
-                               .columns)
-            dataframe[numeric_columns] = (dataframe[numeric_columns]
-                                          .round(numeric_precision))
-            dataframe = dataframe.astype(str)
+            float_columns = (dataframe.select_dtypes(include=['floating'])
+                             .columns)
+            nonfloat_columns = dataframe.columns[~dataframe.columns.isin(
+                float_columns)]
+            dataframe[float_columns] = (dataframe[float_columns]
+                                        .round(numeric_precision))
+            # If desired precision is > 10 decimal places, need to use repr
+            if numeric_precision > 10:
+                dataframe[float_columns] = (dataframe[float_columns]
+                                            .applymap(repr))
+                dataframe[nonfloat_columns] = (dataframe[nonfloat_columns]
+                                               .astype(str))
+            else:
+                dataframe = dataframe.astype(str)
         else:
             raise ValueError('Invalid numeric precision')
 

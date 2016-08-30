@@ -69,7 +69,7 @@ class TestDataFrameClient(unittest.TestCase):
             cli = DataFrameClient(database='db')
             self.assertTrue(cli.write_points(dataframe, "foo", batch_size=1))
 
-    def test_write_points_with_tag_columns(self):
+    def test_write_points_from_dataframe_with_tag_columns(self):
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.DataFrame(data=[['blue', 1, "1", 1, 1.0],
                                        ['red', 0, "2", 2, 2.0]],
@@ -100,7 +100,7 @@ class TestDataFrameClient(unittest.TestCase):
                              tag_columns=['tag_one', 'tag_two'], tags=None)
             self.assertEqual(m.last_request.body, expected)
 
-    def test_write_points_with_tag_columns_and_global_tags(self):
+    def test_write_points_from_dataframe_with_tag_cols_and_global_tags(self):
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.DataFrame(data=[['blue', 1, "1", 1, 1.0],
                                        ['red', 0, "2", 2, 2.0]],
@@ -128,7 +128,7 @@ class TestDataFrameClient(unittest.TestCase):
                              tags={'global_tag': 'value'})
             self.assertEqual(m.last_request.body, expected)
 
-    def test_write_points_with_tag_columns_and_defaults(self):
+    def test_write_points_from_dataframe_with_tag_cols_and_defaults(self):
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.DataFrame(data=[['blue', 1, "1", 1, 1.0, 'hot'],
                                        ['red', 0, "2", 2, 2.0, 'cold']],
@@ -218,6 +218,50 @@ class TestDataFrameClient(unittest.TestCase):
             cli.write_points(dataframe, "foo", {"hello": "there"})
 
             self.assertEqual(m.last_request.body, expected)
+
+    def test_write_points_from_dataframe_with_numeric_precision(self):
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        # df with numeric column names
+        dataframe = pd.DataFrame(data=[["1", 1, 1.1111111111111],
+                                       ["2", 2, 2.2222222222222]],
+                                 index=[now, now + timedelta(hours=1)])
+
+        expected_default_precision = (
+            b'foo,hello=there 0=\"1\",1=1i,2=1.11111111111 0\n'
+            b'foo,hello=there 0=\"2\",1=2i,2=2.22222222222 3600000000000\n'
+        )
+
+        expected_specified_precision = (
+            b'foo,hello=there 0=\"1\",1=1i,2=1.1111 0\n'
+            b'foo,hello=there 0=\"2\",1=2i,2=2.2222 3600000000000\n'
+        )
+
+        expected_full_precision = (
+            b'foo,hello=there 0=\"1\",1=1i,2=1.1111111111111 0\n'
+            b'foo,hello=there 0=\"2\",1=2i,2=2.2222222222222 3600000000000\n'
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+            cli.write_points(dataframe, "foo", {"hello": "there"})
+
+            self.assertEqual(m.last_request.body, expected_default_precision)
+
+            cli = DataFrameClient(database='db')
+            cli.write_points(dataframe, "foo", {"hello": "there"},
+                             numeric_precision=4)
+
+            self.assertEqual(m.last_request.body, expected_specified_precision)
+
+            cli = DataFrameClient(database='db')
+            cli.write_points(dataframe, "foo", {"hello": "there"},
+                             numeric_precision='full')
+
+            self.assertEqual(m.last_request.body, expected_full_precision)
 
     def test_write_points_from_dataframe_with_period_index(self):
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
