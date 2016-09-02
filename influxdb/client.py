@@ -257,12 +257,15 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         """Write data to InfluxDB.
 
         :param data: the data to be written
-        :type data: dict
+        :type data: (if protocol is 'json') dict
+                    (if protocol is 'line') sequence of line protocol strings
         :param params: additional parameters for the request, defaults to None
         :type params: dict
         :param expected_response_code: the expected response code of the write
             operation, defaults to 204
         :type expected_response_code: int
+        :param protocol: protocol of input data, either 'json' or 'line'
+        :type protocol: str
         :returns: True, if the write operation is successful
         :rtype: bool
         """
@@ -363,6 +366,9 @@ localhost:8086/databasename', timeout=5, udp_port=159)
 
         :param points: the list of points to be written in the database
         :type points: list of dictionaries, each dictionary represents a point
+        :type data: (if protocol is 'json') list of dicts, where each dict
+                                            represents a point.
+                    (if protocol is 'line') sequence of line protocol strings.
         :param time_precision: Either 's', 'm', 'ms' or 'u', defaults to None
         :type time_precision: str
         :param database: the database to write the points to. Defaults to
@@ -380,9 +386,10 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             one database to another or when doing a massive write operation,
             defaults to None
         :type batch_size: int
+        :param protocol: Protocol for writing data. Either 'line' or 'json'.
+        :type protocol: str
         :returns: True, if the operation is successful
         :rtype: bool
-        :param protocol: Protocol for writing data. Either 'line' or 'json'.
 
         .. note:: if no retention policy is specified, the default retention
             policy for the database is used
@@ -754,7 +761,10 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         """Send an UDP packet.
 
         :param packet: the packet to be sent
-        :type packet: dict
+        :type packet: (if protocol is 'json') dict
+                      (if protocol is 'line') sequence of line protocol strings
+        :param protocol: protocol of input data, either 'json' or 'line'
+        :type protocol: str
         """
         if protocol == 'json':
             data = make_lines(packet).encode('utf-8')

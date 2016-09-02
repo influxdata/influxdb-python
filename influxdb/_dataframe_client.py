@@ -60,7 +60,7 @@ class DataFrameClient(InfluxDBClient):
             one database to another or when doing a massive write operation
         :type batch_size: int
         :param protocol: Protocol for writing data. Either 'line' or 'json'.
-        :param numeric_precision: Precision for float or int datatypes.
+        :param numeric_precision: Precision for floating point values.
             Either None, 'full' or some int, where int is the desired decimal
             precision. 'full' preserves full precision for int and float
             datatypes. Defaults to None, which preserves 14-15 significant
@@ -94,7 +94,7 @@ class DataFrameClient(InfluxDBClient):
                     time_precision,
                     database,
                     retention_policy,
-                    protocol='line')
+                    protocol=protocol)
             return True
         else:
             if protocol == 'line':
@@ -119,7 +119,7 @@ class DataFrameClient(InfluxDBClient):
                 time_precision,
                 database,
                 retention_policy,
-                protocol='line')
+                protocol=protocol)
             return True
 
     def query(self, query, chunked=False, database=None):
@@ -338,7 +338,7 @@ class DataFrameClient(InfluxDBClient):
             else:
                 dataframe = dataframe.astype(str)
         else:
-            raise ValueError('Invalid numeric precision')
+            raise ValueError('Invalid numeric precision.')
 
         if datatype == 'field':
             # If dealing with fields, format ints and strings correctly
