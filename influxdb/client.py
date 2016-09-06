@@ -252,16 +252,20 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         else:
             raise InfluxDBClientError(response.content, response.status_code)
 
-    def write(self, data, params=None, expected_response_code=204):
+    def write(self, data, params=None, expected_response_code=204,
+              protocol='json'):
         """Write data to InfluxDB.
 
         :param data: the data to be written
-        :type data: dict
+        :type data: (if protocol is 'json') dict
+                    (if protocol is 'line') sequence of line protocol strings
         :param params: additional parameters for the request, defaults to None
         :type params: dict
         :param expected_response_code: the expected response code of the write
             operation, defaults to 204
         :type expected_response_code: int
+        :param protocol: protocol of input data, either 'json' or 'line'
+        :type protocol: str
         :returns: True, if the write operation is successful
         :rtype: bool
         """
@@ -274,11 +278,16 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         else:
             precision = None
 
+        if protocol == 'json':
+            data = make_lines(data, precision).encode('utf-8')
+        elif protocol == 'line':
+            data = ('\n'.join(data) + '\n').encode('utf-8')
+
         self.request(
             url="write",
             method='POST',
             params=params,
-            data=make_lines(data, precision).encode('utf-8'),
+            data=data,
             expected_response_code=expected_response_code,
             headers=headers
         )
@@ -351,11 +360,15 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                      retention_policy=None,
                      tags=None,
                      batch_size=None,
+                     protocol='json'
                      ):
         """Write to multiple time series names.
 
         :param points: the list of points to be written in the database
         :type points: list of dictionaries, each dictionary represents a point
+        :type data: (if protocol is 'json') list of dicts, where each dict
+                                            represents a point.
+                    (if protocol is 'line') sequence of line protocol strings.
         :param time_precision: Either 's', 'm', 'ms' or 'u', defaults to None
         :type time_precision: str
         :param database: the database to write the points to. Defaults to
@@ -373,6 +386,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             one database to another or when doing a massive write operation,
             defaults to None
         :type batch_size: int
+        :param protocol: Protocol for writing data. Either 'line' or 'json'.
+        :type protocol: str
         :returns: True, if the operation is successful
         :rtype: bool
 
@@ -386,14 +401,14 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                                    time_precision=time_precision,
                                    database=database,
                                    retention_policy=retention_policy,
-                                   tags=tags)
+                                   tags=tags, protocol=protocol)
             return True
         else:
             return self._write_points(points=points,
                                       time_precision=time_precision,
                                       database=database,
                                       retention_policy=retention_policy,
-                                      tags=tags)
+                                      tags=tags, protocol=protocol)
 
     def _batches(self, iterable, size):
         for i in xrange(0, len(iterable), size):
@@ -404,7 +419,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                       time_precision,
                       database,
                       retention_policy,
-                      tags):
+                      tags,
+                      protocol='json'):
         if time_precision not in ['n', 'u', 'ms', 's', 'm', 'h', None]:
             raise ValueError(
                 "Invalid time precision is given. "
@@ -415,12 +431,15 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                 "InfluxDB only supports seconds precision for udp writes"
             )
 
-        data = {
-            'points': points
-        }
+        if protocol == 'json':
+            data = {
+                'points': points
+            }
 
-        if tags is not None:
-            data['tags'] = tags
+            if tags is not None:
+                data['tags'] = tags
+        else:
+            data = points
 
         params = {
             'db': database or self._database
@@ -433,12 +452,13 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             params['rp'] = retention_policy
 
         if self.use_udp:
-            self.send_packet(data)
+            self.send_packet(data, protocol=protocol)
         else:
             self.write(
                 data=data,
                 params=params,
-                expected_response_code=204
+                expected_response_code=204,
+                protocol=protocol
             )
 
         return True
@@ -737,13 +757,19 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         text = "SHOW GRANTS FOR {0}".format(username)
         return list(self.query(text).get_points())
 
-    def send_packet(self, packet):
+    def send_packet(self, packet, protocol='json'):
         """Send an UDP packet.
 
         :param packet: the packet to be sent
-        :type packet: dict
+        :type packet: (if protocol is 'json') dict
+                      (if protocol is 'line') sequence of line protocol strings
+        :param protocol: protocol of input data, either 'json' or 'line'
+        :type protocol: str
         """
-        data = make_lines(packet).encode('utf-8')
+        if protocol == 'json':
+            data = make_lines(packet).encode('utf-8')
+        elif protocol == 'line':
+            data = ('\n'.join(data) + '\n').encode('utf-8')
         self.udp_socket.sendto(data, (self._host, self.udp_port))
 
 

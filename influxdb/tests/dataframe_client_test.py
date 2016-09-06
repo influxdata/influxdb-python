@@ -37,8 +37,8 @@ class TestDataFrameClient(unittest.TestCase):
                                  columns=["column_one", "column_two",
                                           "column_three"])
         expected = (
-            b"foo column_one=\"1\",column_three=1.0,column_two=1i 0\n"
-            b"foo column_one=\"2\",column_three=2.0,column_two=2i "
+            b"foo column_one=\"1\",column_two=1i,column_three=1.0 0\n"
+            b"foo column_one=\"2\",column_two=2i,column_three=2.0 "
             b"3600000000000\n"
         )
 
@@ -69,6 +69,135 @@ class TestDataFrameClient(unittest.TestCase):
             cli = DataFrameClient(database='db')
             self.assertTrue(cli.write_points(dataframe, "foo", batch_size=1))
 
+    def test_write_points_from_dataframe_with_tag_columns(self):
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[['blue', 1, "1", 1, 1.0],
+                                       ['red', 0, "2", 2, 2.0]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["tag_one", "tag_two", "column_one",
+                                          "column_two", "column_three"])
+        expected = (
+            b"foo,tag_one=blue,tag_two=1 "
+            b"column_one=\"1\",column_two=1i,column_three=1.0 "
+            b"0\n"
+            b"foo,tag_one=red,tag_two=0 "
+            b"column_one=\"2\",column_two=2i,column_three=2.0 "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo',
+                             tag_columns=['tag_one', 'tag_two'])
+            self.assertEqual(m.last_request.body, expected)
+
+            cli.write_points(dataframe, 'foo',
+                             tag_columns=['tag_one', 'tag_two'], tags=None)
+            self.assertEqual(m.last_request.body, expected)
+
+    def test_write_points_from_dataframe_with_tag_cols_and_global_tags(self):
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[['blue', 1, "1", 1, 1.0],
+                                       ['red', 0, "2", 2, 2.0]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["tag_one", "tag_two", "column_one",
+                                          "column_two", "column_three"])
+        expected = (
+            b"foo,tag_one=blue,tag_two=1,global_tag=value "
+            b"column_one=\"1\",column_two=1i,column_three=1.0 "
+            b"0\n"
+            b"foo,tag_one=red,tag_two=0,global_tag=value "
+            b"column_one=\"2\",column_two=2i,column_three=2.0 "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo',
+                             tag_columns=['tag_one', 'tag_two'],
+                             tags={'global_tag': 'value'})
+            self.assertEqual(m.last_request.body, expected)
+
+    def test_write_points_from_dataframe_with_tag_cols_and_defaults(self):
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[['blue', 1, "1", 1, 1.0, 'hot'],
+                                       ['red', 0, "2", 2, 2.0, 'cold']],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["tag_one", "tag_two", "column_one",
+                                          "column_two", "column_three",
+                                          "tag_three"])
+        expected_tags_and_fields = (
+            b"foo,tag_one=blue "
+            b"column_one=\"1\",column_two=1i "
+            b"0\n"
+            b"foo,tag_one=red "
+            b"column_one=\"2\",column_two=2i "
+            b"3600000000000\n"
+        )
+
+        expected_tags_no_fields = (
+            b"foo,tag_one=blue,tag_two=1 "
+            b"column_one=\"1\",column_two=1i,column_three=1.0,"
+            b"tag_three=\"hot\" 0\n"
+            b"foo,tag_one=red,tag_two=0 "
+            b"column_one=\"2\",column_two=2i,column_three=2.0,"
+            b"tag_three=\"cold\" 3600000000000\n"
+        )
+
+        expected_fields_no_tags = (
+            b"foo,tag_one=blue,tag_two=1,tag_three=hot "
+            b"column_one=\"1\",column_two=1i,column_three=1.0 "
+            b"0\n"
+            b"foo,tag_one=red,tag_two=0,tag_three=cold "
+            b"column_one=\"2\",column_two=2i,column_three=2.0 "
+            b"3600000000000\n"
+        )
+
+        expected_no_tags_no_fields = (
+            b"foo "
+            b"tag_one=\"blue\",tag_two=1i,column_one=\"1\","
+            b"column_two=1i,column_three=1.0,tag_three=\"hot\" "
+            b"0\n"
+            b"foo "
+            b"tag_one=\"red\",tag_two=0i,column_one=\"2\","
+            b"column_two=2i,column_three=2.0,tag_three=\"cold\" "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo',
+                             field_columns=['column_one', 'column_two'],
+                             tag_columns=['tag_one'])
+            self.assertEqual(m.last_request.body, expected_tags_and_fields)
+
+            cli.write_points(dataframe, 'foo',
+                             tag_columns=['tag_one', 'tag_two'])
+            self.assertEqual(m.last_request.body, expected_tags_no_fields)
+
+            cli.write_points(dataframe, 'foo',
+                             field_columns=['column_one', 'column_two',
+                                            'column_three'])
+            self.assertEqual(m.last_request.body, expected_fields_no_tags)
+
+            cli.write_points(dataframe, 'foo')
+            self.assertEqual(m.last_request.body, expected_no_tags_no_fields)
+
     def test_write_points_from_dataframe_with_numeric_column_names(self):
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         # df with numeric column names
@@ -90,15 +219,60 @@ class TestDataFrameClient(unittest.TestCase):
 
             self.assertEqual(m.last_request.body, expected)
 
+    def test_write_points_from_dataframe_with_numeric_precision(self):
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        # df with numeric column names
+        dataframe = pd.DataFrame(data=[["1", 1, 1.1111111111111],
+                                       ["2", 2, 2.2222222222222]],
+                                 index=[now, now + timedelta(hours=1)])
+
+        expected_default_precision = (
+            b'foo,hello=there 0=\"1\",1=1i,2=1.11111111111 0\n'
+            b'foo,hello=there 0=\"2\",1=2i,2=2.22222222222 3600000000000\n'
+        )
+
+        expected_specified_precision = (
+            b'foo,hello=there 0=\"1\",1=1i,2=1.1111 0\n'
+            b'foo,hello=there 0=\"2\",1=2i,2=2.2222 3600000000000\n'
+        )
+
+        expected_full_precision = (
+            b'foo,hello=there 0=\"1\",1=1i,2=1.1111111111111 0\n'
+            b'foo,hello=there 0=\"2\",1=2i,2=2.2222222222222 3600000000000\n'
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+            cli.write_points(dataframe, "foo", {"hello": "there"})
+
+            self.assertEqual(m.last_request.body, expected_default_precision)
+
+            cli = DataFrameClient(database='db')
+            cli.write_points(dataframe, "foo", {"hello": "there"},
+                             numeric_precision=4)
+
+            self.assertEqual(m.last_request.body, expected_specified_precision)
+
+            cli = DataFrameClient(database='db')
+            cli.write_points(dataframe, "foo", {"hello": "there"},
+                             numeric_precision='full')
+
+            self.assertEqual(m.last_request.body, expected_full_precision)
+
     def test_write_points_from_dataframe_with_period_index(self):
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
                                  index=[pd.Period('1970-01-01'),
                                         pd.Period('1970-01-02')],
                                  columns=["column_one", "column_two",
                                           "column_three"])
+
         expected = (
-            b"foo column_one=\"1\",column_three=1.0,column_two=1i 0\n"
-            b"foo column_one=\"2\",column_three=2.0,column_two=2i "
+            b"foo column_one=\"1\",column_two=1i,column_three=1.0 0\n"
+            b"foo column_one=\"2\",column_two=2i,column_three=2.0 "
             b"86400000000000\n"
         )
 
@@ -130,48 +304,48 @@ class TestDataFrameClient(unittest.TestCase):
             cli.write_points(dataframe, measurement, time_precision='h')
             self.assertEqual(m.last_request.qs['precision'], ['h'])
             self.assertEqual(
-                b'foo column_one="1",column_three=1.0,column_two=1i 0\nfoo '
-                b'column_one="2",column_three=2.0,column_two=2i 1\n',
+                b'foo column_one="1",column_two=1i,column_three=1.0 0\nfoo '
+                b'column_one="2",column_two=2i,column_three=2.0 1\n',
                 m.last_request.body,
             )
 
             cli.write_points(dataframe, measurement, time_precision='m')
             self.assertEqual(m.last_request.qs['precision'], ['m'])
             self.assertEqual(
-                b'foo column_one="1",column_three=1.0,column_two=1i 0\nfoo '
-                b'column_one="2",column_three=2.0,column_two=2i 60\n',
+                b'foo column_one="1",column_two=1i,column_three=1.0 0\nfoo '
+                b'column_one="2",column_two=2i,column_three=2.0 60\n',
                 m.last_request.body,
             )
 
             cli.write_points(dataframe, measurement, time_precision='s')
             self.assertEqual(m.last_request.qs['precision'], ['s'])
             self.assertEqual(
-                b'foo column_one="1",column_three=1.0,column_two=1i 0\nfoo '
-                b'column_one="2",column_three=2.0,column_two=2i 3600\n',
+                b'foo column_one="1",column_two=1i,column_three=1.0 0\nfoo '
+                b'column_one="2",column_two=2i,column_three=2.0 3600\n',
                 m.last_request.body,
             )
 
             cli.write_points(dataframe, measurement, time_precision='ms')
             self.assertEqual(m.last_request.qs['precision'], ['ms'])
             self.assertEqual(
-                b'foo column_one="1",column_three=1.0,column_two=1i 0\nfoo '
-                b'column_one="2",column_three=2.0,column_two=2i 3600000\n',
+                b'foo column_one="1",column_two=1i,column_three=1.0 0\nfoo '
+                b'column_one="2",column_two=2i,column_three=2.0 3600000\n',
                 m.last_request.body,
             )
 
             cli.write_points(dataframe, measurement, time_precision='u')
             self.assertEqual(m.last_request.qs['precision'], ['u'])
             self.assertEqual(
-                b'foo column_one="1",column_three=1.0,column_two=1i 0\nfoo '
-                b'column_one="2",column_three=2.0,column_two=2i 3600000000\n',
+                b'foo column_one="1",column_two=1i,column_three=1.0 0\nfoo '
+                b'column_one="2",column_two=2i,column_three=2.0 3600000000\n',
                 m.last_request.body,
             )
 
             cli.write_points(dataframe, measurement, time_precision='n')
             self.assertEqual(m.last_request.qs['precision'], ['n'])
             self.assertEqual(
-                b'foo column_one="1",column_three=1.0,column_two=1i 0\n'
-                b'foo column_one="2",column_three=2.0,column_two=2i '
+                b'foo column_one="1",column_two=1i,column_three=1.0 0\n'
+                b'foo column_one="2",column_two=2i,column_three=2.0 '
                 b'3600000000000\n',
                 m.last_request.body,
             )
