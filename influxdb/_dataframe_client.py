@@ -8,6 +8,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import math
+import re
 
 import pandas as pd
 
@@ -24,6 +25,10 @@ def _pandas_time_unit(time_precision):
         unit = 'ns'
     assert unit in ('s', 'ms', 'us', 'ns')
     return unit
+
+
+def _escape_pandas_series(s):
+    return s.apply(lambda v: re.escape(v))
 
 
 class DataFrameClient(InfluxDBClient):
@@ -242,6 +247,12 @@ class DataFrameClient(InfluxDBClient):
         field_columns = list(field_columns) if list(field_columns) else []
         tag_columns = list(tag_columns) if list(tag_columns) else []
 
+        # Make global_tags as tag_columns
+        if global_tags:
+            for tag in global_tags:
+                dataframe[tag] = global_tags[tag]
+                tag_columns.append(tag)
+
         # If field columns but no tag columns, assume rest of columns are tags
         if field_columns and (not tag_columns):
             tag_columns = list(column_series[~column_series.isin(
@@ -268,6 +279,7 @@ class DataFrameClient(InfluxDBClient):
         # If tag columns exist, make an array of formatted tag keys and values
         if tag_columns:
             tag_df = dataframe[tag_columns]
+            tag_df = tag_df.sort_index(axis=1)
             tag_df = self._stringify_dataframe(
                 tag_df, numeric_precision, datatype='tag')
             tags = (',' + (
@@ -285,15 +297,6 @@ class DataFrameClient(InfluxDBClient):
         field_df[field_df.columns[1:]] = ',' + field_df[field_df.columns[1:]]
         fields = field_df.sum(axis=1)
         del field_df
-
-        # Add any global tags to formatted tag strings
-        if global_tags:
-            global_tags = ','.join(['='.join([tag, global_tags[tag]])
-                                    for tag in global_tags])
-            if tag_columns:
-                tags = tags + ',' + global_tags
-            else:
-                tags = ',' + global_tags
 
         # Generate line protocol string
         points = (measurement + tags + ' ' + fields + ' ' + time).tolist()
@@ -344,6 +347,8 @@ class DataFrameClient(InfluxDBClient):
             # If dealing with fields, format ints and strings correctly
             dataframe[int_columns] = dataframe[int_columns] + 'i'
             dataframe[string_columns] = '"' + dataframe[string_columns] + '"'
+        elif datatype == 'tag':
+            dataframe = dataframe.apply(_escape_pandas_series)
 
         dataframe.columns = dataframe.columns.astype(str)
         return dataframe
