@@ -8,11 +8,11 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import math
-import re
 
 import pandas as pd
 
 from .client import InfluxDBClient
+from .line_protocol import _escape_tag
 
 
 def _pandas_time_unit(time_precision):
@@ -28,7 +28,7 @@ def _pandas_time_unit(time_precision):
 
 
 def _escape_pandas_series(s):
-    return s.apply(lambda v: re.escape(v))
+    return s.apply(lambda v: _escape_tag(v))
 
 
 class DataFrameClient(InfluxDBClient):
