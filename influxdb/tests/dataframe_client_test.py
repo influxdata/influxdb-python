@@ -108,10 +108,10 @@ class TestDataFrameClient(unittest.TestCase):
                                  columns=["tag_one", "tag_two", "column_one",
                                           "column_two", "column_three"])
         expected = (
-            b"foo,tag_one=blue,tag_two=1,global_tag=value "
+            b"foo,global_tag=value,tag_one=blue,tag_two=1 "
             b"column_one=\"1\",column_two=1i,column_three=1.0 "
             b"0\n"
-            b"foo,tag_one=red,tag_two=0,global_tag=value "
+            b"foo,global_tag=value,tag_one=red,tag_two=0 "
             b"column_one=\"2\",column_two=2i,column_three=2.0 "
             b"3600000000000\n"
         )
@@ -155,10 +155,10 @@ class TestDataFrameClient(unittest.TestCase):
         )
 
         expected_fields_no_tags = (
-            b"foo,tag_one=blue,tag_two=1,tag_three=hot "
+            b"foo,tag_one=blue,tag_three=hot,tag_two=1 "
             b"column_one=\"1\",column_two=1i,column_three=1.0 "
             b"0\n"
-            b"foo,tag_one=red,tag_two=0,tag_three=cold "
+            b"foo,tag_one=red,tag_three=cold,tag_two=0 "
             b"column_one=\"2\",column_two=2i,column_three=2.0 "
             b"3600000000000\n"
         )
@@ -197,6 +197,35 @@ class TestDataFrameClient(unittest.TestCase):
 
             cli.write_points(dataframe, 'foo')
             self.assertEqual(m.last_request.body, expected_no_tags_no_fields)
+
+    def test_write_points_from_dataframe_with_tag_escaped(self):
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(
+            data=[['blue', 1, "1", 1, 1.0, 'hot'],
+                  ['red,green=orange', 0, "2", 2, 2.0, 'cold']],
+            index=[now, now + timedelta(hours=1)],
+            columns=["tag_one", "tag_two", "column_one",
+                     "column_two", "column_three",
+                     "tag_three"])
+
+        expected_escaped_tags = (
+            b"foo,tag_one=blue "
+            b"column_one=\"1\",column_two=1i "
+            b"0\n"
+            b"foo,tag_one=red\\,green\\=orange "
+            b"column_one=\"2\",column_two=2i "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+            cli = DataFrameClient(database='db')
+            cli.write_points(dataframe, 'foo',
+                             field_columns=['column_one', 'column_two'],
+                             tag_columns=['tag_one'])
+            self.assertEqual(m.last_request.body, expected_escaped_tags)
 
     def test_write_points_from_dataframe_with_numeric_column_names(self):
         now = pd.Timestamp('1970-01-01 00:00+00:00')
