@@ -13,7 +13,7 @@ import requests
 import requests.exceptions
 from sys import version_info
 
-from influxdb.line_protocol import make_lines
+from influxdb.line_protocol import make_lines, quote_ident, quote_literal
 from influxdb.resultset import ResultSet
 from .exceptions import InfluxDBClientError
 from .exceptions import InfluxDBServerError
@@ -552,8 +552,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             should be set. Otherwise the operation will fail.
         """
         query_string = (
-            "ALTER RETENTION POLICY \"{0}\" ON \"{1}\""
-        ).format(name, database or self._database)
+            "ALTER RETENTION POLICY {0} ON {1}"
+        ).format(quote_ident(name), quote_ident(database or self._database))
         if duration:
             query_string += " DURATION {0}".format(duration)
         if replication:
@@ -573,8 +573,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :type database: str
         """
         query_string = (
-            "DROP RETENTION POLICY \"{0}\" ON \"{1}\""
-        ).format(name, database or self._database)
+            "DROP RETENTION POLICY {0} ON {1}"
+        ).format(quote_ident(name), quote_ident(database or self._database))
         self.query(query_string)
 
     def get_list_retention_policies(self, database=None):
@@ -631,8 +631,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             privileges or not
         :type admin: boolean
         """
-        text = "CREATE USER \"{0}\" WITH PASSWORD '{1}'".format(username,
-                                                                password)
+        text = "CREATE USER {0} WITH PASSWORD {1}".format(
+            quote_ident(username), quote_literal(password))
         if admin:
             text += ' WITH ALL PRIVILEGES'
         self.query(text)
@@ -643,7 +643,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :param username: the username to drop
         :type username: str
         """
-        text = "DROP USER {0}".format(username)
+        text = "DROP USER {0}".format(quote_ident(username))
         self.query(text)
 
     def set_user_password(self, username, password):
@@ -654,7 +654,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :param password: the new password for the user
         :type password: str
         """
-        text = "SET PASSWORD FOR {0} = '{1}'".format(username, password)
+        text = "SET PASSWORD FOR {0} = {1}".format(
+            quote_ident(username), quote_literal(password))
         self.query(text)
 
     def delete_series(self, database=None, measurement=None, tags=None):
@@ -672,11 +673,12 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         database = database or self._database
         query_str = 'DROP SERIES'
         if measurement:
-            query_str += ' FROM "{0}"'.format(measurement)
+            query_str += ' FROM {0}'.format(quote_ident(measurement))
 
         if tags:
-            query_str += ' WHERE ' + ' and '.join(["{0}='{1}'".format(k, v)
-                                                   for k, v in tags.items()])
+            tag_eq_list = ["{0}={1}".format(quote_ident(k), quote_literal(v))
+                           for k, v in tags.items()]
+            query_str += ' WHERE ' + ' AND '.join(tag_eq_list)
         self.query(query_str, database=database)
 
     def grant_admin_privileges(self, username):
@@ -688,7 +690,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         .. note:: Only a cluster administrator can create/drop databases
             and manage users.
         """
-        text = "GRANT ALL PRIVILEGES TO {0}".format(username)
+        text = "GRANT ALL PRIVILEGES TO {0}".format(quote_ident(username))
         self.query(text)
 
     def revoke_admin_privileges(self, username):
@@ -700,7 +702,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         .. note:: Only a cluster administrator can create/ drop databases
             and manage users.
         """
-        text = "REVOKE ALL PRIVILEGES FROM {0}".format(username)
+        text = "REVOKE ALL PRIVILEGES FROM {0}".format(quote_ident(username))
         self.query(text)
 
     def grant_privilege(self, privilege, database, username):
@@ -715,8 +717,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :type username: str
         """
         text = "GRANT {0} ON {1} TO {2}".format(privilege,
-                                                database,
-                                                username)
+                                                quote_ident(database),
+                                                quote_ident(username))
         self.query(text)
 
     def revoke_privilege(self, privilege, database, username):
@@ -731,8 +733,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :type username: str
         """
         text = "REVOKE {0} ON {1} FROM {2}".format(privilege,
-                                                   database,
-                                                   username)
+                                                   quote_ident(database),
+                                                   quote_ident(username))
         self.query(text)
 
     def get_list_privileges(self, username):
@@ -754,7 +756,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
              {u'privilege': u'ALL PRIVILEGES', u'database': u'db2'},
              {u'privilege': u'NO PRIVILEGES', u'database': u'db3'}]
         """
-        text = "SHOW GRANTS FOR {0}".format(username)
+        text = "SHOW GRANTS FOR {0}".format(quote_ident(username))
         return list(self.query(text).get_points())
 
     def send_packet(self, packet, protocol='json'):

@@ -53,16 +53,32 @@ def _escape_tag(tag):
     )
 
 
+def quote_ident(value):
+    return "\"{0}\"".format(
+        value.replace(
+            "\\", "\\\\"
+        ).replace(
+            "\"", "\\\""
+        ).replace(
+            "\n", "\\n"
+        )
+    )
+
+
+def quote_literal(value):
+    return "'{0}'".format(
+        value.replace(
+            "\\", "\\\\"
+        ).replace(
+            "'", "\\'"
+        )
+    )
+
+
 def _escape_value(value):
     value = _get_unicode(value)
     if isinstance(value, text_type) and value != '':
-        return "\"{0}\"".format(
-            value.replace(
-                "\"", "\\\""
-            ).replace(
-                "\n", "\\n"
-            )
-        )
+        return quote_ident(value)
     elif isinstance(value, integer_types) and not isinstance(value, bool):
         return str(value) + 'i'
     else:

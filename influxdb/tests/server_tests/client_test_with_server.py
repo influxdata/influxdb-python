@@ -200,14 +200,6 @@ class SimpleTests(SingleTestCaseWithServerMixin,
         self.assertIn('user not found',
                       ctx.exception.content)
 
-    def test_drop_user_invalid(self):
-        with self.assertRaises(InfluxDBClientError) as ctx:
-            self.cli.drop_user('very invalid')
-        self.assertEqual(400, ctx.exception.code)
-        self.assertIn('{"error":"error parsing query: '
-                      'found invalid, expected',
-                      ctx.exception.content)
-
     @unittest.skip("Broken as of 0.9.0")
     def test_revoke_admin_privileges(self):
         self.cli.create_user('test', 'test', admin=True)
@@ -216,13 +208,6 @@ class SimpleTests(SingleTestCaseWithServerMixin,
         self.cli.revoke_admin_privileges('test')
         self.assertEqual([{'user': 'test', 'admin': False}],
                          self.cli.get_list_users())
-
-    def test_revoke_admin_privileges_invalid(self):
-        with self.assertRaises(InfluxDBClientError) as ctx:
-            self.cli.revoke_admin_privileges('')
-        self.assertEqual(400, ctx.exception.code)
-        self.assertIn('{"error":"error parsing query: ',
-                      ctx.exception.content)
 
     def test_grant_privilege(self):
         self.cli.create_user('test', 'test')

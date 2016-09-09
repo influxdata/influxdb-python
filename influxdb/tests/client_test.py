@@ -688,7 +688,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
             self.assertEqual(
                 m.last_request.qs['q'][0],
-                'grant all privileges to test'
+                'grant all privileges to "test"'
             )
 
     @raises(Exception)
@@ -710,7 +710,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
             self.assertEqual(
                 m.last_request.qs['q'][0],
-                'revoke all privileges from test'
+                'revoke all privileges from "test"'
             )
 
     @raises(Exception)
@@ -732,7 +732,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
             self.assertEqual(
                 m.last_request.qs['q'][0],
-                'grant read on testdb to test'
+                'grant read on "testdb" to "test"'
             )
 
     @raises(Exception)
@@ -754,7 +754,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
             self.assertEqual(
                 m.last_request.qs['q'][0],
-                'revoke read on testdb from test'
+                'revoke read on "testdb" from "test"'
             )
 
     @raises(Exception)
