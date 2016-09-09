@@ -206,8 +206,9 @@ class TestDataFrameClient(unittest.TestCase):
                 ['red,green', "2", 2, r'cold\fire'],  # comma, backslash
                 ['some', "2", 2, ''],                 # skip empty
                 ['some', "2", 2, None],               # skip None
+                ['', "2", 2, None],                   # all tags empty
             ],
-            index=pd.period_range(now, freq='H', periods=4),
+            index=pd.period_range(now, freq='H', periods=5),
             columns=["tag_one", "column_one", "column_two", "tag_three"]
         )
 
@@ -224,6 +225,9 @@ class TestDataFrameClient(unittest.TestCase):
             b"foo,tag_one=some "
             b"column_one=\"2\",column_two=2i "
             b"10800000000000\n"
+            b"foo "
+            b"column_one=\"2\",column_two=2i "
+            b"14400000000000\n"
         )
 
         with requests_mock.Mocker() as m:

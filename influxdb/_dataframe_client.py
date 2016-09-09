@@ -291,7 +291,10 @@ class DataFrameClient(InfluxDBClient):
 
             # join tags, but leave out None values
             tags = tag_df.apply(
-                lambda r: ',' + ','.join(r.dropna()), axis=1)
+                lambda r: ','.join(r.dropna()), axis=1)
+
+            # prepend comma
+            tags = tags.apply(lambda v: ',' + v if v else '')
 
             del tag_df
         else:
