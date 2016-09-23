@@ -662,13 +662,13 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         """Delete series from a database. Series can be filtered by
         measurement and tags.
 
-        :param measurement: Delete all series from a measurement
-        :type id: string
-        :param tags: Delete all series that match given tags
-        :type id: dict
         :param database: the database from which the series should be
             deleted, defaults to client's current database
         :type database: str
+        :param measurement: Delete all series from a measurement
+        :type id: str
+        :param tags: Delete all series that match given tags
+        :type id: dict
         """
         database = database or self._database
         query_str = 'DROP SERIES'
