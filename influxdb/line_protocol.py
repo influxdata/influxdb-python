@@ -102,6 +102,49 @@ def _get_unicode(data, force=False):
         return data
 
 
+def make_line(measurement, tags=None, fields=None, time=None, precision=None):
+    tags = tags or {}
+    fields = fields or {}
+
+    line = _escape_tag(_get_unicode(measurement))
+
+    # tags should be sorted client-side to take load off server
+    tag_list = []
+    for tag_key in sorted(tags.keys()):
+        key = _escape_tag(tag_key)
+        value = _escape_tag(tags[tag_key])
+
+        if key != '' and value != '':
+            tag_list.append(
+                "{key}={value}".format(key=key, value=value)
+            )
+
+    if tag_list:
+        line += ',' + ','.join(tag_list)
+
+    field_list = []
+    for field_key in sorted(fields.keys()):
+        key = _escape_tag(field_key)
+        value = _escape_value(fields[field_key])
+
+        if key != '' and value != '':
+            field_list.append("{key}={value}".format(
+                key=key,
+                value=value
+            ))
+
+    if field_list:
+        line += ' ' + ','.join(field_list)
+
+    if time:
+        timestamp = _get_unicode(str(int(
+            _convert_timestamp(time, precision)
+        )))
+        line += ' ' + timestamp
+
+    return line
+
+
 def make_lines(data, precision=None):
     """
     Extracts the points from the given dict and returns a Unicode string
@@ -110,52 +153,20 @@ def make_lines(data, precision=None):
     lines = []
     static_tags = data.get('tags', None)
     for point in data['points']:
-        elements = []
-
-        # add measurement name
-        measurement = _escape_tag(_get_unicode(
-            point.get('measurement', data.get('measurement'))
-        ))
-        key_values = [measurement]
-
-        # add tags
         if static_tags is None:
             tags = point.get('tags', {})
         else:
             tags = copy(static_tags)
             tags.update(point.get('tags', {}))
 
-        # tags should be sorted client-side to take load off server
-        for tag_key in sorted(tags.keys()):
-            key = _escape_tag(tag_key)
-            value = _escape_tag(tags[tag_key])
-
-            if key != '' and value != '':
-                key_values.append("{key}={value}".format(key=key, value=value))
-        key_values = ','.join(key_values)
-        elements.append(key_values)
-
-        # add fields
-        field_values = []
-        for field_key in sorted(point['fields'].keys()):
-            key = _escape_tag(field_key)
-            value = _escape_value(point['fields'][field_key])
-            if key != '' and value != '':
-                field_values.append("{key}={value}".format(
-                    key=key,
-                    value=value
-                ))
-        field_values = ','.join(field_values)
-        elements.append(field_values)
-
-        # add timestamp
-        if 'time' in point:
-            timestamp = _get_unicode(str(int(
-                _convert_timestamp(point['time'], precision)
-            )))
-            elements.append(timestamp)
-
-        line = ' '.join(elements)
+        line = make_line(
+            point.get('measurement', data.get('measurement')),
+            tags=tags,
+            fields=point['fields'],
+            precision=precision,
+            time=point.get('time')
+        )
         lines.append(line)
+
     lines = '\n'.join(lines)
     return lines + '\n'
