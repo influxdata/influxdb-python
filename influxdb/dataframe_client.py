@@ -16,8 +16,10 @@ except ImportError as err:
     from .client import InfluxDBClient
 
     class DataFrameClient(InfluxDBClient):
+        err = err
+
         def __init__(self, *a, **kw):
             raise ImportError("DataFrameClient requires Pandas "
-                              "which couldn't be imported: %s" % err)
+                              "which couldn't be imported: %s" % self.err)
 else:
     from ._dataframe_client import DataFrameClient
