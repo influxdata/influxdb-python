@@ -5,12 +5,9 @@ addons:
     - wget
 env:
     - TOX_ENV=py27
-#    - TOX_ENV=py32
-# Disabling py32 tests until the following issue is fixed:
-# pip 8.x breaks python 3.2 compatibility
-# https://github.com/pypa/pip/issues/3390
     - TOX_ENV=py33
     - TOX_ENV=py34
+    - TOX_ENV=py35
     - TOX_ENV=pypy
     - TOX_ENV=pypy3
     - TOX_ENV=docs
