@@ -44,8 +44,8 @@ class DataFrameClient(InfluxDBClient):
                      dataframe,
                      measurement,
                      tags=None,
-                     tag_columns=[],
-                     field_columns=[],
+                     tag_columns=None,
+                     field_columns=None,
                      time_precision=None,
                      database=None,
                      retention_policy=None,
@@ -72,6 +72,10 @@ class DataFrameClient(InfluxDBClient):
             figures for float and all significant figures for int datatypes.
 
         """
+        if tag_columns is None:
+            tag_columns = []
+        if field_columns is None:
+            field_columns = []
         if batch_size:
             number_batches = int(math.ceil(len(dataframe) / float(batch_size)))
             for batch in range(number_batches):
@@ -166,8 +170,8 @@ class DataFrameClient(InfluxDBClient):
                                    dataframe,
                                    measurement,
                                    tags=None,
-                                   tag_columns=[],
-                                   field_columns=[],
+                                   tag_columns=None,
+                                   field_columns=None,
                                    time_precision=None):
 
         if not isinstance(dataframe, pd.DataFrame):
@@ -221,9 +225,9 @@ class DataFrameClient(InfluxDBClient):
     def _convert_dataframe_to_lines(self,
                                     dataframe,
                                     measurement,
-                                    field_columns=[],
-                                    tag_columns=[],
-                                    global_tags={},
+                                    field_columns=None,
+                                    tag_columns=None,
+                                    global_tags=None,
                                     time_precision=None,
                                     numeric_precision=None):
 
@@ -242,6 +246,8 @@ class DataFrameClient(InfluxDBClient):
             field_columns = []
         if tag_columns is None:
             tag_columns = []
+        if global_tags is None:
+            global_tags = {}
 
         # Make sure field_columns and tag_columns are lists
         field_columns = list(field_columns) if list(field_columns) else []
