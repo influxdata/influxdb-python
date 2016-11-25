@@ -31,7 +31,7 @@ install:
     - dpkg -x influxdb*.deb influxdb_install
 script:
     - export INFLUXDB_PYTHON_INFLUXD_PATH=$(pwd)/influxdb_install/usr/bin/influxd
-    - travis_wait 30 tox -e $TOX_ENV
+    - tox
 after_success:
     - sphinx-build -b html docs/source docs/build
     - coveralls
