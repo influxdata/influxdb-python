@@ -9,7 +9,8 @@ env:
 # Disabling py32 tests until the following issue is fixed:
 # pip 8.x breaks python 3.2 compatibility
 # https://github.com/pypa/pip/issues/3390
-    - TOX_ENV=py33
+#    - TOX_ENV=py33
+# pandas 0.19.x breaks python 3.3 compatibility
     - TOX_ENV=py34
     - TOX_ENV=pypy
     - TOX_ENV=pypy3
