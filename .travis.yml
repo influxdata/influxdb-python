@@ -1,27 +1,26 @@
 language: python
-python:
-    - "2.7"
-    - "3.4"
-    - "pypy"
-    - "pypy3"
+
 addons:
   apt:
     packages:
     - wget
-#env:
-#    - TOX_ENV=py27
-#    - TOX_ENV=py32
-# Disabling py32 tests until the following issue is fixed:
-# pip 8.x breaks python 3.2 compatibility
-# https://github.com/pypa/pip/issues/3390
-#    - TOX_ENV=py33
-# pandas 0.19.x breaks python 3.3 compatibility
-#    - TOX_ENV=py34
-#    - TOX_ENV=pypy
-#    - TOX_ENV=pypy3
-#    - TOX_ENV=docs
-#    - TOX_ENV=flake8
-#    - TOX_ENV=coverage
+
+matrix:
+  include:
+    - python: 2.7
+      env: TOX_ENV=py27
+    - python: pypy
+      env: TOX_ENV=pypy
+    - python: 3.4
+      env: TOX_ENV=py34
+    - python: pypy3
+      env: TOX_ENV=pypy3
+    - python: 2.7
+      env: TOX_ENV=docs
+    - python: 3.4
+      env: TOX_ENV=flake8
+    - python: 3.4
+      env: TOX_ENV=coverage
 
 install:
     - pip install tox
@@ -33,8 +32,7 @@ script:
     - export INFLUXDB_PYTHON_INFLUXD_PATH=$(pwd)/influxdb_install/usr/bin/influxd
     - tox
 after_success:
-    - sphinx-build -b html docs/source docs/build
-    - coveralls
+    - if [ "$TOX_ENV" == "coverage" ] ; then coveralls; fi
 notifications:
     email: false
 
