@@ -8,13 +8,9 @@ addons:
 matrix:
   include:
     - python: 2.7
-      env: TOX_ENV=py27
-    - python: pypy
-      env: TOX_ENV=pypy
+    - python: pypy-5.3.1
     - python: 3.4
-      env: TOX_ENV=py34
-    - python: pypy3
-      env: TOX_ENV=pypy3
+    - python: pypy3.3-5.2-alpha1
     - python: 3.4
       env: TOX_ENV=docs
     - python: 3.4
@@ -31,11 +27,6 @@ install:
 script:
     - export INFLUXDB_PYTHON_INFLUXD_PATH=$(pwd)/influxdb_install/usr/bin/influxd
     - tox
-after_failure:
-    - cat /home/travis/build/influxdata/influxdb-python/.tox/coverage/log/coverage-0.log
-    - cat /home/travis/build/influxdata/influxdb-python/.tox/coverage/log/coverage-1.log
-    - cat /home/travis/build/influxdata/influxdb-python/.tox/docs/log/docs-0.log
-    - cat /home/travis/build/influxdata/influxdb-python/.tox/flake8/log/flake8-0.log
 after_success:
     - if [ "$TOX_ENV" == "coverage" ] ; then coveralls; fi
 notifications:
