@@ -29,7 +29,7 @@ def main(host='localhost', port=8086):
     client.query("select * from demo")
 
     print("Delete database: " + dbname)
-    client.delete_database(dbname)
+    client.drop_database(dbname)
 
 
 def parse_args():
