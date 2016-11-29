@@ -468,6 +468,9 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
     def test_create_retention_policy(self):
         self.cli.create_retention_policy('somename', '1d', 1)
+        # NB: creating a retention policy without specifying shard group duration
+        #     leads to a shard group duration of 1 hour
+        # See https://docs.influxdata.com/influxdb/v1.1/query_language/database_management/#retention-policy-management
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
@@ -491,6 +494,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         # Test alter duration
         self.cli.alter_retention_policy('somename', 'db',
                                         duration='4d')
+        # NB: altering retention policy doesn't change shard group duration
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
@@ -502,7 +506,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
                 {'duration': '96h0m0s',
                  'default': False,
                  'replicaN': 1,
-                 'shardGroupDuration': u'24h0m0s',
+                 'shardGroupDuration': u'1h0m0s',
                  'name': 'somename'}
             ],
             rsp
@@ -511,6 +515,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         # Test alter replication
         self.cli.alter_retention_policy('somename', 'db',
                                         replication=4)
+        # NB: altering retention policy doesn't change shard group duration
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
@@ -522,7 +527,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
                 {'duration': '96h0m0s',
                  'default': False,
                  'replicaN': 4,
-                 'shardGroupDuration': u'24h0m0s',
+                 'shardGroupDuration': u'1h0m0s',
                  'name': 'somename'}
             ],
             rsp
@@ -531,6 +536,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         # Test alter default
         self.cli.alter_retention_policy('somename', 'db',
                                         default=True)
+        # NB: altering retention policy doesn't change shard group duration
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
@@ -542,7 +548,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
                 {'duration': '96h0m0s',
                  'default': True,
                  'replicaN': 4,
-                 'shardGroupDuration': u'24h0m0s',
+                 'shardGroupDuration': u'1h0m0s',
                  'name': 'somename'}
             ],
             rsp
