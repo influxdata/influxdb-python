@@ -468,9 +468,9 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
     def test_create_retention_policy(self):
         self.cli.create_retention_policy('somename', '1d', 1)
-        # NB: creating a retention policy without specifying shard group duration
+        # NB: creating a retention policy without specifying
+        # shard group duration
         #     leads to a shard group duration of 1 hour
-        # See https://docs.influxdata.com/influxdb/v1.1/query_language/database_management/#retention-policy-management
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
