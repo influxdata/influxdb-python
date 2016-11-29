@@ -431,8 +431,8 @@ class CommonTests(ManyTestCasesWithServerMixin,
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
-                {'name': 'default',
-                 'duration': '0',
+                {'name': 'autogen',
+                 'duration': '0s',
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
                  'default': True}
@@ -447,11 +447,11 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
         self.assertEqual(
             [
-                {'duration': '0',
+                {'duration': '0s',
                  'default': False,
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
-                 'name': 'default'},
+                 'name': 'autogen'},
                 {'duration': '24h0m0s',
                  'default': True,
                  'replicaN': 1,
@@ -471,11 +471,11 @@ class CommonTests(ManyTestCasesWithServerMixin,
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
-                {'duration': '0',
+                {'duration': '0s',
                  'default': True,
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
-                 'name': 'default'},
+                 'name': 'autogen'},
                 {'duration': '24h0m0s',
                  'default': False,
                  'replicaN': 1,
@@ -494,11 +494,11 @@ class CommonTests(ManyTestCasesWithServerMixin,
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
-                {'duration': '0',
+                {'duration': '0s',
                  'default': True,
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
-                 'name': 'default'},
+                 'name': 'autogen'},
                 {'duration': '96h0m0s',
                  'default': False,
                  'replicaN': 1,
