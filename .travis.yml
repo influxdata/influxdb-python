@@ -28,7 +28,7 @@ install:
     - pip install tox
     - pip install coveralls
     - mkdir influxdb_install
-    - wget https://dl.influxdata.com/influxdb/releases/influxdb_0.13.0_amd64.deb
+    - wget https://dl.influxdata.com/influxdb/releases/influxdb_1.1.0_amd64.deb
     - dpkg -x influxdb*.deb influxdb_install
 script:
     - export INFLUXDB_PYTHON_INFLUXD_PATH=$(pwd)/influxdb_install/usr/bin/influxd
