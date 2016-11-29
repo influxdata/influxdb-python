@@ -1,15 +1,17 @@
 
 
-InfluxDB-Python is a client for interacting with InfluxDB_.**This is a fork with some updates, see my pull requests on the original repo for this library: https://github.com/influxdata/influxdb-python/pulls/gansanay**
+InfluxDB-Python is a client for interacting with InfluxDB_.
 
-.. image:: https://travis-ci.org/influxdata/influxdb-python.svg?branch=master
-    :target: https://travis-ci.org/influxdata/influxdb-python
+This is a fork with some updates, see my pull requests on the original repo for this library: https://github.com/influxdata/influxdb-python/pulls/gansanay
+
+.. image:: https://travis-ci.org/gansanay/influxdb-python.svg?branch=master
+    :target: https://travis-ci.org/gansanay/influxdb-python/
 
 .. image:: https://readthedocs.org/projects/influxdb-python/badge/?version=latest&style
     :target: http://influxdb-python.readthedocs.org/
     :alt: Documentation Status
 
-.. image:: https://img.shields.io/coveralls/influxdata/influxdb-python.svg
+.. image:: https://img.shields.io/coveralls/gansanay/influxdb-python.svg
   :target: https://coveralls.io/github/gansanay/influxdb-python
   :alt: Coverage
 
