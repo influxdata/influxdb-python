@@ -431,8 +431,8 @@ class CommonTests(ManyTestCasesWithServerMixin,
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
-                {'name': 'default',
-                 'duration': '0',
+                {'name': 'autogen',
+                 'duration': '0s',
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
                  'default': True}
@@ -447,11 +447,11 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
         self.assertEqual(
             [
-                {'duration': '0',
+                {'duration': '0s',
                  'default': False,
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
-                 'name': 'default'},
+                 'name': 'autogen'},
                 {'duration': '24h0m0s',
                  'default': True,
                  'replicaN': 1,
@@ -468,14 +468,17 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
     def test_create_retention_policy(self):
         self.cli.create_retention_policy('somename', '1d', 1)
+        # NB: creating a retention policy without specifying
+        # shard group duration
+        #     leads to a shard group duration of 1 hour
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
-                {'duration': '0',
+                {'duration': '0s',
                  'default': True,
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
-                 'name': 'default'},
+                 'name': 'autogen'},
                 {'duration': '24h0m0s',
                  'default': False,
                  'replicaN': 1,
@@ -491,18 +494,19 @@ class CommonTests(ManyTestCasesWithServerMixin,
         # Test alter duration
         self.cli.alter_retention_policy('somename', 'db',
                                         duration='4d')
+        # NB: altering retention policy doesn't change shard group duration
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
-                {'duration': '0',
+                {'duration': '0s',
                  'default': True,
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
-                 'name': 'default'},
+                 'name': 'autogen'},
                 {'duration': '96h0m0s',
                  'default': False,
                  'replicaN': 1,
-                 'shardGroupDuration': u'24h0m0s',
+                 'shardGroupDuration': u'1h0m0s',
                  'name': 'somename'}
             ],
             rsp
@@ -511,18 +515,19 @@ class CommonTests(ManyTestCasesWithServerMixin,
         # Test alter replication
         self.cli.alter_retention_policy('somename', 'db',
                                         replication=4)
+        # NB: altering retention policy doesn't change shard group duration
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
-                {'duration': '0',
+                {'duration': '0s',
                  'default': True,
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
-                 'name': 'default'},
+                 'name': 'autogen'},
                 {'duration': '96h0m0s',
                  'default': False,
                  'replicaN': 4,
-                 'shardGroupDuration': u'24h0m0s',
+                 'shardGroupDuration': u'1h0m0s',
                  'name': 'somename'}
             ],
             rsp
@@ -531,18 +536,19 @@ class CommonTests(ManyTestCasesWithServerMixin,
         # Test alter default
         self.cli.alter_retention_policy('somename', 'db',
                                         default=True)
+        # NB: altering retention policy doesn't change shard group duration
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
-                {'duration': '0',
+                {'duration': '0s',
                  'default': False,
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
-                 'name': 'default'},
+                 'name': 'autogen'},
                 {'duration': '96h0m0s',
                  'default': True,
                  'replicaN': 4,
-                 'shardGroupDuration': u'24h0m0s',
+                 'shardGroupDuration': u'1h0m0s',
                  'name': 'somename'}
             ],
             rsp
@@ -558,11 +564,11 @@ class CommonTests(ManyTestCasesWithServerMixin,
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
-                {'duration': '0',
+                {'duration': '0s',
                  'default': True,
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
-                 'name': 'default'},
+                 'name': 'autogen'},
                 {'duration': '24h0m0s',
                  'default': False,
                  'replicaN': 1,
@@ -580,11 +586,11 @@ class CommonTests(ManyTestCasesWithServerMixin,
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
-                {'duration': '0',
+                {'duration': '0s',
                  'default': True,
                  'replicaN': 1,
                  'shardGroupDuration': u'168h0m0s',
-                 'name': 'default'}
+                 'name': 'autogen'}
             ],
             rsp
         )
