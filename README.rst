@@ -12,7 +12,7 @@ InfluxDB-Python is a client for interacting with InfluxDB_. Maintained by @aviau
     :alt: Documentation Status
 
 .. image:: https://img.shields.io/coveralls/influxdata/influxdb-python.svg
-  :target: https://coveralls.io/github/gansanay/influxdb-python
+  :target: https://coveralls.io/r/influxdata/influxdb-python
   :alt: Coverage
 
 .. _readme-about:
