@@ -139,7 +139,8 @@ def make_lines(data, precision=None):
         field_values = []
         for field_key in sorted(point['fields'].keys()):
             key = _escape_tag(field_key)
-            value = _escape_value(point['fields'][field_key])
+            value = _escape_value(point['fields'][field_key]) + 'i' \
+                if isinstance(value, int) else ''
             if key != '' and value != '':
                 field_values.append("{key}={value}".format(
                     key=key,
