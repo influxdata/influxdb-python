@@ -132,7 +132,12 @@ class DataFrameClient(InfluxDBClient):
                 isinstance(dataframe.index, pd.tseries.index.DatetimeIndex)):
             raise TypeError('Must be DataFrame with DatetimeIndex or \
                             PeriodIndex.')
-        dataframe.index = dataframe.index.to_datetime()
+
+        if isinstance(dataframe.index, pd.tseries.period.PeriodIndex):
+            dataframe.index = dataframe.index.to_timestamp()
+        else:
+            dataframe.index = pd.to_datetime(dataframe.index)
+
         if dataframe.index.tzinfo is None:
             dataframe.index = dataframe.index.tz_localize('UTC')
         dataframe['time'] = [self._datetime_to_epoch(dt, time_precision)

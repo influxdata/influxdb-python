@@ -273,8 +273,12 @@ class DataFrameClient(InfluxDBClient):
         }.get(time_precision, 1)
 
         # Make array of timestamp ints
-        time = ((dataframe.index.to_datetime().values.astype(int) /
-                 precision_factor).astype(int).astype(str))
+        if isinstance(dataframe.index, pd.tseries.period.PeriodIndex):
+            time = ((dataframe.index.to_timestamp().values.astype(int) /
+                     precision_factor).astype(int).astype(str))
+        else:
+            time = ((pd.to_datetime(dataframe.index).values.astype(int) /
+                     precision_factor).astype(int).astype(str))
 
         # If tag columns exist, make an array of formatted tag keys and values
         if tag_columns:
