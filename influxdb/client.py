@@ -485,7 +485,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :param dbname: the name of the database to create
         :type dbname: str
         """
-        self.query("CREATE DATABASE \"%s\"" % dbname)
+        self.query("CREATE DATABASE {0}".format(quote_ident(dbname)))
 
     def drop_database(self, dbname):
         """Drop a database from InfluxDB.
@@ -493,7 +493,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :param dbname: the name of the database to drop
         :type dbname: str
         """
-        self.query("DROP DATABASE \"%s\"" % dbname)
+        self.query("DROP DATABASE {0}".format(quote_ident(dbname)))
 
     def create_retention_policy(self, name, duration, replication,
                                 database=None, default=False):
@@ -517,9 +517,10 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :type default: bool
         """
         query_string = \
-            "CREATE RETENTION POLICY \"%s\" ON \"%s\" " \
-            "DURATION %s REPLICATION %s" % \
-            (name, database or self._database, duration, replication)
+            "CREATE RETENTION POLICY {0} ON {1} " \
+            "DURATION {2} REPLICATION {3}".format(
+                quote_ident(name), quote_ident(database or self._database),
+                duration, replication)
 
         if default is True:
             query_string += " DEFAULT"
@@ -597,8 +598,15 @@ localhost:8086/databasename', timeout=5, udp_port=159)
               u'name': u'default',
               u'replicaN': 1}]
             """
+
+        if not (database or self._database):
+            raise InfluxDBClientError(
+                "get_list_retention_policies() requires a database as a "
+                "parameter or the client to be using a database")
+
         rsp = self.query(
-            "SHOW RETENTION POLICIES ON \"%s\"" % (database or self._database)
+            "SHOW RETENTION POLICIES ON {0}".format(
+                quote_ident(database or self._database))
         )
         return list(rsp.get_points())
 
