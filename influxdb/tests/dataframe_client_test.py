@@ -553,3 +553,8 @@ class TestDataFrameClient(unittest.TestCase):
             cli._datetime_to_epoch(timestamp, time_precision='n'),
             1356998400000000000.0
         )
+
+    def test_dsn_constructor(self):
+        client = DataFrameClient.from_DSN('influxdb://localhost:8086')
+        self.assertIsInstance(client, DataFrameClient)
+        self.assertEqual('http://localhost:8086', client._baseurl)
