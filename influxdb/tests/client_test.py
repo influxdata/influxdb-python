@@ -591,7 +591,7 @@ class TestInfluxDBClient(unittest.TestCase):
                 text=example_response
             )
             self.assertListEqual(
-                self.cli.get_list_retention_policies(),
+                self.cli.get_list_retention_policies("db"),
                 [{'duration': '24h0m0s',
                   'name': 'fsfdsdf', 'replicaN': 2}]
             )
