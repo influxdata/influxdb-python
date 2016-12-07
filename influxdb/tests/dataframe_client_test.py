@@ -201,20 +201,33 @@ class TestDataFrameClient(unittest.TestCase):
     def test_write_points_from_dataframe_with_tag_escaped(self):
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.DataFrame(
-            data=[['blue', 1, "1", 1, 1.0, 'hot'],
-                  ['red,green=orange', 0, "2", 2, 2.0, 'cold']],
-            index=[now, now + timedelta(hours=1)],
-            columns=["tag_one", "tag_two", "column_one",
-                     "column_two", "column_three",
-                     "tag_three"])
+            data=[
+                ['blue orange', "1", 1, 'hot=cold'],  # space, equal
+                ['red,green', "2", 2, r'cold\fire'],  # comma, backslash
+                ['some', "2", 2, ''],                 # skip empty
+                ['some', "2", 2, None],               # skip None
+                ['', "2", 2, None],                   # all tags empty
+            ],
+            index=pd.period_range(now, freq='H', periods=5),
+            columns=["tag_one", "column_one", "column_two", "tag_three"]
+        )
 
         expected_escaped_tags = (
-            b"foo,tag_one=blue "
+            b"foo,tag_one=blue\\ orange,tag_three=hot\\=cold "
             b"column_one=\"1\",column_two=1i "
             b"0\n"
-            b"foo,tag_one=red\\,green\\=orange "
+            b"foo,tag_one=red\\,green,tag_three=cold\\\\fire "
             b"column_one=\"2\",column_two=2i "
             b"3600000000000\n"
+            b"foo,tag_one=some "
+            b"column_one=\"2\",column_two=2i "
+            b"7200000000000\n"
+            b"foo,tag_one=some "
+            b"column_one=\"2\",column_two=2i "
+            b"10800000000000\n"
+            b"foo "
+            b"column_one=\"2\",column_two=2i "
+            b"14400000000000\n"
         )
 
         with requests_mock.Mocker() as m:
@@ -224,7 +237,7 @@ class TestDataFrameClient(unittest.TestCase):
             cli = DataFrameClient(database='db')
             cli.write_points(dataframe, 'foo',
                              field_columns=['column_one', 'column_two'],
-                             tag_columns=['tag_one'])
+                             tag_columns=['tag_one', 'tag_three'])
             self.assertEqual(m.last_request.body, expected_escaped_tags)
 
     def test_write_points_from_dataframe_with_numeric_column_names(self):

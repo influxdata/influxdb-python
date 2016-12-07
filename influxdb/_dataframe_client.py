@@ -283,13 +283,24 @@ class DataFrameClient(InfluxDBClient):
         # If tag columns exist, make an array of formatted tag keys and values
         if tag_columns:
             tag_df = dataframe[tag_columns]
+            tag_df = tag_df.fillna('')  # replace NA with empty string
             tag_df = tag_df.sort_index(axis=1)
             tag_df = self._stringify_dataframe(
                 tag_df, numeric_precision, datatype='tag')
-            tags = (',' + (
-                (tag_df.columns.values + '=').tolist() + tag_df)).sum(axis=1)
-            del tag_df
 
+            # prepend tag keys
+            tag_df = tag_df.apply(
+                lambda s: s.apply(
+                    lambda v, l: l + '=' + v if v else None, l=s.name))
+
+            # join tags, but leave out None values
+            tags = tag_df.apply(
+                lambda r: ','.join(r.dropna()), axis=1)
+
+            # prepend comma
+            tags = tags.apply(lambda v: ',' + v if v else '')
+
+            del tag_df
         else:
             tags = ''
 
