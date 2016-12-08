@@ -136,7 +136,7 @@ def make_line(measurement, tags=None, fields=None, time=None, precision=None):
     if field_list:
         line += ' ' + ','.join(field_list)
 
-    if time:
+    if time is not None:
         timestamp = _get_unicode(str(int(
             _convert_timestamp(time, precision)
         )))
