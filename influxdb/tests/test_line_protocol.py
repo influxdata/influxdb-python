@@ -122,7 +122,7 @@ class TestLineProtocol(unittest.TestCase):
         )
 
 
-class Test_convert_timestamp(unittest.TestCase):
+class TestConvertTimestamp(unittest.TestCase):
 
     def test_if_raises_value_error_when_not_supported(self):
         with self.assertRaises(ValueError):
