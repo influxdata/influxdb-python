@@ -110,6 +110,9 @@ class InfluxDBClient(object):
             'Accept': 'text/plain'
         }
 
+    # _baseurl, _host and _port are properties to allow
+    # influxdb011.InfluxDBClusterClient to override them with
+    # thread-local variables
     @property
     def _baseurl(self):
         return self._get_baseurl()
