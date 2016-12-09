@@ -406,7 +406,7 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_create_database(self):
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text='{"results":[{}]}'
             )
@@ -419,7 +419,7 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_create_numeric_named_database(self):
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text='{"results":[{}]}'
             )
@@ -437,7 +437,7 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_drop_database(self):
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text='{"results":[{}]}'
             )
@@ -450,7 +450,7 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_drop_numeric_named_database(self):
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text='{"results":[{}]}'
             )
@@ -487,7 +487,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -506,7 +506,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -525,7 +525,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -555,7 +555,7 @@ class TestInfluxDBClient(unittest.TestCase):
     @raises(Exception)
     def test_alter_retention_policy_invalid(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password')
-        with _mocked_session(cli, 'get', 400):
+        with _mocked_session(cli, 'post', 400):
             self.cli.alter_retention_policy('somename', 'db')
 
     def test_drop_retention_policy(self):
@@ -563,7 +563,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -680,7 +680,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -694,7 +694,7 @@ class TestInfluxDBClient(unittest.TestCase):
     @raises(Exception)
     def test_grant_admin_privileges_invalid(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password')
-        with _mocked_session(cli, 'get', 400):
+        with _mocked_session(cli, 'post', 400):
             self.cli.grant_admin_privileges('')
 
     def test_revoke_admin_privileges(self):
@@ -702,7 +702,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -716,7 +716,7 @@ class TestInfluxDBClient(unittest.TestCase):
     @raises(Exception)
     def test_revoke_admin_privileges_invalid(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password')
-        with _mocked_session(cli, 'get', 400):
+        with _mocked_session(cli, 'post', 400):
             self.cli.revoke_admin_privileges('')
 
     def test_grant_privilege(self):
@@ -724,7 +724,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -738,7 +738,7 @@ class TestInfluxDBClient(unittest.TestCase):
     @raises(Exception)
     def test_grant_privilege_invalid(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password')
-        with _mocked_session(cli, 'get', 400):
+        with _mocked_session(cli, 'post', 400):
             self.cli.grant_privilege('', 'testdb', 'test')
 
     def test_revoke_privilege(self):
@@ -746,7 +746,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -760,7 +760,7 @@ class TestInfluxDBClient(unittest.TestCase):
     @raises(Exception)
     def test_revoke_privilege_invalid(self):
         cli = InfluxDBClient('host', 8086, 'username', 'password')
-        with _mocked_session(cli, 'get', 400):
+        with _mocked_session(cli, 'post', 400):
             self.cli.revoke_privilege('', 'testdb', 'test')
 
     def test_get_list_privileges(self):

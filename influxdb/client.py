@@ -331,9 +331,13 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         if epoch is not None:
             params['epoch'] = epoch
 
+        method = 'POST'
+        if query.split() and query.split()[0].upper() in ('SELECT', 'SHOW'):
+            method = 'GET'
+
         response = self.request(
             url="query",
-            method='GET',
+            method=method,
             params=params,
             data=None,
             expected_response_code=expected_response_code
