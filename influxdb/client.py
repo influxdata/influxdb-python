@@ -131,8 +131,8 @@ class InfluxDBClient(object):
     def _get_port(self):
         return self.__port
 
-    @staticmethod
-    def from_DSN(dsn, **kwargs):
+    @classmethod
+    def from_DSN(cls, dsn, **kwargs):
         """Return an instance of :class:`~.InfluxDBClient` from the provided
         data source name. Supported schemes are "influxdb", "https+influxdb"
         and "udp+influxdb". Parameters for the :class:`~.InfluxDBClient`
@@ -169,7 +169,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         init_args['port'] = port
         init_args.update(kwargs)
 
-        return InfluxDBClient(**init_args)
+        return cls(**init_args)
 
     def switch_database(self, database):
         """Change the client's database.
