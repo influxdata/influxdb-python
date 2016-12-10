@@ -1,18 +1,18 @@
 
 
-InfluxDB-Python is a client for interacting with InfluxDB_. Maintained by @aviau (https://github.com/aviau).
+InfluxDB-Python is a client for interacting with InfluxDB_.
 
-**Help needed:** Development of this library is made by the community and help is needed. A co-maintainer would be welcome. To contribute, take a look at the issues list of simply contact @aviau.
+This is a fork with some updates, see my pull requests on the original repo for this library: https://github.com/influxdata/influxdb-python/pulls/gansanay
 
-.. image:: https://travis-ci.org/influxdata/influxdb-python.svg?branch=master
-    :target: https://travis-ci.org/influxdata/influxdb-python
+.. image:: https://travis-ci.org/gansanay/influxdb-python.svg?branch=master
+    :target: https://travis-ci.org/gansanay/influxdb-python/
 
 .. image:: https://readthedocs.org/projects/influxdb-python/badge/?version=latest&style
     :target: http://influxdb-python.readthedocs.org/
     :alt: Documentation Status
 
-.. image:: https://img.shields.io/coveralls/influxdata/influxdb-python.svg
-  :target: https://coveralls.io/r/influxdata/influxdb-python
+.. image:: https://img.shields.io/coveralls/gansanay/influxdb-python.svg
+  :target: https://coveralls.io/github/gansanay/influxdb-python
   :alt: Coverage
 
 .. _readme-about:
@@ -43,9 +43,9 @@ On Debian/Ubuntu, you can install it with this command::
 Dependencies
 ============
 
-The InfluxDB-Python distribution is supported and tested on Python 2.7, 3.3, 3.4, PyPy and PyPy3.
+The InfluxDB-Python distribution is supported and tested on Python 2.7, 3.4 and PyPy3.
 
-**Note:** Python 3.2 is currently untested. See ``.travis.yml``. 
+**Note:** Pypy, Python 3.2 and 3.3 are currently untested. See ``.travis.yml``.
 
 Main dependency is:
 
