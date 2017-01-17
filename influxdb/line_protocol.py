@@ -16,6 +16,12 @@ from six import binary_type, text_type, integer_types, PY2
 EPOCH = UTC.localize(datetime.utcfromtimestamp(0))
 
 
+def _to_nanos(timestamp):
+    delta = timestamp - EPOCH
+    nanos = (delta.days * 86400 + delta.seconds) * 10 ** 9 + delta.microseconds * 10 ** 3
+    return nanos
+
+
 def _convert_timestamp(timestamp, precision=None):
     if isinstance(timestamp, Integral):
         return timestamp  # assume precision is correct if timestamp is int
@@ -24,7 +30,7 @@ def _convert_timestamp(timestamp, precision=None):
     if isinstance(timestamp, datetime):
         if not timestamp.tzinfo:
             timestamp = UTC.localize(timestamp)
-        ns = (timestamp - EPOCH).total_seconds() * 1e9
+        ns = _to_nanos(timestamp)
         if precision is None or precision == 'n':
             return ns
         elif precision == 'u':
