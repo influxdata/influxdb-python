@@ -415,7 +415,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         iterator = iter(iterable)
         while True:
             batch_iterator = itertools.islice(iterator, size)
-            yield itertools.chain([batch_iterator.next()], batch_iterator)
+            yield itertools.chain([next(batch_iterator)], batch_iterator)
 
     def _write_points(self,
                       points,
