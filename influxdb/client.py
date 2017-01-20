@@ -7,6 +7,7 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import itertools
 import json
 import socket
 import requests
@@ -411,8 +412,10 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                                       tags=tags, protocol=protocol)
 
     def _batches(self, iterable, size):
-        for i in xrange(0, len(iterable), size):
-            yield iterable[i:i + size]
+        iterator = iter(iterable)
+        while True:
+            batch_iterator = itertools.islice(iterator, size)
+            yield itertools.chain([batch_iterator.next()], batch_iterator)
 
     def _write_points(self,
                       points,
