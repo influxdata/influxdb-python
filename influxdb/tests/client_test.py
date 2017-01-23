@@ -403,6 +403,17 @@ class TestInfluxDBClient(unittest.TestCase):
         with _mocked_session(self.cli, 'get', 401):
             self.cli.query('select column_one from foo;')
 
+    def test_ping(self):
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/ping",
+                status_code=204,
+                headers={'X-Influxdb-Version': '1.2.3'}
+            )
+            version = self.cli.ping()
+            self.assertEqual(version, '1.2.3')
+
     def test_create_database(self):
         with requests_mock.Mocker() as m:
             m.register_uri(

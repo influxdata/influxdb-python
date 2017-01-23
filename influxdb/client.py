@@ -410,6 +410,18 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                                       retention_policy=retention_policy,
                                       tags=tags, protocol=protocol)
 
+    def ping(self):
+        """Check connectivity to influxdb
+        :returns: The version of the influxdb the client is connected to
+        """
+        response = self.request(
+            url="ping",
+            method='GET',
+            expected_response_code=204
+        )
+
+        return response.headers['X-Influxdb-Version']
+
     def _batches(self, iterable, size):
         for i in xrange(0, len(iterable), size):
             yield iterable[i:i + size]
