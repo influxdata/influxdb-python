@@ -411,10 +411,10 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                                       tags=tags, protocol=protocol)
 
     def ping(self):
-        """Check connectivity to InfluxDB
+        """Check connectivity to InfluxDB.
+
         :returns: The version of the InfluxDB the client is connected to
         """
-
         response = self.request(
             url="ping",
             method='GET',
