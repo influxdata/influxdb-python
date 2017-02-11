@@ -720,6 +720,34 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
             rsp
         )
 
+    def test_create_continuous_query(self):
+        self.cli.create_retention_policy('some_rp', '1d', 1)
+        query = 'select count("value") into "some_rp"."events" from ' \
+                '"events" group by time(10m)'
+        self.cli.create_continuous_query('test_cq', query, 'db')
+        cqs = self.cli.get_list_continuous_queries()
+        expected_cqs = [
+            {
+                'db': [
+                    {
+                        'name': 'test_cq',
+                        'query': 'CREATE CONTINUOUS QUERY test_cq ON db '
+                                 'BEGIN SELECT count(value) INTO '
+                                 'db.some_rp.events FROM db.autogen.events '
+                                 'GROUP BY time(10m) END'
+                    }
+                ]
+            }
+        ]
+        self.assertEqual(cqs, expected_cqs)
+
+    def test_drop_continuous_query(self):
+        self.test_create_continuous_query()
+        self.cli.drop_continuous_query('test_cq', 'db')
+        cqs = self.cli.get_list_continuous_queries()
+        expected_cqs = [{'db': []}]
+        self.assertEqual(cqs, expected_cqs)
+
     def test_issue_143(self):
         """Test for PR#143 from repo."""
         pt = partial(point, 'a_series_name', timestamp='2015-03-30T16:16:37Z')
