@@ -349,6 +349,11 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         if epoch is not None:
             params['epoch'] = epoch
 
+        if chunked:
+            params['chunked'] = 'true'
+            if chunk_size > 0:
+                params['chunk_size'] = chunk_size
+
         response = self.request(
             url="query",
             method='GET',
@@ -357,10 +362,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             expected_response_code=expected_response_code
         )
 
-        if chunked or 'chunked' in params:
-            params['chunked'] = 'true'
-            if chunk_size > 0:
-                params['chunk_size'] = chunk_size
+        if chunked:
             return self._read_chunked_response(response)
 
         data = response.json()
