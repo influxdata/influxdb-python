@@ -813,7 +813,7 @@ class TestInfluxDBClient(unittest.TestCase):
                 text=example_response
             )
             response = list(self.cli.query('show series limit 4 offset 0',
-                                           chunked=True))
+                                           chunked=True, chunk_size=4))
             self.assertTrue(len(response) == 4)
             self.assertEqual(response[0].raw, ResultSet(
                 {"statement_id": 0,

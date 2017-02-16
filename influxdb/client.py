@@ -308,7 +308,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
               expected_response_code=200,
               database=None,
               raise_errors=True,
-              chunked=False):
+              chunked=False,
+              chunk_size=0):
         """Send a query to InfluxDB.
 
         :param query: the actual query string
@@ -333,6 +334,9 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             is returned as opposed to a list.
         :type chunked: bool
 
+        :param chunk_size: Size of each chunk to tell InfluxDB to use.
+        :type chunk_size: int
+
         :returns: the queried data
         :rtype: :class:`~.ResultSet`
         """
@@ -355,6 +359,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
 
         if chunked or 'chunked' in params:
             params['chunked'] = 'true'
+            if chunk_size > 0:
+                params['chunk_size'] = chunk_size
             return self._read_chunked_response(response)
 
         data = response.json()
