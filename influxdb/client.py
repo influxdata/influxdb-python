@@ -293,13 +293,23 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         )
         return True
 
+    def _read_chunked_response(self, response, raise_errors=True):
+        for line in response.iter_lines():
+            # import ipdb; ipdb.set_trace()
+            if isinstance(line, bytes):
+                line = line.decode('utf-8')
+            data = json.loads(line)
+            for result in data.get('results', []):
+                yield ResultSet(result, raise_errors=raise_errors)
+
     def query(self,
               query,
               params=None,
               epoch=None,
               expected_response_code=200,
               database=None,
-              raise_errors=True):
+              raise_errors=True,
+              chunked=False):
         """Send a query to InfluxDB.
 
         :param query: the actual query string
@@ -338,6 +348,10 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             data=None,
             expected_response_code=expected_response_code
         )
+
+        if chunked or 'chunked' in params:
+            params['chunked'] = 'true'
+            return self._read_chunked_response(response)
 
         data = response.json()
 
