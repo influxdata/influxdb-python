@@ -34,6 +34,7 @@ import unittest
 from influxdb import InfluxDBClient
 from influxdb.resultset import ResultSet
 
+
 def _build_response_object(status_code=200, content=""):
     resp = requests.Response()
     resp.status_code = status_code
@@ -793,16 +794,17 @@ class TestInfluxDBClient(unittest.TestCase):
             InfluxDBClient('host', '80/redir', 'username', 'password')
 
     def test_chunked_response(self):
-        example_response = u'{"results":[{"statement_id":0,"series": ' \
-          '[{"name":"cpu","columns":["fieldKey","fieldType"],"values":' \
-          '[["value","integer"]]}],"partial":true}]}\n{"results":' \
-          '[{"statement_id":0,"series":[{"name":"iops","columns":' \
-          '["fieldKey","fieldType"],"values":[["value","integer"]]}],' \
-          '"partial":true}]}\n{"results":[{"statement_id":0,"series":' \
-          '[{"name":"load","columns":["fieldKey","fieldType"],"values":' \
-          '[["value","integer"]]}],"partial":true}]}\n{"results":' \
-          '[{"statement_id":0,"series":[{"name":"memory","columns":' \
-          '["fieldKey","fieldType"],"values":[["value","integer"]]}]}]}\n'
+        example_response = \
+            u'{"results":[{"statement_id":0,"series":' \
+            '[{"name":"cpu","columns":["fieldKey","fieldType"],"values":' \
+            '[["value","integer"]]}],"partial":true}]}\n{"results":' \
+            '[{"statement_id":0,"series":[{"name":"iops","columns":' \
+            '["fieldKey","fieldType"],"values":[["value","integer"]]}],' \
+            '"partial":true}]}\n{"results":[{"statement_id":0,"series":' \
+            '[{"name":"load","columns":["fieldKey","fieldType"],"values":' \
+            '[["value","integer"]]}],"partial":true}]}\n{"results":' \
+            '[{"statement_id":0,"series":[{"name":"memory","columns":' \
+            '["fieldKey","fieldType"],"values":[["value","integer"]]}]}]}\n'
 
         with requests_mock.Mocker() as m:
             m.register_uri(
@@ -810,19 +812,23 @@ class TestInfluxDBClient(unittest.TestCase):
                 "http://localhost:8086/query",
                 text=example_response
             )
-            response = list(self.cli.query('show series limit 4 offset 0', chunked=True))
+            response = list(self.cli.query('show series limit 4 offset 0',
+                                           chunked=True))
             self.assertTrue(len(response) == 4)
             self.assertEqual(response[0].raw, ResultSet(
-                {"statement_id":0,
-                 "series": [{"name":"cpu","columns":["fieldKey","fieldType"],
-                             "values": [["value","integer"]]}],"partial":True}
-                ).raw)
+                {"statement_id": 0,
+                 "series": [{"name": "cpu",
+                             "columns": ["fieldKey", "fieldType"],
+                             "values": [["value", "integer"]]}],
+                 "partial": True}
+            ).raw)
             self.assertEqual(response[3].raw, ResultSet(
-                {"statement_id":0,
-                 "series":[{"name":"memory","columns":
-                            ["fieldKey","fieldType"],
-                            "values":[["value","integer"]]}]}
-                ).raw)
+                {"statement_id": 0,
+                 "series": [{"name": "memory",
+                             "columns": ["fieldKey", "fieldType"],
+                             "values": [["value", "integer"]]}]}
+            ).raw)
+
 
 class FakeClient(InfluxDBClient):
 
