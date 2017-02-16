@@ -295,7 +295,6 @@ localhost:8086/databasename', timeout=5, udp_port=159)
 
     def _read_chunked_response(self, response, raise_errors=True):
         for line in response.iter_lines():
-            # import ipdb; ipdb.set_trace()
             if isinstance(line, bytes):
                 line = line.decode('utf-8')
             data = json.loads(line)
@@ -328,6 +327,11 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :param raise_errors: Whether or not to raise exceptions when InfluxDB
             returns errors, defaults to True
         :type raise_errors: bool
+
+        :param chunked: Enable to use chunked responses from InfluxDB.
+            With ``chunked`` enabled, a _generator_ of ResultSet objects
+            is returned as opposed to a list.
+        :type chunked: bool
 
         :returns: the queried data
         :rtype: :class:`~.ResultSet`
