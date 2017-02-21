@@ -294,12 +294,16 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         return True
 
     def _read_chunked_response(self, response, raise_errors=True):
+        result_set = {}
         for line in response.iter_lines():
             if isinstance(line, bytes):
                 line = line.decode('utf-8')
             data = json.loads(line)
             for result in data.get('results', []):
-                yield ResultSet(result, raise_errors=raise_errors)
+                for _key in result:
+                    if type(result[_key]) == list:
+                        result_set.setdefault(_key, []).extend(result[_key])
+        return ResultSet(result_set, raise_errors=raise_errors)
 
     def query(self,
               query,
@@ -330,8 +334,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :type raise_errors: bool
 
         :param chunked: Enable to use chunked responses from InfluxDB.
-            With ``chunked`` enabled, a _generator_ of ResultSet objects
-            is returned as opposed to a list.
+            With ``chunked`` enabled, one ResultSet is returned per chunk
+            containing all results within that chunk
         :type chunked: bool
 
         :param chunk_size: Size of each chunk to tell InfluxDB to use.
