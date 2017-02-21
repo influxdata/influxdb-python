@@ -812,22 +812,23 @@ class TestInfluxDBClient(unittest.TestCase):
                 "http://localhost:8086/query",
                 text=example_response
             )
-            response = list(self.cli.query('show series limit 4 offset 0',
-                                           chunked=True, chunk_size=4))
+            response = self.cli.query('show series limit 4 offset 0',
+                                      chunked=True, chunk_size=4)
             self.assertTrue(len(response) == 4)
-            self.assertEqual(response[0].raw, ResultSet(
-                {"statement_id": 0,
-                 "series": [{"name": "cpu",
-                             "columns": ["fieldKey", "fieldType"],
-                             "values": [["value", "integer"]]}],
-                 "partial": True}
-            ).raw)
-            self.assertEqual(response[3].raw, ResultSet(
-                {"statement_id": 0,
-                 "series": [{"name": "memory",
-                             "columns": ["fieldKey", "fieldType"],
-                             "values": [["value", "integer"]]}]}
-            ).raw)
+            self.assertEqual(response.__repr__(), ResultSet(
+                {'series': [{'values': [['value', 'integer']],
+                             'name': 'cpu',
+                             'columns': ['fieldKey', 'fieldType']},
+                            {'values': [['value', 'integer']],
+                             'name': 'iops',
+                             'columns': ['fieldKey', 'fieldType']},
+                            {'values': [['value', 'integer']],
+                             'name': 'load',
+                             'columns': ['fieldKey', 'fieldType']},
+                            {'values': [['value', 'integer']],
+                             'name': 'memory',
+                             'columns': ['fieldKey', 'fieldType']}]}
+            ).__repr__())
 
 
 class FakeClient(InfluxDBClient):
