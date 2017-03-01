@@ -32,6 +32,7 @@ import mock
 import unittest
 
 from influxdb import InfluxDBClient
+from influxdb.resultset import ResultSet
 
 
 def _build_response_object(status_code=200, content=""):
@@ -791,6 +792,43 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_invalid_port_fails(self):
         with self.assertRaises(ValueError):
             InfluxDBClient('host', '80/redir', 'username', 'password')
+
+    def test_chunked_response(self):
+        example_response = \
+            u'{"results":[{"statement_id":0,"series":' \
+            '[{"name":"cpu","columns":["fieldKey","fieldType"],"values":' \
+            '[["value","integer"]]}],"partial":true}]}\n{"results":' \
+            '[{"statement_id":0,"series":[{"name":"iops","columns":' \
+            '["fieldKey","fieldType"],"values":[["value","integer"]]}],' \
+            '"partial":true}]}\n{"results":[{"statement_id":0,"series":' \
+            '[{"name":"load","columns":["fieldKey","fieldType"],"values":' \
+            '[["value","integer"]]}],"partial":true}]}\n{"results":' \
+            '[{"statement_id":0,"series":[{"name":"memory","columns":' \
+            '["fieldKey","fieldType"],"values":[["value","integer"]]}]}]}\n'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            response = self.cli.query('show series limit 4 offset 0',
+                                      chunked=True, chunk_size=4)
+            self.assertTrue(len(response) == 4)
+            self.assertEqual(response.__repr__(), ResultSet(
+                {'series': [{'values': [['value', 'integer']],
+                             'name': 'cpu',
+                             'columns': ['fieldKey', 'fieldType']},
+                            {'values': [['value', 'integer']],
+                             'name': 'iops',
+                             'columns': ['fieldKey', 'fieldType']},
+                            {'values': [['value', 'integer']],
+                             'name': 'load',
+                             'columns': ['fieldKey', 'fieldType']},
+                            {'values': [['value', 'integer']],
+                             'name': 'memory',
+                             'columns': ['fieldKey', 'fieldType']}]}
+            ).__repr__())
 
 
 class FakeClient(InfluxDBClient):

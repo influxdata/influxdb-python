@@ -293,13 +293,27 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         )
         return True
 
+    def _read_chunked_response(self, response, raise_errors=True):
+        result_set = {}
+        for line in response.iter_lines():
+            if isinstance(line, bytes):
+                line = line.decode('utf-8')
+            data = json.loads(line)
+            for result in data.get('results', []):
+                for _key in result:
+                    if type(result[_key]) == list:
+                        result_set.setdefault(_key, []).extend(result[_key])
+        return ResultSet(result_set, raise_errors=raise_errors)
+
     def query(self,
               query,
               params=None,
               epoch=None,
               expected_response_code=200,
               database=None,
-              raise_errors=True):
+              raise_errors=True,
+              chunked=False,
+              chunk_size=0):
         """Send a query to InfluxDB.
 
         :param query: the actual query string
@@ -319,6 +333,14 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             returns errors, defaults to True
         :type raise_errors: bool
 
+        :param chunked: Enable to use chunked responses from InfluxDB.
+            With ``chunked`` enabled, one ResultSet is returned per chunk
+            containing all results within that chunk
+        :type chunked: bool
+
+        :param chunk_size: Size of each chunk to tell InfluxDB to use.
+        :type chunk_size: int
+
         :returns: the queried data
         :rtype: :class:`~.ResultSet`
         """
@@ -331,6 +353,11 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         if epoch is not None:
             params['epoch'] = epoch
 
+        if chunked:
+            params['chunked'] = 'true'
+            if chunk_size > 0:
+                params['chunk_size'] = chunk_size
+
         response = self.request(
             url="query",
             method='GET',
@@ -338,6 +365,9 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             data=None,
             expected_response_code=expected_response_code
         )
+
+        if chunked:
+            return self._read_chunked_response(response)
 
         data = response.json()
 
