@@ -247,7 +247,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                 else:
                     raise e
 
-        if response.status_code >= 500 and response.status_code < 600:
+        if 500 <= response.status_code < 600:
             raise InfluxDBServerError(response.content)
         elif response.status_code == expected_response_code:
             return response
