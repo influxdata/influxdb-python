@@ -261,9 +261,9 @@ class TestSeriesHelper(unittest.TestCase):
         self.assertEqual(point2['time'], yesterday)
 
     def testInvalidHelpers(self):
-        '''
+        """
         Tests errors in invalid helpers.
-        '''
+        """
         class MissingMeta(SeriesHelper):
             pass
 

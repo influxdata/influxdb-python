@@ -41,9 +41,9 @@ def _teardown_influxdb_server(inst):
 
 
 class SingleTestCaseWithServerMixin(object):
-    ''' A mixin for unittest.TestCase to start an influxdb server instance
+    """ A mixin for unittest.TestCase to start an influxdb server instance
     in a temporary directory **for each test function/case**
-    '''
+    """
 
     # 'influxdb_template_conf' attribute must be set
     # on the TestCase class or instance.
@@ -53,10 +53,10 @@ class SingleTestCaseWithServerMixin(object):
 
 
 class ManyTestCasesWithServerMixin(object):
-    ''' Same than SingleTestCaseWithServerMixin
+    """ Same than SingleTestCaseWithServerMixin
     but creates a single instance for the whole class.
     Also pre-creates a fresh database: 'db'.
-    '''
+    """
 
     # 'influxdb_template_conf' attribute must be set on the class itself !
 
