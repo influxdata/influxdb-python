@@ -16,6 +16,16 @@ from six import binary_type, text_type, integer_types, PY2
 EPOCH = UTC.localize(datetime.utcfromtimestamp(0))
 
 
+def total_seconds(td):
+    # Keep backward compatibility with Python 2.6 which doesn't have
+    # this method
+    if hasattr(td, 'total_seconds'):
+        return td.total_seconds()
+    else:
+        return (td.microseconds +
+                (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
+
+
 def _convert_timestamp(timestamp, precision=None):
     if isinstance(timestamp, Integral):
         return timestamp  # assume precision is correct if timestamp is int
@@ -24,7 +34,7 @@ def _convert_timestamp(timestamp, precision=None):
     if isinstance(timestamp, datetime):
         if not timestamp.tzinfo:
             timestamp = UTC.localize(timestamp)
-        ns = (timestamp - EPOCH).total_seconds() * 1e9
+        ns = total_seconds(timestamp - EPOCH) * 1e9
         if precision is None or precision == 'n':
             return ns
         elif precision == 'u':
