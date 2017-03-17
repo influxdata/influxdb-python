@@ -565,13 +565,13 @@ class InfluxDBClient(object):
         """
         return list(self.query("SHOW MEASUREMENTS").get_points())
 
-    def drop_measurement(self, measurementname):
+    def drop_measurement(self, measurement):
         """Drop a measurement from InfluxDB.
 
-        :param dbname: the name of the measurement to drop
-        :type dbname: str
+        :param measurement: the name of the measurement to drop
+        :type measurement: str
         """
-        self.query("DROP MEASUREMENT {0}".format(quote_ident(measurementname)))
+        self.query("DROP MEASUREMENT {0}".format(quote_ident(measurement)))
 
     def create_retention_policy(self, name, duration, replication,
                                 database=None, default=False):
