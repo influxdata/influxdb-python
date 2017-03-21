@@ -8,6 +8,7 @@ def main(host='localhost', port=8086):
     user = 'root'
     password = 'root'
     dbname = 'example'
+    protocol = 'json'
 
     client = DataFrameClient(host, port, user, password, dbname)
 
