@@ -5,8 +5,6 @@ from influxdb import DataFrameClient
 
 
 def main(host='localhost', port=8086):
-    host='localhost'
-    port=8086
     user = 'root'
     password = 'root'
     dbname = 'demo'
