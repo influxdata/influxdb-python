@@ -75,12 +75,22 @@ def quote_literal(value):
     )
 
 
+def _is_float(value):
+    try:
+        float(value)
+    except ValueError:
+        return False
+    return True
+
+
 def _escape_value(value):
     value = _get_unicode(value)
     if isinstance(value, text_type) and value != '':
         return quote_ident(value)
     elif isinstance(value, integer_types) and not isinstance(value, bool):
         return str(value) + 'i'
+    elif _is_float(value):
+        return repr(value)
     else:
         return str(value)
 
