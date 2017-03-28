@@ -5,13 +5,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from copy import copy
 from datetime import datetime
 from numbers import Integral
 
 from pytz import UTC
 from dateutil.parser import parse
-from six import binary_type, text_type, integer_types, PY2
+from six import iteritems, binary_type, text_type, integer_types, PY2
 
 EPOCH = UTC.localize(datetime.utcfromtimestamp(0))
 
@@ -108,7 +107,7 @@ def make_lines(data, precision=None):
     matching the line protocol introduced in InfluxDB 0.9.0.
     """
     lines = []
-    static_tags = data.get('tags', None)
+    static_tags = data.get('tags')
     for point in data['points']:
         elements = []
 
@@ -119,32 +118,29 @@ def make_lines(data, precision=None):
         key_values = [measurement]
 
         # add tags
-        if static_tags is None:
-            tags = point.get('tags', {})
+        if static_tags:
+            tags = dict(static_tags)  # make a copy, since we'll modify
+            tags.update(point.get('tags') or {})
         else:
-            tags = copy(static_tags)
-            tags.update(point.get('tags', {}))
+            tags = point.get('tags') or {}
 
         # tags should be sorted client-side to take load off server
-        for tag_key in sorted(tags.keys()):
+        for tag_key, tag_value in sorted(iteritems(tags)):
             key = _escape_tag(tag_key)
-            value = _escape_tag(tags[tag_key])
+            value = _escape_tag(tag_value)
 
             if key != '' and value != '':
-                key_values.append("{key}={value}".format(key=key, value=value))
+                key_values.append(key + "=" + value)
         key_values = ','.join(key_values)
         elements.append(key_values)
 
         # add fields
         field_values = []
-        for field_key in sorted(point['fields'].keys()):
+        for field_key, field_value in sorted(iteritems(point['fields'])):
             key = _escape_tag(field_key)
-            value = _escape_value(point['fields'][field_key])
+            value = _escape_value(field_value)
             if key != '' and value != '':
-                field_values.append("{key}={value}".format(
-                    key=key,
-                    value=value
-                ))
+                field_values.append(key + "=" + value)
         field_values = ','.join(field_values)
         elements.append(field_values)
 
