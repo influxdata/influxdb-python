@@ -13,16 +13,6 @@ import warnings
 from .client import InfluxDBClient
 
 
-def total_seconds(td):
-    # Keep backward compatibility with Python 2.6 which doesn't have
-    # this method
-    if hasattr(td, 'total_seconds'):
-        return td.total_seconds()
-    else:
-        return (td.microseconds +
-                (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
-
-
 class DataFrameClient(InfluxDBClient):
     """
     The ``DataFrameClient`` object holds information necessary to connect
@@ -173,7 +163,7 @@ class DataFrameClient(InfluxDBClient):
             return list(array)
 
     def _datetime_to_epoch(self, datetime, time_precision='s'):
-        seconds = total_seconds(datetime - self.EPOCH)
+        seconds = self.total_seconds(datetime - self.EPOCH)
         if time_precision == 's':
             return seconds
         elif time_precision == 'm' or time_precision == 'ms':

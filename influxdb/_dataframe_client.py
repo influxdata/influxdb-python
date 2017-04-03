@@ -12,7 +12,7 @@ import math
 import pandas as pd
 
 from .client import InfluxDBClient
-from .line_protocol import _escape_tag, total_seconds
+from .line_protocol import _escape_tag
 
 
 def _pandas_time_unit(time_precision):
@@ -375,7 +375,7 @@ class DataFrameClient(InfluxDBClient):
         return dataframe
 
     def _datetime_to_epoch(self, datetime, time_precision='s'):
-        seconds = total_seconds(datetime - self.EPOCH)
+        seconds = self.total_seconds(datetime - self.EPOCH)
         if time_precision == 'h':
             return seconds / 3600
         elif time_precision == 'm':

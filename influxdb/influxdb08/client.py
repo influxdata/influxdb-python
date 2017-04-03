@@ -208,6 +208,22 @@ class InfluxDBClient(object):
         self._username = username
         self._password = password
 
+    def total_seconds(self, td):
+        """
+        total_seconds()
+
+        Keep backward compatibility with Python 2.6, where datetime
+        does not contain this method.
+
+        :param td: timedelta
+        :type td: datetime.timedelta
+        """
+        if hasattr(td, 'total_seconds'):
+            return td.total_seconds()
+        else:
+            return (td.microseconds +
+                    (td.seconds + td.days * 24 * 3600) * 10**6) / 10**6
+
     def request(self, url, method='GET', params=None, data=None,
                 expected_response_code=200):
         """

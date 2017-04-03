@@ -17,8 +17,15 @@ EPOCH = UTC.localize(datetime.utcfromtimestamp(0))
 
 
 def total_seconds(td):
-    # Keep backward compatibility with Python 2.6 which doesn't have
-    # this method
+    """
+    total_seconds()
+
+    Keep backward compatibility with Python 2.6, where datetime
+    does not contain this method.
+
+    :param td: timedelta
+    :type td: datetime.timedelta
+    """
     if hasattr(td, 'total_seconds'):
         return td.total_seconds()
     else:
