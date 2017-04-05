@@ -205,6 +205,8 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :param expected_response_code: the expected response code of
             the request, defaults to 200
         :type expected_response_code: int
+        :param headers: headers to add to the request
+        :type headers: dict
         :returns: the response from the request
         :rtype: :class:`requests.Response`
         :raises InfluxDBServerError: if the response code is any server error
@@ -245,7 +247,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                 else:
                     raise e
 
-        if response.status_code >= 500 and response.status_code < 600:
+        if 500 <= response.status_code < 600:
             raise InfluxDBServerError(response.content)
         elif response.status_code == expected_response_code:
             return response
@@ -322,6 +324,11 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :param params: additional parameters for the request, defaults to {}
         :type params: dict
 
+        :param epoch: response timestamps to be in epoch format either 'h',
+            'm', 's', 'ms', 'u', or 'ns',defaults to `None` which is
+            RFC3339 UTC format with nanosecond precision
+        :type epoch: str
+
         :param expected_response_code: the expected status code of response,
             defaults to 200
         :type expected_response_code: int
@@ -396,7 +403,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
 
         :param points: the list of points to be written in the database
         :type points: list of dictionaries, each dictionary represents a point
-        :type data: (if protocol is 'json') list of dicts, where each dict
+        :type points: (if protocol is 'json') list of dicts, where each dict
                                             represents a point.
                     (if protocol is 'line') sequence of line protocol strings.
         :param time_precision: Either 's', 'm', 'ms' or 'u', defaults to None
@@ -575,7 +582,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :type duration: str
         :param replication: the new replication of the existing
             retention policy
-        :type replication: str
+        :type replication: int
         :param default: whether or not to set the modified policy as default
         :type default: bool
 
@@ -704,9 +711,9 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             deleted, defaults to client's current database
         :type database: str
         :param measurement: Delete all series from a measurement
-        :type id: str
+        :type measurement: str
         :param tags: Delete all series that match given tags
-        :type id: dict
+        :type tags: dict
         """
         database = database or self._database
         query_str = 'DROP SERIES'

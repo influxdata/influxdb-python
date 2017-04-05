@@ -227,7 +227,7 @@ class DataFrameClient(InfluxDBClient):
                                     measurement,
                                     field_columns=None,
                                     tag_columns=None,
-                                    global_tags={},
+                                    global_tags=None,
                                     time_precision=None,
                                     numeric_precision=None):
 
@@ -366,7 +366,7 @@ class DataFrameClient(InfluxDBClient):
 
         if datatype == 'field':
             # If dealing with fields, format ints and strings correctly
-            dataframe[int_columns] = dataframe[int_columns] + 'i'
+            dataframe[int_columns] += 'i'
             dataframe[string_columns] = '"' + dataframe[string_columns] + '"'
         elif datatype == 'tag':
             dataframe = dataframe.apply(_escape_pandas_series)

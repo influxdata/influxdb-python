@@ -838,7 +838,7 @@ class FakeClient(InfluxDBClient):
 
     def query(self,
               query,
-              params={},
+              params=None,
               expected_response_code=200,
               database=None):
         if query == 'Fail':
