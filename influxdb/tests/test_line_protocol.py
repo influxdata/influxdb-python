@@ -121,6 +121,7 @@ class TestLineProtocol(unittest.TestCase):
         )
 
     def test_float_with_long_decimal_fraction(self):
+        """Ensure precision is preserved when casting floats into strings."""
         data = {
             "points": [
                 {
