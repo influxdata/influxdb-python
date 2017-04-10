@@ -21,6 +21,7 @@ if not using_pypy:
     import pandas as pd
     from pandas.util.testing import assert_frame_equal
     from influxdb import DataFrameClient
+    import numpy as np
 
 
 @skipIfPYpy
@@ -571,3 +572,53 @@ class TestDataFrameClient(unittest.TestCase):
         client = DataFrameClient.from_DSN('influxdb://localhost:8086')
         self.assertIsInstance(client, DataFrameClient)
         self.assertEqual('http://localhost:8086', client._baseurl)
+
+    def test_write_points_from_dataframe_with_nan_line(self):
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[["1", 1, np.inf], ["2", 2, np.nan]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["column_one", "column_two",
+                                          "column_three"])
+        expected = (
+            b"foo column_one=\"1\",column_two=1i 0\n"
+            b"foo column_one=\"2\",column_two=2i "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo', protocol='line')
+            self.assertEqual(m.last_request.body, expected)
+
+            cli.write_points(dataframe, 'foo', tags=None, protocol='line')
+            self.assertEqual(m.last_request.body, expected)
+
+    def test_write_points_from_dataframe_with_nan_json(self):
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[["1", 1, np.inf], ["2", 2, np.nan]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["column_one", "column_two",
+                                          "column_three"])
+        expected = (
+            b"foo column_one=\"1\",column_two=1i 0\n"
+            b"foo column_one=\"2\",column_two=2i "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo', protocol='json')
+            self.assertEqual(m.last_request.body, expected)
+
+            cli.write_points(dataframe, 'foo', tags=None, protocol='json')
+            self.assertEqual(m.last_request.body, expected)

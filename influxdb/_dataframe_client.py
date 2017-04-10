@@ -10,6 +10,7 @@ from __future__ import unicode_literals
 import math
 
 import pandas as pd
+import numpy as np
 
 from .client import InfluxDBClient
 from .line_protocol import _escape_tag
@@ -213,11 +214,11 @@ class DataFrameClient(InfluxDBClient):
         points = [
             {'measurement': measurement,
              'tags': dict(list(tag.items()) + list(tags.items())),
-             'fields': rec,
+             'fields': rec.replace([np.inf, -np.inf], np.nan).dropna().to_dict(),
              'time': int(ts.value / precision_factor)}
-            for ts, tag, rec in zip(dataframe.index,
+            for ts, tag, (_, rec) in zip(dataframe.index,
                                     dataframe[tag_columns].to_dict('record'),
-                                    dataframe[field_columns].to_dict('record'))
+                                    dataframe[field_columns].iterrows())
         ]
 
         return points
@@ -311,12 +312,14 @@ class DataFrameClient(InfluxDBClient):
             tags = ''
 
         # Make an array of formatted field keys and values
-        field_df = dataframe[field_columns]
+        field_df = dataframe[field_columns].replace([np.inf, -np.inf], np.nan)
+        nans = pd.isnull(field_df)
         field_df = self._stringify_dataframe(
             field_df, numeric_precision, datatype='field')
         field_df = (field_df.columns.values + '=').tolist() + field_df
         field_df[field_df.columns[1:]] = ',' + field_df[field_df.columns[1:]]
-        fields = field_df.sum(axis=1)
+        field_df[nans] = ''
+        fields = field_df.sum(axis=1).map(lambda x: x.lstrip(','))
         del field_df
 
         # Generate line protocol string
