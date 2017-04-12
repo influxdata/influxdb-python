@@ -248,11 +248,13 @@ class InfluxDBClient(object):
                     timeout=self._timeout
                 )
                 break
-            except (requests.exceptions.ConnectionError,
-                    requests.exceptions.Timeout) as e:
+             except (requests.exceptions.ConnectionError,
+                     requests.exceptions.Timeout) as e:
                 _try += 1
                 if self._retries != 0:
                     retry = _try < self._retries
+        else:
+            raise requests.exceptions.ConnectionError
 
         if response.status_code == expected_response_code:
             return response

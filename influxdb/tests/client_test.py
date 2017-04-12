@@ -645,6 +645,60 @@ class TestInfluxDBClient(unittest.TestCase):
         with self.assertRaises(requests.exceptions.ConnectionError):
             cli.write_points(self.dummy_points)
 
+    @mock.patch('requests.Session.request')
+    def test_random_request_retry(self, mock_request):
+        """Tests that a random number of connection errors will be handled"""
+
+        class CustomMock(object):
+            def __init__(self, retries):
+                self.i = 0
+                self.retries = retries
+
+            def connection_error(self, *args, **kwargs):
+                self.i += 1
+
+                if self.i < self.retries:
+                    raise requests.exceptions.ConnectionError
+                else:
+                    r = requests.Response()
+                    r.status_code = 204
+                    return r
+
+        retries = random.randint(1, 100)
+        mock_request.side_effect = CustomMock(retries).connection_error
+
+        cli = InfluxDBClient(database='db', retries=retries)
+        cli.write_points(
+            self.dummy_points
+        )
+
+    @mock.patch('requests.Session.request')
+    def test_random_request_retry_raises(self, mock_request):
+        """Tests that a random number of connection errors plus one will be not handled"""
+
+        class CustomMock(object):
+            def __init__(self, retries):
+                self.i = 0
+                self.retries = retries
+
+            def connection_error(self, *args, **kwargs):
+                self.i += 1
+
+                if self.i < self.retries + 1:
+                    raise requests.exceptions.ConnectionError
+                else:
+                    r = requests.Response()
+                    r.status_code = 200
+                    return r
+
+        retries = random.randint(1, 100)
+        mock_request.side_effect = CustomMock(retries).connection_error
+
+        cli = InfluxDBClient(database='db', retries=retries)
+
+        with self.assertRaises(requests.exceptions.ConnectionError):
+            cli.write_points(self.dummy_points)
+
     def test_get_list_users(self):
         example_response = (
             '{"results":[{"series":[{"columns":["user","admin"],'

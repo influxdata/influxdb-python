@@ -252,6 +252,9 @@ localhost:8086/databasename', timeout=5, udp_port=159)
                 if self._retries != 0:
                     retry = _try < self._retries
 
+        else:
+            raise requests.exceptions.ConnectionError
+
         if 500 <= response.status_code < 600:
             raise InfluxDBServerError(response.content)
         elif response.status_code == expected_response_code:
