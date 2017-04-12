@@ -55,6 +55,9 @@ class InfluxDBClient(object):
     :param verify_ssl: verify SSL certificates for HTTPS requests, defaults is
         False
     :type verify_ssl: boolean
+    :param retries: number of retries your client will try before aborting,
+        defaults to 3. 0 indicates try until success
+    :type retries: int
     :param timeout: number of seconds Requests will wait for your client to
         establish a connection, defaults to None
     :type timeout: int
@@ -73,6 +76,7 @@ class InfluxDBClient(object):
                  ssl=False,
                  verify_ssl=False,
                  timeout=None,
+                 retries=3,
                  use_udp=False,
                  udp_port=4444):
         """
@@ -84,6 +88,7 @@ class InfluxDBClient(object):
         self._password = password
         self._database = database
         self._timeout = timeout
+        self._retries = retries
 
         self._verify_ssl = verify_ssl
 
@@ -228,9 +233,10 @@ class InfluxDBClient(object):
         if data is not None and not isinstance(data, str):
             data = json.dumps(data)
 
-        # Try to send the request a maximum of three times. (see #103)
-        # TODO (aviau): Make this configurable.
-        for i in range(0, 3):
+        retry = True
+        _try = 0
+        # Try to send the request more than once by default (see #103)
+        while retry:
             try:
                 response = session.request(
                     method=method,
@@ -244,10 +250,11 @@ class InfluxDBClient(object):
                 break
             except (requests.exceptions.ConnectionError,
                     requests.exceptions.Timeout) as e:
-                if i < 2:
-                    continue
-                else:
-                    raise e
+                _try += 1
+                if self._retries != 0:
+                    retry = _try < self._retries
+        else:
+            raise requests.exceptions.ConnectionError
 
         if response.status_code == expected_response_code:
             return response
