@@ -237,7 +237,7 @@ class InfluxDBClient(object):
         _try = 0
         # Try to send the request more than once by default (see #103)
         while retry:
-             try:
+            try:
                 response = session.request(
                     method=method,
                     url=url,
@@ -248,8 +248,8 @@ class InfluxDBClient(object):
                     timeout=self._timeout
                 )
                 break
-             except (requests.exceptions.ConnectionError,
-                     requests.exceptions.Timeout) as e:
+            except (requests.exceptions.ConnectionError,
+                    requests.exceptions.Timeout) as e:
                 _try += 1
                 if self._retries != 0:
                     retry = _try < self._retries

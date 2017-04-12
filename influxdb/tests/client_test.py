@@ -674,7 +674,8 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @mock.patch('requests.Session.request')
     def test_random_request_retry_raises(self, mock_request):
-        """Tests that a random number of connection errors plus one will be not handled"""
+        """Tests that a random number of connection errors plus one \
+                will not be handled"""
 
         class CustomMock(object):
             def __init__(self, retries):
