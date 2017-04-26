@@ -106,7 +106,7 @@ class ResultSet(object):
                 # we will matches every returned serie
                 serie_tags = serie.get('columns', {})
                 for item in self._get_points_for_serie(serie):
-                    if tags is None or self._tag_matches(item, tags):   
+                    if tags is None or self._tag_matches(item, tags):
                         yield item
 
     def __repr__(self):
