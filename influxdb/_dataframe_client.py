@@ -8,6 +8,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import math
+from collections import defaultdict
 
 import pandas as pd
 
@@ -131,25 +132,26 @@ class DataFrameClient(InfluxDBClient):
                 protocol=protocol)
             return True
 
-    def query(self, query, chunked=False, database=None):
+    def query(self, query, dropna=True, **kwargs):
         """
         Quering data into a DataFrame.
 
-        :param chunked: [Optional, default=False] True if the data shall be
-            retrieved in chunks, False otherwise.
+        :param query: the actual query string
+        :param dropna: drop columns where all values are missing
+        :param **kwargs: additional parameters for ``InfluxDBClient.query``
 
         """
-        results = super(DataFrameClient, self).query(query, database=database)
+        results = super(DataFrameClient, self).query(query, **kwargs)
         if query.strip().upper().startswith("SELECT"):
             if len(results) > 0:
-                return self._to_dataframe(results)
+                return self._to_dataframe(results, dropna)
             else:
                 return {}
         else:
             return results
 
-    def _to_dataframe(self, rs):
-        result = {}
+    def _to_dataframe(self, rs, dropna=True):
+        result = defaultdict(list)
         if isinstance(rs, list):
             return map(self._to_dataframe, rs)
         for key, data in rs.items():
@@ -163,6 +165,11 @@ class DataFrameClient(InfluxDBClient):
             df.set_index('time', inplace=True)
             df.index = df.index.tz_localize('UTC')
             df.index.name = None
+            result[key].append(df)
+        for key, data in result.items():
+            df = pd.concat(data).sort_index()
+            if dropna:
+                df.dropna(how='all', axis=1, inplace=True)
             result[key] = df
         return result
 
