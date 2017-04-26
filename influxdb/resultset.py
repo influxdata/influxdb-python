@@ -104,9 +104,9 @@ class ResultSet(object):
             elif measurement in (None, serie_name):
                 # by default if no tags was provided then
                 # we will matches every returned serie
-                serie_tags = serie.get('tags', {})
-                if tags is None or self._tag_matches(serie_tags, tags):
-                    for item in self._get_points_for_serie(serie):
+                serie_tags = serie.get('columns', {})
+                for item in self._get_points_for_serie(serie):
+                    if tags is None or self._tag_matches(item, tags):   
                         yield item
 
     def __repr__(self):
