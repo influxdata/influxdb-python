@@ -5,14 +5,14 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from datetime import datetime
+import datetime
 from numbers import Integral
 
 from pytz import UTC
 from dateutil.parser import parse
 from six import iteritems, binary_type, text_type, integer_types, PY2
 
-EPOCH = UTC.localize(datetime.utcfromtimestamp(0))
+EPOCH = UTC.localize(datetime.datetime.utcfromtimestamp(0))
 
 
 def _convert_timestamp(timestamp, precision=None):
@@ -20,10 +20,12 @@ def _convert_timestamp(timestamp, precision=None):
         return timestamp  # assume precision is correct if timestamp is int
     if isinstance(_get_unicode(timestamp), text_type):
         timestamp = parse(timestamp)
-    if isinstance(timestamp, datetime):
+    if isinstance(timestamp, datetime.datetime):
         if not timestamp.tzinfo:
             timestamp = UTC.localize(timestamp)
-        ns = (timestamp - EPOCH).total_seconds() * 1e9
+        ns_no_total = (timestamp - EPOCH)
+        ns = ((ns_no_total.microseconds + (
+            ns_no_total.seconds + ns_no_total.days * 24 * 3600) * 10 ** 6) / 10 ** 6) * 1e9
         if precision is None or precision == 'n':
             return ns
         elif precision == 'u':
@@ -36,7 +38,7 @@ def _convert_timestamp(timestamp, precision=None):
             return ns / 1e9 / 60
         elif precision == 'h':
             return ns / 1e9 / 3600
-    raise ValueError(timestamp)
+        raise ValueError(timestamp)
 
 
 def _escape_tag(tag):
