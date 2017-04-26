@@ -18,8 +18,10 @@ EPOCH = UTC.localize(datetime.utcfromtimestamp(0))
 
 def _to_nanos(timestamp):
     delta = timestamp - EPOCH
-    nanos = (delta.days * 86400 + delta.seconds) * 10 ** 9 + delta.microseconds * 10 ** 3
-    return nanos
+    nanos_in_days = delta.days * 86400 * 10 ** 9
+    nanos_in_seconds = delta.seconds * 10 ** 9
+    nanos_in_micros = delta.microseconds * 10 ** 3
+    return nanos_in_days + nanos_in_seconds + nanos_in_micros
 
 
 def _convert_timestamp(timestamp, precision=None):
