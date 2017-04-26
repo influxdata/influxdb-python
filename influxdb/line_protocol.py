@@ -23,19 +23,21 @@ def _convert_timestamp(timestamp, precision=None):
     if isinstance(timestamp, datetime):
         if not timestamp.tzinfo:
             timestamp = UTC.localize(timestamp)
-        ns = (timestamp - EPOCH).total_seconds() * 1e9
-        if precision is None or precision == 'n':
-            return ns
-        elif precision == 'u':
-            return ns / 1e3
-        elif precision == 'ms':
-            return ns / 1e6
-        elif precision == 's':
-            return ns / 1e9
-        elif precision == 'm':
-            return ns / 1e9 / 60
-        elif precision == 'h':
-            return ns / 1e9 / 3600
+            td = (timestamp - EPOCH)
+            ns = ((td.microseconds + (td.seconds + td.days * 24 * 3600) *
+                   10 ** 6) / 10 ** 6) * 1e9
+            if precision is None or precision == 'n':
+                return ns
+            elif precision == 'u':
+                return ns / 1e3
+            elif precision == 'ms':
+                return ns / 1e6
+            elif precision == 's':
+                return ns / 1e9
+            elif precision == 'm':
+                return ns / 1e9 / 60
+            elif precision == 'h':
+                return ns / 1e9 / 3600
     raise ValueError(timestamp)
 
 
