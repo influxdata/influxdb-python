@@ -25,7 +25,8 @@ def _convert_timestamp(timestamp, precision=None):
             timestamp = UTC.localize(timestamp)
         ns_no_total = (timestamp - EPOCH)
         ns = ((ns_no_total.microseconds + (
-            ns_no_total.seconds + ns_no_total.days * 24 * 3600) * 10 ** 6) / 10 ** 6) * 1e9
+            ns_no_total.seconds + ns_no_total.days * 24 * 3600) *
+            10 ** 6) / 10 ** 6) * 1e9
         if precision is None or precision == 'n':
             return ns
         elif precision == 'u':
