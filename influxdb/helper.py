@@ -25,6 +25,9 @@ class SeriesHelper(object):
     the time types supported by the client (i.e. str, datetime, int).
     If the time is not specified, the current system time (utc) will be used.
 
+    A field "timestamp" can be used to write data points at a specific time,
+    rather than the default current time.
+
     Annotated example::
 
         class MySeriesHelper(SeriesHelper):
@@ -157,6 +160,13 @@ class SeriesHelper(object):
                     "tags": {},
                     "time": getattr(point, "time")
                 }
+                if 'timestamp' in point.__dict__ \
+                   and point.__dict__['timestamp']:
+                    # keep the timestamp in json_point
+                    json_point["timestamp"] = point.__dict__['timestamp']
+                    # remove timestamp from fields
+                    if "timestamp" in cls._fields:
+                        cls._fields.remove("timestamp")
 
                 for field in cls._fields:
                     json_point['fields'][field] = getattr(point, field)
