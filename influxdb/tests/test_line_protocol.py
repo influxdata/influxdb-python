@@ -119,3 +119,20 @@ class TestLineProtocol(unittest.TestCase):
             line_protocol.quote_literal(r"""\foo ' bar " Örf"""),
             r"""'\\foo \' bar " Örf'"""
         )
+
+    def test_float_with_long_decimal_fraction(self):
+        """Ensure precision is preserved when casting floats into strings."""
+        data = {
+            "points": [
+                {
+                    "measurement": "test",
+                    "fields": {
+                        "float_val": 1.0000000000000009,
+                    }
+                }
+            ]
+        }
+        self.assertEqual(
+            line_protocol.make_lines(data),
+            'test float_val=1.0000000000000009\n'
+        )

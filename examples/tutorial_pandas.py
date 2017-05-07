@@ -7,7 +7,9 @@ from influxdb import DataFrameClient
 def main(host='localhost', port=8086):
     user = 'root'
     password = 'root'
-    dbname = 'example'
+    dbname = 'demo'
+    # Temporarily used to avoid line protocol time conversion issues #412, #426, #431.
+    protocol = 'json'
 
     client = DataFrameClient(host, port, user, password, dbname)
 
@@ -20,16 +22,16 @@ def main(host='localhost', port=8086):
     client.create_database(dbname)
 
     print("Write DataFrame")
-    client.write_points(df, 'demo')
+    client.write_points(df, 'demo', protocol=protocol)
 
     print("Write DataFrame with Tags")
-    client.write_points(df, 'demo', {'k1': 'v1', 'k2': 'v2'})
+    client.write_points(df, 'demo', {'k1': 'v1', 'k2': 'v2'}, protocol=protocol)
 
     print("Read DataFrame")
     client.query("select * from demo")
 
     print("Delete database: " + dbname)
-    client.delete_database(dbname)
+    client.drop_database(dbname)
 
 
 def parse_args():

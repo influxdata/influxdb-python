@@ -83,9 +83,9 @@ class TestSeriesHelper(unittest.TestCase):
             'Resetting helper did not empty datapoints.')
 
     def testSeveralSeriesNames(self):
-        '''
+        """
         Tests JSON conversion when there is only one series name.
-        '''
+        """
         TestSeriesHelper.MySeriesHelper(server_name='us.east-1', time=159)
         TestSeriesHelper.MySeriesHelper(server_name='fr.paris-10', time=158)
         TestSeriesHelper.MySeriesHelper(server_name='lu.lux', time=157)
@@ -116,9 +116,9 @@ class TestSeriesHelper(unittest.TestCase):
             'Resetting helper did not empty datapoints.')
 
     def testInvalidHelpers(self):
-        '''
+        """
         Tests errors in invalid helpers.
-        '''
+        """
         class MissingMeta(SeriesHelper):
             pass
 
