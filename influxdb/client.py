@@ -824,7 +824,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         if protocol == 'json':
             data = make_lines(packet).encode('utf-8')
         elif protocol == 'line':
-            data = ('\n'.join(data) + '\n').encode('utf-8')
+            data = ('\n'.join(packet) + '\n').encode('utf-8')
         self.udp_socket.sendto(data, (self._host, self.udp_port))
 
 

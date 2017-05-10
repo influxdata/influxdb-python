@@ -140,7 +140,7 @@ class DataFrameClient(InfluxDBClient):
 
         """
         results = super(DataFrameClient, self).query(query, database=database)
-        if query.upper().startswith("SELECT"):
+        if query.strip().upper().startswith("SELECT"):
             if len(results) > 0:
                 return self._to_dataframe(results)
             else:
