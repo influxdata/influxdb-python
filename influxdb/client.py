@@ -62,11 +62,26 @@ class InfluxDBClient(object):
     :type udp_port: int
     :param proxies: HTTP(S) proxy to use for Requests, defaults to {}
     :type proxies: dict
+    :param uri: uri to use in URL when using a reverse proxy, defaults to ''
+        example https://myserver.domain.com/influxproxy with an Apache 
+        reverse proxy config that should look like :
+            <Proxy http://localhost:8086/*>
+                 Allow from all
+            </Proxy>
+            <LocationMatch "/influxproxy">
+                 ProxyPass http://localhost:8086 retry=0
+                 ProxyPassReverse http://localhost:8086
+                 RequestHeader set X-Forwarded-For %{REMOTE_ADDR}s
+            </LocationMatch>
+
+    :type uri: str
+
     """
 
     def __init__(self,
                  host='localhost',
                  port=8086,
+                 uri='',
                  username='root',
                  password='root',
                  database=None,
@@ -81,6 +96,7 @@ class InfluxDBClient(object):
         """Construct a new InfluxDBClient object."""
         self.__host = host
         self.__port = int(port)
+        self.__uri = uri
         self._username = username
         self._password = password
         self._database = database
@@ -219,7 +235,10 @@ localhost:8086/databasename', timeout=5, udp_port=159)
         :raises InfluxDBClientError: if the response code is not the
             same as `expected_response_code` and is not a server error code
         """
-        url = "{0}/{1}".format(self._baseurl, url)
+        if self.__uri == '':
+            url = "{0}/{1}".format(self._baseurl, url)
+        else:
+            url = "{0}/{1}/{2}".format(self._baseurl, self.__uri, url)
 
         if headers is None:
             headers = self._headers
