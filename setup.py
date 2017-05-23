@@ -30,7 +30,7 @@ with open('README.rst', 'r') as f:
 
 
 setup(
-    name='influxdb',
+    name='influxdb-python',
     version=version,
     description="InfluxDB client",
     long_description=readme,
