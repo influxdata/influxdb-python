@@ -1,3 +1,4 @@
+unittest2
 python-dateutil>=2.0.0
 pytz
 requests>=1.0.3
