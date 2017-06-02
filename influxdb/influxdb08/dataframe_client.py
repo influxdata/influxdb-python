@@ -128,12 +128,12 @@ class DataFrameClient(InfluxDBClient):
         if not isinstance(dataframe, pd.DataFrame):
             raise TypeError('Must be DataFrame, but type was: {0}.'
                             .format(type(dataframe)))
-        if not (isinstance(dataframe.index, pd.tseries.period.PeriodIndex) or
-                isinstance(dataframe.index, pd.tseries.index.DatetimeIndex)):
+        if not (isinstance(dataframe.index, pd.PeriodIndex) or
+                isinstance(dataframe.index, pd.DatetimeIndex)):
             raise TypeError('Must be DataFrame with DatetimeIndex or \
                             PeriodIndex.')
 
-        if isinstance(dataframe.index, pd.tseries.period.PeriodIndex):
+        if isinstance(dataframe.index, pd.PeriodIndex):
             dataframe.index = dataframe.index.to_timestamp()
         else:
             dataframe.index = pd.to_datetime(dataframe.index)
