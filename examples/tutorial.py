@@ -41,7 +41,7 @@ def main(host='localhost', port=8086):
     print("Write points: {0}".format(json_body))
     client.write_points(json_body)
 
-    print("Queying data: " + query)
+    print("Querying data: " + query)
     result = client.query(query)
 
     print("Result: {0}".format(result))
