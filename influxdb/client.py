@@ -829,7 +829,7 @@ localhost:8086/databasename', timeout=5, udp_port=159)
 
     def close(self):
         """Close http session."""
-        if self._session:
+        if isinstance(self._session, requests.Session):
             self._session.close()
 
 
