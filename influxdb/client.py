@@ -827,6 +827,11 @@ localhost:8086/databasename', timeout=5, udp_port=159)
             data = ('\n'.join(packet) + '\n').encode('utf-8')
         self.udp_socket.sendto(data, (self._host, self.udp_port))
 
+    def close(self):
+        """Close http session."""
+        if self._session:
+            self._session.close()
+
 
 def parse_dsn(dsn):
     conn_params = urlparse(dsn)
