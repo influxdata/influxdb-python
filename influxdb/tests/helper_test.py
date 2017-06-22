@@ -1,23 +1,27 @@
 # -*- coding: utf-8 -*-
+"""Set of series helper functions for test."""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+from datetime import datetime, timedelta
+
 import unittest
 import warnings
 
 import mock
-from datetime import datetime, timedelta
 from influxdb import SeriesHelper, InfluxDBClient
 from requests.exceptions import ConnectionError
 
 
 class TestSeriesHelper(unittest.TestCase):
+    """Define the SeriesHelper test object."""
 
     @classmethod
     def setUpClass(cls):
+        """Set up the TestSeriesHelper object."""
         super(TestSeriesHelper, cls).setUpClass()
 
         TestSeriesHelper.client = InfluxDBClient(
@@ -29,8 +33,11 @@ class TestSeriesHelper(unittest.TestCase):
         )
 
         class MySeriesHelper(SeriesHelper):
+            """Define a SeriesHelper object."""
 
             class Meta:
+                """Define metadata for the SeriesHelper object."""
+
                 client = TestSeriesHelper.client
                 series_name = 'events.stats.{server_name}'
                 fields = ['some_stat']
@@ -41,6 +48,7 @@ class TestSeriesHelper(unittest.TestCase):
         TestSeriesHelper.MySeriesHelper = MySeriesHelper
 
     def tearDown(self):
+        """Deconstruct the TestSeriesHelper object."""
         super(TestSeriesHelper, self).tearDown()
         TestSeriesHelper.MySeriesHelper._reset_()
         self.assertEqual(
@@ -49,12 +57,13 @@ class TestSeriesHelper(unittest.TestCase):
             'Resetting helper did not empty datapoints.')
 
     def test_auto_commit(self):
-        """
-        Tests that write_points is called after the right number of events
-        """
+        """Test write_points called after valid number of events."""
         class AutoCommitTest(SeriesHelper):
+            """Define a SeriesHelper instance to test autocommit."""
 
             class Meta:
+                """Define metadata for AutoCommitTest."""
+
                 series_name = 'events.stats.{server_name}'
                 fields = ['some_stat']
                 tags = ['server_name', 'other_tag']
@@ -74,9 +83,7 @@ class TestSeriesHelper(unittest.TestCase):
 
     @mock.patch('influxdb.helper.SeriesHelper._current_timestamp')
     def testSingleSeriesName(self, current_timestamp):
-        """
-        Tests JSON conversion when there is only one series name.
-        """
+        """Test JSON conversion when there is only one series name."""
         current_timestamp.return_value = current_date = datetime.today()
         TestSeriesHelper.MySeriesHelper(
             server_name='us.east-1', other_tag='ello', some_stat=159)
@@ -141,9 +148,7 @@ class TestSeriesHelper(unittest.TestCase):
 
     @mock.patch('influxdb.helper.SeriesHelper._current_timestamp')
     def testSeveralSeriesNames(self, current_timestamp):
-        """
-        Tests JSON conversion when there are multiple series names.
-        """
+        """Test JSON conversion when there are multiple series names."""
         current_timestamp.return_value = current_date = datetime.today()
         TestSeriesHelper.MySeriesHelper(
             server_name='us.east-1', some_stat=159, other_tag='ello')
@@ -209,9 +214,7 @@ class TestSeriesHelper(unittest.TestCase):
 
     @mock.patch('influxdb.helper.SeriesHelper._current_timestamp')
     def testSeriesWithoutTimeField(self, current_timestamp):
-        """
-        Tests that time is optional on a series without a time field.
-        """
+        """Test that time is optional on a series without a time field."""
         current_date = datetime.today()
         yesterday = current_date - timedelta(days=1)
         current_timestamp.return_value = yesterday
@@ -230,9 +233,7 @@ class TestSeriesHelper(unittest.TestCase):
 
     @mock.patch('influxdb.helper.SeriesHelper._current_timestamp')
     def testSeriesWithTimeField(self, current_timestamp):
-        """
-        Test that time is optional on a series with a time field.
-        """
+        """Test that time is optional on a series with a time field."""
         current_date = datetime.today()
         yesterday = current_date - timedelta(days=1)
         current_timestamp.return_value = yesterday
@@ -261,27 +262,36 @@ class TestSeriesHelper(unittest.TestCase):
         self.assertEqual(point2['time'], yesterday)
 
     def testInvalidHelpers(self):
-        """
-        Tests errors in invalid helpers.
-        """
+        """Test errors in invalid helpers."""
         class MissingMeta(SeriesHelper):
+            """Define instance of SeriesHelper for missing meta."""
+
             pass
 
         class MissingClient(SeriesHelper):
+            """Define SeriesHelper for missing client data."""
 
             class Meta:
+                """Define metadat for MissingClient."""
+
                 series_name = 'events.stats.{server_name}'
                 fields = ['time', 'server_name']
                 autocommit = True
 
         class MissingSeriesName(SeriesHelper):
+            """Define instance of SeriesHelper for missing series."""
 
             class Meta:
+                """Define metadata for MissingSeriesName."""
+
                 fields = ['time', 'server_name']
 
         class MissingFields(SeriesHelper):
+            """Define instance of SeriesHelper for missing fields."""
 
             class Meta:
+                """Define metadata for MissingFields."""
+
                 series_name = 'events.stats.{server_name}'
 
         for cls in [MissingMeta, MissingClient, MissingFields,
@@ -292,9 +302,7 @@ class TestSeriesHelper(unittest.TestCase):
 
     @unittest.skip("Fails on py32")
     def testWarnBulkSizeZero(self):
-        """
-        Tests warning for an invalid bulk size.
-        """
+        """Test warning for an invalid bulk size."""
         class WarnBulkSizeZero(SeriesHelper):
 
             class Meta:
@@ -320,12 +328,13 @@ class TestSeriesHelper(unittest.TestCase):
                           'Warning message did not contain "forced to 1".')
 
     def testWarnBulkSizeNoEffect(self):
-        """
-        Tests warning for a set bulk size but autocommit False.
-        """
+        """Test warning for a set bulk size but autocommit False."""
         class WarnBulkSizeNoEffect(SeriesHelper):
+            """Define SeriesHelper for warning on bulk size."""
 
             class Meta:
+                """Define metadat for WarnBulkSizeNoEffect."""
+
                 series_name = 'events.stats.{server_name}'
                 fields = ['time', 'server_name']
                 bulk_size = 5

@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
-DataFrame client for InfluxDB
-"""
+"""DataFrame client for InfluxDB v0.8."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -14,13 +13,15 @@ from .client import InfluxDBClient
 
 
 class DataFrameClient(InfluxDBClient):
-    """
+    """Primary defintion of the DataFrameClient for v0.8.
+
     The ``DataFrameClient`` object holds information necessary to connect
     to InfluxDB. Requests can be made to InfluxDB directly through the client.
     The client reads and writes from pandas DataFrames.
     """
 
     def __init__(self, ignore_nan=True, *args, **kwargs):
+        """Initialize an instance of the DataFrameClient."""
         super(DataFrameClient, self).__init__(*args, **kwargs)
 
         try:
@@ -29,12 +30,12 @@ class DataFrameClient(InfluxDBClient):
         except ImportError as ex:
             raise ImportError('DataFrameClient requires Pandas, '
                               '"{ex}" problem importing'.format(ex=str(ex)))
+
         self.EPOCH = pd.Timestamp('1970-01-01 00:00:00.000+00:00')
         self.ignore_nan = ignore_nan
 
     def write_points(self, data, *args, **kwargs):
-        """
-        Write to multiple time series names.
+        """Write to multiple time series names.
 
         :param data: A dictionary mapping series names to pandas DataFrames
         :param time_precision: [Optional, default 's'] Either 's', 'm', 'ms'
@@ -44,7 +45,6 @@ class DataFrameClient(InfluxDBClient):
             one database to another or when doing a massive write operation
         :type batch_size: int
         """
-
         batch_size = kwargs.get('batch_size')
         time_precision = kwargs.get('time_precision', 's')
         if batch_size:
@@ -55,22 +55,25 @@ class DataFrameClient(InfluxDBClient):
                 for batch in range(number_batches):
                     start_index = batch * batch_size
                     end_index = (batch + 1) * batch_size
-                    data = [self._convert_dataframe_to_json(
-                        name=key,
-                        dataframe=data_frame.ix[start_index:end_index].copy(),
-                        time_precision=time_precision)]
-                    InfluxDBClient.write_points(self, data, *args, **kwargs)
+                    outdata = [
+                        self._convert_dataframe_to_json(
+                            name=key,
+                            dataframe=data_frame
+                            .ix[start_index:end_index].copy(),
+                            time_precision=time_precision)]
+                    InfluxDBClient.write_points(self, outdata, *args, **kwargs)
             return True
-        else:
-            data = [self._convert_dataframe_to_json(
-                name=key, dataframe=dataframe, time_precision=time_precision)
-                for key, dataframe in data.items()]
-            return InfluxDBClient.write_points(self, data, *args, **kwargs)
+
+        outdata = [
+            self._convert_dataframe_to_json(name=key, dataframe=dataframe,
+                                            time_precision=time_precision)
+            for key, dataframe in data.items()]
+        return InfluxDBClient.write_points(self, outdata, *args, **kwargs)
 
     def write_points_with_precision(self, data, time_precision='s'):
-        """
-        DEPRECATED. Write to multiple time series names
+        """Write to multiple time series names.
 
+        DEPRECATED
         """
         warnings.warn(
             "write_points_with_precision is deprecated, and will be removed "
@@ -80,8 +83,7 @@ class DataFrameClient(InfluxDBClient):
         return self.write_points(data, time_precision='s')
 
     def query(self, query, time_precision='s', chunked=False):
-        """
-        Quering data into DataFrames.
+        """Query data into DataFrames.
 
         Returns a DataFrame for a single time series and a map for multiple
         time series with the time series as value and its name as key.
@@ -90,7 +92,6 @@ class DataFrameClient(InfluxDBClient):
             or 'u'.
         :param chunked: [Optional, default=False] True if the data shall be
             retrieved in chunks, False otherwise.
-
         """
         result = InfluxDBClient.query(self, query=query,
                                       time_precision=time_precision,
@@ -106,18 +107,21 @@ class DataFrameClient(InfluxDBClient):
                                                               time_precision)
             return ret
 
-    def _to_dataframe(self, json_result, time_precision):
+    @staticmethod
+    def _to_dataframe(json_result, time_precision):
         dataframe = pd.DataFrame(data=json_result['points'],
                                  columns=json_result['columns'])
         if 'sequence_number' in dataframe.keys():
             dataframe.sort_values(['time', 'sequence_number'], inplace=True)
         else:
             dataframe.sort_values(['time'], inplace=True)
+
         pandas_time_unit = time_precision
         if time_precision == 'm':
             pandas_time_unit = 'ms'
         elif time_precision == 'u':
             pandas_time_unit = 'us'
+
         dataframe.index = pd.to_datetime(list(dataframe['time']),
                                          unit=pandas_time_unit,
                                          utc=True)
@@ -154,13 +158,14 @@ class DataFrameClient(InfluxDBClient):
         except ImportError as ex:
             raise ImportError('DataFrameClient requires Numpy, '
                               '"{ex}" problem importing'.format(ex=str(ex)))
+
         if self.ignore_nan:
             number_types = (int, float, np.number)
             condition = (all(isinstance(el, number_types) for el in array) and
                          np.isnan(array))
             return list(np.where(condition, None, array))
-        else:
-            return list(array)
+
+        return list(array)
 
     def _datetime_to_epoch(self, datetime, time_precision='s'):
         seconds = (datetime - self.EPOCH).total_seconds()
