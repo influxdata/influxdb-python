@@ -1,25 +1,26 @@
 # -*- coding: utf-8 -*-
+"""Chunked JSON test."""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from influxdb import chunked_json
-
 import unittest
+
+from influxdb import chunked_json
 
 
 class TestChunkJson(unittest.TestCase):
+    """Set up the TestChunkJson object."""
 
     @classmethod
     def setUpClass(cls):
+        """Initialize the TestChunkJson object."""
         super(TestChunkJson, cls).setUpClass()
 
     def test_load(self):
-        """
-        Tests reading a sequence of JSON values from a string
-        """
+        """Test reading a sequence of JSON values from a string."""
         example_response = \
             '{"results": [{"series": [{"measurement": "sdfsdfsdf", ' \
             '"columns": ["time", "value"], "values": ' \
@@ -30,7 +31,6 @@ class TestChunkJson(unittest.TestCase):
         res = list(chunked_json.loads(example_response))
         # import ipdb; ipdb.set_trace()
 
-        # self.assertTrue(res)
         self.assertListEqual(
             [
                 {

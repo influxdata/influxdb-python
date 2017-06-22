@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
-"""
-Python client for InfluxDB
-"""
+"""Python client for InfluxDB v0.8."""
+
+import warnings
+from sys import version_info
+
 import json
 import socket
 import requests
 import requests.exceptions
-import warnings
-from sys import version_info
 
 from influxdb import chunked_json
 
@@ -25,8 +25,10 @@ session = requests.Session()
 
 
 class InfluxDBClientError(Exception):
-    """Raised when an error occurs in the request"""
+    """Raised when an error occurs in the request."""
+
     def __init__(self, content, code=-1):
+        """Initialize an InfluxDBClientError handler."""
         super(InfluxDBClientError, self).__init__(
             "{0}: {1}".format(code, content))
         self.content = content
@@ -34,8 +36,8 @@ class InfluxDBClientError(Exception):
 
 
 class InfluxDBClient(object):
+    """Define the standard InfluxDBClient for influxdb v0.8.
 
-    """
     The ``InfluxDBClient`` object holds information necessary to connect
     to InfluxDB. Requests can be made to InfluxDB directly through the client.
 
@@ -79,9 +81,7 @@ class InfluxDBClient(object):
                  retries=3,
                  use_udp=False,
                  udp_port=4444):
-        """
-        Construct a new InfluxDBClient object.
-        """
+        """Construct a new InfluxDBClient object."""
         self._host = host
         self._port = port
         self._username = username
@@ -112,19 +112,20 @@ class InfluxDBClient(object):
             'Accept': 'text/plain'}
 
     @staticmethod
-    def from_DSN(dsn, **kwargs):
-        """
+    def from_dsn(dsn, **kwargs):
+        r"""Return an instaance of InfluxDBClient from given data source name.
+
         Returns an instance of InfluxDBClient from the provided data source
         name. Supported schemes are "influxdb", "https+influxdb",
         "udp+influxdb". Parameters for the InfluxDBClient constructor may be
         also be passed to this function.
 
         Examples:
-            >> cli = InfluxDBClient.from_DSN('influxdb://username:password@\
+            >> cli = InfluxDBClient.from_dsn('influxdb://username:password@\
             ... localhost:8086/databasename', timeout=5)
             >> type(cli)
             <class 'influxdb.client.InfluxDBClient'>
-            >> cli = InfluxDBClient.from_DSN('udp+influxdb://username:pass@\
+            >> cli = InfluxDBClient.from_dsn('udp+influxdb://username:pass@\
             ... localhost:8086/databasename', timeout=5, udp_port=159)
             >> print('{0._baseurl} - {0.use_udp} {0.udp_port}'.format(cli))
             http://localhost:8086 - True 159
@@ -138,11 +139,12 @@ class InfluxDBClient(object):
         used for the TCP connection; specify the udp port with the additional
         udp_port parameter (cf. examples).
         :raise ValueError: if the provided DSN has any unexpected value.
-        """
 
+        """
         init_args = {}
         conn_params = urlparse(dsn)
         scheme_info = conn_params.scheme.split('+')
+
         if len(scheme_info) == 1:
             scheme = scheme_info[0]
             modifier = None
@@ -151,6 +153,7 @@ class InfluxDBClient(object):
 
         if scheme != 'influxdb':
             raise ValueError('Unknown scheme "{0}".'.format(scheme))
+
         if modifier:
             if modifier == 'udp':
                 init_args['use_udp'] = True
@@ -177,10 +180,7 @@ class InfluxDBClient(object):
     # Change member variables
 
     def switch_database(self, database):
-        """
-        switch_database()
-
-        Change client database.
+        """Change client database.
 
         :param database: the new database name to switch to
         :type database: string
@@ -188,9 +188,9 @@ class InfluxDBClient(object):
         self._database = database
 
     def switch_db(self, database):
-        """
-        DEPRECATED. Change client database.
+        """Change client database.
 
+        DEPRECATED.
         """
         warnings.warn(
             "switch_db is deprecated, and will be removed "
@@ -200,10 +200,7 @@ class InfluxDBClient(object):
         return self.switch_database(database)
 
     def switch_user(self, username, password):
-        """
-        switch_user()
-
-        Change client username.
+        """Change client username.
 
         :param username: the new username to switch to
         :type username: string
@@ -215,9 +212,7 @@ class InfluxDBClient(object):
 
     def request(self, url, method='GET', params=None, data=None,
                 expected_response_code=200):
-        """
-        Make a http request to API
-        """
+        """Make a http request to API."""
         url = "{0}/{1}".format(self._baseurl, url)
 
         if params is None:
@@ -249,7 +244,7 @@ class InfluxDBClient(object):
                 )
                 break
             except (requests.exceptions.ConnectionError,
-                    requests.exceptions.Timeout) as e:
+                    requests.exceptions.Timeout):
                 _try += 1
                 if self._retries != 0:
                     retry = _try < self._retries
@@ -262,7 +257,7 @@ class InfluxDBClient(object):
             raise InfluxDBClientError(response.content, response.status_code)
 
     def write(self, data):
-        """ Provided as convenience for influxdb v0.9.0, this may change. """
+        """Provide as convenience for influxdb v0.9.0, this may change."""
         self.request(
             url="write",
             method='POST',
@@ -279,8 +274,9 @@ class InfluxDBClient(object):
     # with a JSON body of points.
 
     def write_points(self, data, time_precision='s', *args, **kwargs):
-        """
-        Write to multiple time series names. An example data blob is:
+        """Write to multiple time series names.
+
+        An example data blob is:
 
         data = [
             {
@@ -303,11 +299,10 @@ class InfluxDBClient(object):
             instead of all at one time. Useful for when doing data dumps from
             one database to another or when doing a massive write operation
         :type batch_size: int
-        """
 
+        """
         def list_chunks(l, n):
-            """ Yield successive n-sized chunks from l.
-            """
+            """Yield successive n-sized chunks from l."""
             for i in xrange(0, len(l), n):
                 yield l[i:i + n]
 
@@ -328,14 +323,14 @@ class InfluxDBClient(object):
                         data=item,
                         time_precision=time_precision)
             return True
-        else:
-            return self._write_points(data=data,
-                                      time_precision=time_precision)
+
+        return self._write_points(data=data,
+                                  time_precision=time_precision)
 
     def write_points_with_precision(self, data, time_precision='s'):
-        """
-        DEPRECATED. Write to multiple time series names
+        """Write to multiple time series names.
 
+        DEPRECATED.
         """
         warnings.warn(
             "write_points_with_precision is deprecated, and will be removed "
@@ -376,9 +371,7 @@ class InfluxDBClient(object):
     # One Time Deletes
 
     def delete_points(self, name):
-        """
-        Delete an entire series
-        """
+        """Delete an entire series."""
         url = "db/{0}/series/{1}".format(self._database, name)
 
         self.request(
@@ -392,12 +385,12 @@ class InfluxDBClient(object):
     # Regularly Scheduled Deletes
 
     def create_scheduled_delete(self, json_body):
-        """
-        TODO: Create scheduled delete
+        """Create schedule delete from database.
 
         2013-11-08: This endpoint has not been implemented yet in ver0.0.8,
         but it is documented in http://influxdb.org/docs/api/http.html.
         See also: src/api/http/api.go:l57
+
         """
         raise NotImplementedError()
 
@@ -408,28 +401,27 @@ class InfluxDBClient(object):
     # curl -X DELETE http://localhost:8086/db/site_dev/scheduled_deletes/:id
 
     def get_list_scheduled_delete(self):
-        """
-        TODO: Get list of scheduled deletes
+        """Get list of scheduled deletes.
 
         2013-11-08: This endpoint has not been implemented yet in ver0.0.8,
         but it is documented in http://influxdb.org/docs/api/http.html.
         See also: src/api/http/api.go:l57
+
         """
         raise NotImplementedError()
 
     def remove_scheduled_delete(self, delete_id):
-        """
-        TODO: Remove scheduled delete
+        """Remove scheduled delete.
 
         2013-11-08: This endpoint has not been implemented yet in ver0.0.8,
         but it is documented in http://influxdb.org/docs/api/http.html.
         See also: src/api/http/api.go:l57
+
         """
         raise NotImplementedError()
 
     def query(self, query, time_precision='s', chunked=False):
-        """
-        Quering data
+        """Query data from the influxdb v0.8 database.
 
         :param time_precision: [Optional, default 's'] Either 's', 'm', 'ms'
             or 'u'.
@@ -469,15 +461,14 @@ class InfluxDBClient(object):
         )
 
         if chunked:
-            decoded = {}
             try:
                 decoded = chunked_json.loads(response.content.decode())
             except UnicodeDecodeError:
                 decoded = chunked_json.loads(response.content.decode('utf-8'))
-            finally:
-                return list(decoded)
-        else:
-            return response.json()
+
+            return list(decoded)
+
+        return response.json()
 
     # Creating and Dropping Databases
     #
@@ -488,10 +479,7 @@ class InfluxDBClient(object):
     # curl -X DELETE http://localhost:8086/db/site_development
 
     def create_database(self, database):
-        """
-        create_database()
-
-        Create a database on the InfluxDB server.
+        """Create a database on the InfluxDB server.
 
         :param database: the name of the database to create
         :type database: string
@@ -511,10 +499,7 @@ class InfluxDBClient(object):
         return True
 
     def delete_database(self, database):
-        """
-        delete_database()
-
-        Drop a database on the InfluxDB server.
+        """Drop a database on the InfluxDB server.
 
         :param database: the name of the database to delete
         :type database: string
@@ -534,9 +519,7 @@ class InfluxDBClient(object):
     # curl -X GET http://localhost:8086/db
 
     def get_list_database(self):
-        """
-        Get the list of databases
-        """
+        """Get the list of databases."""
         url = "db"
 
         response = self.request(
@@ -548,9 +531,9 @@ class InfluxDBClient(object):
         return response.json()
 
     def get_database_list(self):
-        """
-        DEPRECATED. Get the list of databases
+        """Get the list of databases.
 
+        DEPRECATED.
         """
         warnings.warn(
             "get_database_list is deprecated, and will be removed "
@@ -560,10 +543,7 @@ class InfluxDBClient(object):
         return self.get_list_database()
 
     def delete_series(self, series):
-        """
-        delete_series()
-
-        Drop a series on the InfluxDB server.
+        """Drop a series on the InfluxDB server.
 
         :param series: the name of the series to delete
         :type series: string
@@ -583,29 +563,14 @@ class InfluxDBClient(object):
         return True
 
     def get_list_series(self):
-        """
-        Get a list of all time series in a database
-        """
-
+        """Get a list of all time series in a database."""
         response = self._query('list series')
-
-        series_list = []
-        for series in response[0]['points']:
-            series_list.append(series[1])
-
-        return series_list
+        return [series[1] for series in response[0]['points']]
 
     def get_list_continuous_queries(self):
-        """
-        Get a list of continuous queries
-        """
-
+        """Get a list of continuous queries."""
         response = self._query('list continuous queries')
-        queries_list = []
-        for query in response[0]['points']:
-            queries_list.append(query[2])
-
-        return queries_list
+        return [query[2] for query in response[0]['points']]
 
     # Security
     # get list of cluster admins
@@ -639,9 +604,7 @@ class InfluxDBClient(object):
     #        http://localhost:8086/db/site_dev/admins/paul?u=root&p=root
 
     def get_list_cluster_admins(self):
-        """
-        Get list of cluster admins
-        """
+        """Get list of cluster admins."""
         response = self.request(
             url="cluster_admins",
             method='GET',
@@ -651,9 +614,7 @@ class InfluxDBClient(object):
         return response.json()
 
     def add_cluster_admin(self, new_username, new_password):
-        """
-        Add cluster admin
-        """
+        """Add cluster admin."""
         data = {
             'name': new_username,
             'password': new_password
@@ -669,9 +630,7 @@ class InfluxDBClient(object):
         return True
 
     def update_cluster_admin_password(self, username, new_password):
-        """
-        Update cluster admin password
-        """
+        """Update cluster admin password."""
         url = "cluster_admins/{0}".format(username)
 
         data = {
@@ -688,9 +647,7 @@ class InfluxDBClient(object):
         return True
 
     def delete_cluster_admin(self, username):
-        """
-        Delete cluster admin
-        """
+        """Delete cluster admin."""
         url = "cluster_admins/{0}".format(username)
 
         self.request(
@@ -702,18 +659,15 @@ class InfluxDBClient(object):
         return True
 
     def set_database_admin(self, username):
-        """
-        Set user as database admin
-        """
+        """Set user as database admin."""
         return self.alter_database_admin(username, True)
 
     def unset_database_admin(self, username):
-        """
-        Unset user as database admin
-        """
+        """Unset user as database admin."""
         return self.alter_database_admin(username, False)
 
     def alter_database_admin(self, username, is_admin):
+        """Alter the database admin."""
         url = "db/{0}/users/{1}".format(self._database, username)
 
         data = {'admin': is_admin}
@@ -728,42 +682,42 @@ class InfluxDBClient(object):
         return True
 
     def get_list_database_admins(self):
-        """
-        TODO: Get list of database admins
+        """Get list of database admins.
 
         2013-11-08: This endpoint has not been implemented yet in ver0.0.8,
         but it is documented in http://influxdb.org/docs/api/http.html.
         See also: src/api/http/api.go:l57
+
         """
         raise NotImplementedError()
 
     def add_database_admin(self, new_username, new_password):
-        """
-        TODO: Add cluster admin
+        """Add cluster admin.
 
         2013-11-08: This endpoint has not been implemented yet in ver0.0.8,
         but it is documented in http://influxdb.org/docs/api/http.html.
         See also: src/api/http/api.go:l57
+
         """
         raise NotImplementedError()
 
     def update_database_admin_password(self, username, new_password):
-        """
-        TODO: Update database admin password
+        """Update database admin password.
 
         2013-11-08: This endpoint has not been implemented yet in ver0.0.8,
         but it is documented in http://influxdb.org/docs/api/http.html.
         See also: src/api/http/api.go:l57
+
         """
         raise NotImplementedError()
 
     def delete_database_admin(self, username):
-        """
-        TODO: Delete database admin
+        """Delete database admin.
 
         2013-11-08: This endpoint has not been implemented yet in ver0.0.8,
         but it is documented in http://influxdb.org/docs/api/http.html.
         See also: src/api/http/api.go:l57
+
         """
         raise NotImplementedError()
 
@@ -786,9 +740,7 @@ class InfluxDBClient(object):
     # curl -X DELETE http://localhost:8086/db/site_dev/users/paul?u=root&p=root
 
     def get_database_users(self):
-        """
-        Get list of database users
-        """
+        """Get list of database users."""
         url = "db/{0}/users".format(self._database)
 
         response = self.request(
@@ -800,8 +752,7 @@ class InfluxDBClient(object):
         return response.json()
 
     def add_database_user(self, new_username, new_password, permissions=None):
-        """
-        Add database user
+        """Add database user.
 
         :param permissions: A ``(readFrom, writeTo)`` tuple
         """
@@ -830,14 +781,12 @@ class InfluxDBClient(object):
         return True
 
     def update_database_user_password(self, username, new_password):
-        """
-        Update password
-        """
+        """Update password."""
         return self.alter_database_user(username, new_password)
 
     def alter_database_user(self, username, password=None, permissions=None):
-        """
-        Alters a database user and/or their permissions.
+        """Alter a database user and/or their permissions.
+
         :param permissions: A ``(readFrom, writeTo)`` tuple
         :raise TypeError: if permissions cannot be read.
         :raise ValueError: if neither password nor permissions provided.
@@ -873,9 +822,7 @@ class InfluxDBClient(object):
         return True
 
     def delete_database_user(self, username):
-        """
-        Delete database user
-        """
+        """Delete database user."""
         url = "db/{0}/users/{1}".format(self._database, username)
 
         self.request(
@@ -889,16 +836,17 @@ class InfluxDBClient(object):
     # update the user by POSTing to db/site_dev/users/paul
 
     def update_permission(self, username, json_body):
-        """
-        TODO: Update read/write permission
+        """Update read/write permission.
 
         2013-11-08: This endpoint has not been implemented yet in ver0.0.8,
         but it is documented in http://influxdb.org/docs/api/http.html.
         See also: src/api/http/api.go:l57
+
         """
         raise NotImplementedError()
 
     def send_packet(self, packet):
+        """Send a UDP packet along the wire."""
         data = json.dumps(packet)
         byte = data.encode('utf-8')
         self.udp_socket.sendto(byte, (self._host, self.udp_port))
