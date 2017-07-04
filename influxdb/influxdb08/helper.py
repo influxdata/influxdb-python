@@ -17,7 +17,7 @@ class SeriesHelper(object):
 
     """
     Subclassing this helper eases writing data points in bulk.
-    All data points are immutable, insuring they do not get overwritten.
+    All data points are immutable, ensuring they do not get overwritten.
     Each subclass can write to its own database.
     The time series names can also be based on one or more defined fields.
 
