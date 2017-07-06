@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 #
+"""InfluxDB documentation build configuration file."""
+
 # InfluxDB documentation build configuration file, created by
 # sphinx-quickstart on Thu Oct 16 00:33:06 2014.
 #
