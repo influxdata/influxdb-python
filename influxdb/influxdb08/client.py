@@ -92,8 +92,8 @@ class InfluxDBClient(object):
 
         self._verify_ssl = verify_ssl
 
-        self.use_udp = use_udp
-        self.udp_port = udp_port
+        self._use_udp = use_udp
+        self._udp_port = udp_port
         if use_udp:
             self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -344,7 +344,7 @@ class InfluxDBClient(object):
             raise Exception(
                 "Invalid time precision is given. (use 's', 'm', 'ms' or 'u')")
 
-        if self.use_udp and time_precision != 's':
+        if self._use_udp and time_precision != 's':
             raise Exception(
                 "InfluxDB only supports seconds precision for udp writes"
             )
@@ -355,7 +355,7 @@ class InfluxDBClient(object):
             'time_precision': time_precision
         }
 
-        if self.use_udp:
+        if self._use_udp:
             self.send_packet(data)
         else:
             self.request(
@@ -849,4 +849,4 @@ class InfluxDBClient(object):
         """Send a UDP packet along the wire."""
         data = json.dumps(packet)
         byte = data.encode('utf-8')
-        self.udp_socket.sendto(byte, (self._host, self.udp_port))
+        self.udp_socket.sendto(byte, (self._host, self._udp_port))

@@ -91,8 +91,8 @@ class InfluxDBClient(object):
 
         self._verify_ssl = verify_ssl
 
-        self.use_udp = use_udp
-        self.udp_port = udp_port
+        self.__use_udp = use_udp
+        self.__udp_port = udp_port
         self._session = requests.Session()
         if use_udp:
             self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -128,6 +128,14 @@ class InfluxDBClient(object):
     @property
     def _port(self):
         return self.__port
+
+    @property
+    def _udp_port(self):
+        return self.__udp_port
+
+    @property
+    def _use_udp(self):
+        return self.__use_udp
 
     @classmethod
     def from_dsn(cls, dsn, **kwargs):
@@ -467,7 +475,7 @@ class InfluxDBClient(object):
                 "Invalid time precision is given. "
                 "(use 'n', 'u', 'ms', 's', 'm' or 'h')")
 
-        if self.use_udp and time_precision and time_precision != 's':
+        if self._use_udp and time_precision and time_precision != 's':
             raise ValueError(
                 "InfluxDB only supports seconds precision for udp writes"
             )
@@ -492,7 +500,7 @@ class InfluxDBClient(object):
         if retention_policy is not None:
             params['rp'] = retention_policy
 
-        if self.use_udp:
+        if self._use_udp:
             self.send_packet(data, protocol=protocol)
         else:
             self.write(
@@ -821,7 +829,7 @@ class InfluxDBClient(object):
             data = make_lines(packet).encode('utf-8')
         elif protocol == 'line':
             data = ('\n'.join(packet) + '\n').encode('utf-8')
-        self.udp_socket.sendto(data, (self._host, self.udp_port))
+        self.udp_socket.sendto(data, (self._host, self._udp_port))
 
     def close(self):
         """Close http session."""
