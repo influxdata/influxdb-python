@@ -823,6 +823,11 @@ class InfluxDBClient(object):
             data = ('\n'.join(packet) + '\n').encode('utf-8')
         self.udp_socket.sendto(data, (self._host, self.udp_port))
 
+    def close(self):
+        """Close http session."""
+        if isinstance(self._session, requests.Session):
+            self._session.close()
+
 
 def _parse_dsn(dsn):
     """Parse data source name.
