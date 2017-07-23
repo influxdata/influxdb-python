@@ -1,10 +1,13 @@
+# -*- coding: utf-8 -*-
+"""Tutorial using all elements to define a sine wave."""
+
 import argparse
 
-from influxdb import InfluxDBClient
 import math
 import datetime
 import time
 
+from influxdb import InfluxDBClient
 
 USER = 'root'
 PASSWORD = 'root'
@@ -12,9 +15,7 @@ DBNAME = 'tutorial'
 
 
 def main(host='localhost', port=8086):
-    """
-    main function to generate the sin wave
-    """
+    """Define function to generate the sin wave."""
     now = datetime.datetime.today()
     points = []
 
@@ -36,7 +37,7 @@ def main(host='localhost', port=8086):
     client.create_database(DBNAME)
     client.switch_database(DBNAME)
 
-    #Write points
+    # Write points
     client.write_points(points)
 
     time.sleep(3)
@@ -47,9 +48,9 @@ def main(host='localhost', port=8086):
     print("Result: {0}".format(result))
 
     """
-    You might want to comment the delete and plot the result on InfluxDB Interface
-    Connect on InfluxDB Interface at http://127.0.0.1:8083/
-    Select  the database tutorial -> Explore Data
+    You might want to comment the delete and plot the result on InfluxDB
+    Interface. Connect on InfluxDB Interface at http://127.0.0.1:8083/
+    Select the database tutorial -> Explore Data
 
     Then run the following query:
 
@@ -61,9 +62,11 @@ def main(host='localhost', port=8086):
 
 
 def parse_args():
+    """Parse the args."""
     parser = argparse.ArgumentParser(
         description='example code to play with InfluxDB')
-    parser.add_argument('--host', type=str, required=False, default='localhost',
+    parser.add_argument('--host', type=str, required=False,
+                        default='localhost',
                         help='hostname influxdb http API')
     parser.add_argument('--port', type=int, required=False, default=8086,
                         help='port influxdb http API')

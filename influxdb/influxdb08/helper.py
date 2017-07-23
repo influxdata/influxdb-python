@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
-Helper class for InfluxDB
-"""
+"""Helper class for InfluxDB for v0.8."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -14,8 +13,8 @@ import six
 
 
 class SeriesHelper(object):
+    """Define the SeriesHelper object for InfluxDB v0.8.
 
-    """
     Subclassing this helper eases writing data points in bulk.
     All data points are immutable, ensuring they do not get overwritten.
     Each subclass can write to its own database.
@@ -41,11 +40,11 @@ class SeriesHelper(object):
                 # If True and no bulk_size, then will set bulk_size to 1.
 
     """
+
     __initialized__ = False
 
     def __new__(cls, *args, **kwargs):
-        """
-        Initializes class attributes for subsequent constructor calls.
+        """Initialize class attributes for subsequent constructor calls.
 
         :note: *args and **kwargs are not explicitly used in this function,
         but needed for Python 2 compatibility.
@@ -97,8 +96,9 @@ class SeriesHelper(object):
         return super(SeriesHelper, cls).__new__(cls)
 
     def __init__(self, **kw):
-        """
-        Constructor call creates a new data point. All fields must be present.
+        """Create a new data point.
+
+        All fields must be present.
 
         :note: Data points written when `bulk_size` is reached per Helper.
         :warning: Data points are *immutable* (`namedtuples`).
@@ -120,8 +120,7 @@ class SeriesHelper(object):
 
     @classmethod
     def commit(cls, client=None):
-        """
-        Commit everything from datapoints via the client.
+        """Commit everything from datapoints via the client.
 
         :param client: InfluxDBClient instance for writing points to InfluxDB.
         :attention: any provided client will supersede the class client.
@@ -135,8 +134,9 @@ class SeriesHelper(object):
 
     @classmethod
     def _json_body_(cls):
-        """
-        :return: JSON body of these datapoints.
+        """Return JSON body of the datapoints.
+
+        :return: JSON body of the datapoints.
         """
         json = []
         for series_name, data in six.iteritems(cls._datapoints):
@@ -149,7 +149,5 @@ class SeriesHelper(object):
 
     @classmethod
     def _reset_(cls):
-        """
-        Reset data storage.
-        """
+        """Reset data storage."""
         cls._datapoints = defaultdict(list)

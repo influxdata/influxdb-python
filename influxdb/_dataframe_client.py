@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
-DataFrame client for InfluxDB
-"""
+"""DataFrame client for InfluxDB."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -33,7 +32,8 @@ def _escape_pandas_series(s):
 
 
 class DataFrameClient(InfluxDBClient):
-    """
+    """DataFrameClient instantiates InfluxDBClient to connect to the backend.
+
     The ``DataFrameClient`` object holds information necessary to connect
     to InfluxDB. Requests can be made to InfluxDB directly through the client.
     The client reads and writes from pandas DataFrames.
@@ -53,8 +53,7 @@ class DataFrameClient(InfluxDBClient):
                      batch_size=None,
                      protocol='line',
                      numeric_precision=None):
-        """
-        Write to multiple time series names.
+        """Write to multiple time series names.
 
         :param dataframe: data points in a DataFrame
         :param measurement: name of measurement
@@ -71,17 +70,20 @@ class DataFrameClient(InfluxDBClient):
             precision. 'full' preserves full precision for int and float
             datatypes. Defaults to None, which preserves 14-15 significant
             figures for float and all significant figures for int datatypes.
-
         """
         if tag_columns is None:
             tag_columns = []
+
         if field_columns is None:
             field_columns = []
+
         if batch_size:
             number_batches = int(math.ceil(len(dataframe) / float(batch_size)))
+
             for batch in range(number_batches):
                 start_index = batch * batch_size
                 end_index = (batch + 1) * batch_size
+
                 if protocol == 'line':
                     points = self._convert_dataframe_to_lines(
                         dataframe.ix[start_index:end_index].copy(),
@@ -99,38 +101,42 @@ class DataFrameClient(InfluxDBClient):
                         time_precision=time_precision,
                         tag_columns=tag_columns,
                         field_columns=field_columns)
+
                 super(DataFrameClient, self).write_points(
                     points,
                     time_precision,
                     database,
                     retention_policy,
                     protocol=protocol)
+
             return True
+
+        if protocol == 'line':
+            points = self._convert_dataframe_to_lines(
+                dataframe,
+                measurement=measurement,
+                global_tags=tags,
+                tag_columns=tag_columns,
+                field_columns=field_columns,
+                time_precision=time_precision,
+                numeric_precision=numeric_precision)
         else:
-            if protocol == 'line':
-                points = self._convert_dataframe_to_lines(
-                    dataframe,
-                    measurement=measurement,
-                    global_tags=tags,
-                    tag_columns=tag_columns,
-                    field_columns=field_columns,
-                    time_precision=time_precision,
-                    numeric_precision=numeric_precision)
-            else:
-                points = self._convert_dataframe_to_json(
-                    dataframe,
-                    measurement=measurement,
-                    tags=tags,
-                    time_precision=time_precision,
-                    tag_columns=tag_columns,
-                    field_columns=field_columns)
-            super(DataFrameClient, self).write_points(
-                points,
-                time_precision,
-                database,
-                retention_policy,
-                protocol=protocol)
-            return True
+            points = self._convert_dataframe_to_json(
+                dataframe,
+                measurement=measurement,
+                tags=tags,
+                time_precision=time_precision,
+                tag_columns=tag_columns,
+                field_columns=field_columns)
+
+        super(DataFrameClient, self).write_points(
+            points,
+            time_precision,
+            database,
+            retention_policy,
+            protocol=protocol)
+
+        return True
 
     def query(self,
               query,
@@ -182,6 +188,7 @@ class DataFrameClient(InfluxDBClient):
         result = defaultdict(list)
         if isinstance(rs, list):
             return map(self._to_dataframe, rs)
+
         for key, data in rs.items():
             name, tags = key
             if tags is None:
@@ -199,10 +206,11 @@ class DataFrameClient(InfluxDBClient):
             if dropna:
                 df.dropna(how='all', axis=1, inplace=True)
             result[key] = df
+
         return result
 
-    def _convert_dataframe_to_json(self,
-                                   dataframe,
+    @staticmethod
+    def _convert_dataframe_to_json(dataframe,
                                    measurement,
                                    tags=None,
                                    tag_columns=None,
@@ -279,8 +287,10 @@ class DataFrameClient(InfluxDBClient):
 
         if field_columns is None:
             field_columns = []
+
         if tag_columns is None:
             tag_columns = []
+
         if global_tags is None:
             global_tags = {}
 
@@ -347,8 +357,9 @@ class DataFrameClient(InfluxDBClient):
 
         # Make an array of formatted field keys and values
         field_df = dataframe[field_columns]
-        field_df = self._stringify_dataframe(
-            field_df, numeric_precision, datatype='field')
+        field_df = self._stringify_dataframe(field_df,
+                                             numeric_precision,
+                                             datatype='field')
         field_df = (field_df.columns.values + '=').tolist() + field_df
         field_df[field_df.columns[1:]] = ',' + field_df[field_df.columns[1:]]
         fields = field_df.sum(axis=1)
@@ -358,56 +369,52 @@ class DataFrameClient(InfluxDBClient):
         points = (measurement + tags + ' ' + fields + ' ' + time).tolist()
         return points
 
-    def _stringify_dataframe(self,
-                             dataframe,
-                             numeric_precision,
-                             datatype='field'):
-
+    @staticmethod
+    def _stringify_dataframe(dframe, numeric_precision, datatype='field'):
         # Find int and string columns for field-type data
-        int_columns = dataframe.select_dtypes(include=['integer']).columns
-        string_columns = dataframe.select_dtypes(include=['object']).columns
+        int_columns = dframe.select_dtypes(include=['integer']).columns
+        string_columns = dframe.select_dtypes(include=['object']).columns
 
-        # Convert dataframe to string
+        # Convert dframe to string
         if numeric_precision is None:
             # If no precision specified, convert directly to string (fast)
-            dataframe = dataframe.astype(str)
+            dframe = dframe.astype(str)
         elif numeric_precision == 'full':
             # If full precision, use repr to get full float precision
-            float_columns = (dataframe.select_dtypes(include=['floating'])
-                             .columns)
-            nonfloat_columns = dataframe.columns[~dataframe.columns.isin(
+            float_columns = (dframe.select_dtypes(
+                include=['floating']).columns)
+            nonfloat_columns = dframe.columns[~dframe.columns.isin(
                 float_columns)]
-            dataframe[float_columns] = dataframe[float_columns].applymap(repr)
-            dataframe[nonfloat_columns] = (dataframe[nonfloat_columns]
-                                           .astype(str))
+            dframe[float_columns] = dframe[float_columns].applymap(repr)
+            dframe[nonfloat_columns] = (dframe[nonfloat_columns].astype(str))
         elif isinstance(numeric_precision, int):
             # If precision is specified, round to appropriate precision
-            float_columns = (dataframe.select_dtypes(include=['floating'])
-                             .columns)
-            nonfloat_columns = dataframe.columns[~dataframe.columns.isin(
+            float_columns = (dframe.select_dtypes(
+                include=['floating']).columns)
+            nonfloat_columns = dframe.columns[~dframe.columns.isin(
                 float_columns)]
-            dataframe[float_columns] = (dataframe[float_columns]
-                                        .round(numeric_precision))
+            dframe[float_columns] = (dframe[float_columns].round(
+                numeric_precision))
+
             # If desired precision is > 10 decimal places, need to use repr
             if numeric_precision > 10:
-                dataframe[float_columns] = (dataframe[float_columns]
-                                            .applymap(repr))
-                dataframe[nonfloat_columns] = (dataframe[nonfloat_columns]
-                                               .astype(str))
+                dframe[float_columns] = (dframe[float_columns].applymap(repr))
+                dframe[nonfloat_columns] = (dframe[nonfloat_columns]
+                                            .astype(str))
             else:
-                dataframe = dataframe.astype(str)
+                dframe = dframe.astype(str)
         else:
             raise ValueError('Invalid numeric precision.')
 
         if datatype == 'field':
             # If dealing with fields, format ints and strings correctly
-            dataframe[int_columns] += 'i'
-            dataframe[string_columns] = '"' + dataframe[string_columns] + '"'
+            dframe[int_columns] += 'i'
+            dframe[string_columns] = '"' + dframe[string_columns] + '"'
         elif datatype == 'tag':
-            dataframe = dataframe.apply(_escape_pandas_series)
+            dframe = dframe.apply(_escape_pandas_series)
 
-        dataframe.columns = dataframe.columns.astype(str)
-        return dataframe
+        dframe.columns = dframe.columns.astype(str)
+        return dframe
 
     def _datetime_to_epoch(self, datetime, time_precision='s'):
         seconds = (datetime - self.EPOCH).total_seconds()

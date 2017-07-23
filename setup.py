@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+"""Define the setup options."""
 
 try:
     import distribute_setup

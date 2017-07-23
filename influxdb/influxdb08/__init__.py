@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Define the influxdb08 package."""
 
 from __future__ import absolute_import
 from __future__ import division
