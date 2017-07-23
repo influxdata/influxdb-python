@@ -132,16 +132,44 @@ class DataFrameClient(InfluxDBClient):
                 protocol=protocol)
             return True
 
-    def query(self, query, dropna=True, **kwargs):
+    def query(self,
+              query,
+              params=None,
+              epoch=None,
+              expected_response_code=200,
+              database=None,
+              raise_errors=True,
+              chunked=False,
+              chunk_size=0,
+              dropna=True):
         """
         Quering data into a DataFrame.
 
         :param query: the actual query string
+        :param params: additional parameters for the request, defaults to {}
+        :param epoch: response timestamps to be in epoch format either 'h',
+            'm', 's', 'ms', 'u', or 'ns',defaults to `None` which is
+            RFC3339 UTC format with nanosecond precision
+        :param expected_response_code: the expected status code of response,
+            defaults to 200
+        :param database: database to query, defaults to None
+        :param raise_errors: Whether or not to raise exceptions when InfluxDB
+            returns errors, defaults to True
+        :param chunked: Enable to use chunked responses from InfluxDB.
+            With ``chunked`` enabled, one ResultSet is returned per chunk
+            containing all results within that chunk
+        :param chunk_size: Size of each chunk to tell InfluxDB to use.
         :param dropna: drop columns where all values are missing
-        :param **kwargs: additional parameters for ``InfluxDBClient.query``
-
+        :returns: the queried data
+        :rtype: :class:`~.ResultSet`
         """
-        results = super(DataFrameClient, self).query(query, **kwargs)
+        query_args = dict(params=params,
+                          epoch=epoch,
+                          expected_response_code=expected_response_code,
+                          raise_errors=raise_errors,
+                          chunked=chunked,
+                          chunk_size=chunk_size)
+        results = super(DataFrameClient, self).query(query, **query_args)
         if query.strip().upper().startswith("SELECT"):
             if len(results) > 0:
                 return self._to_dataframe(results, dropna)
