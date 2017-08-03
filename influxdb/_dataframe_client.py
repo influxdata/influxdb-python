@@ -302,17 +302,10 @@ class DataFrameClient(InfluxDBClient):
             tag_df = self._stringify_dataframe(
                 tag_df, numeric_precision, datatype='tag')
 
-            # prepend tag keys
-            tag_df = tag_df.apply(
-                lambda s: s.apply(
-                    lambda v, l: l + '=' + v if v else None, l=s.name))
-
-            # join tags, but leave out None values
+            # join preprendded tags, leaving None values out
             tags = tag_df.apply(
-                lambda r: ','.join(r.dropna()), axis=1)
-
-            # prepend comma
-            tags = tags.apply(lambda v: ',' + v if v else '')
+                lambda s: [',' + s.name + '=' + v if v else '' for v in s])
+            tags = tags.sum(axis=1)
 
             del tag_df
         else:
