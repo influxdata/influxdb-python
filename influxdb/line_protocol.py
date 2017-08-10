@@ -135,7 +135,7 @@ def make_lines(data, precision=None):
         # tags should be sorted client-side to take load off server
         for tag_key, tag_value in sorted(iteritems(tags)):
             key = _escape_tag(tag_key)
-            value = _escape_tag(tag_value)
+            value = _escape_value(tag_value)
 
             if key != '' and value != '':
                 key_values.append(key + "=" + value)
