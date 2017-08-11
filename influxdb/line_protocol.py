@@ -89,7 +89,6 @@ def _escape_value(value):
     elif isinstance(value, integer_types) and not isinstance(value, bool):
         return str(value) + 'i'
     elif _is_float(value):
-        return repr(value)
         reprvalue = repr(value)
         decimalstart = "Decimal('"
         decimalstop = "')"
