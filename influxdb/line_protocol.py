@@ -90,6 +90,14 @@ def _escape_value(value):
         return str(value) + 'i'
     elif _is_float(value):
         return repr(value)
+        reprvalue = repr(value)
+        decimalstart = "Decimal('"
+        decimalstop = "')"
+        if reprvalue.startswith(decimalstart):
+            return reprvalue.lstrip(decimalstart).rstrip(decimalstop)
+        else:
+            return reprvalue
+
 
     return str(value)
 
