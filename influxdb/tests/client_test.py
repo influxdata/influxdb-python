@@ -119,10 +119,10 @@ class TestInfluxDBClient(unittest.TestCase):
         self.assertEqual('uSr', cli._username)
         self.assertEqual('pWd', cli._password)
         self.assertEqual('db', cli._database)
-        self.assertFalse(cli.use_udp)
+        self.assertFalse(cli._use_udp)
 
         cli = InfluxDBClient.from_dsn('udp+' + self.dsn_string)
-        self.assertTrue(cli.use_udp)
+        self.assertTrue(cli._use_udp)
 
         cli = InfluxDBClient.from_dsn('https+' + self.dsn_string)
         self.assertEqual('https://my.host.fr:1886', cli._baseurl)
