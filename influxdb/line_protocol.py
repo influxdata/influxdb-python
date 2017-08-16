@@ -75,7 +75,7 @@ def quote_literal(value):
 def _is_float(value):
     try:
         float(value)
-    except ValueError:
+    except (TypeError, ValueError):
         return False
 
     return True
