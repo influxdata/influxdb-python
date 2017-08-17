@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Define the base module for server test."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -41,9 +42,11 @@ def _teardown_influxdb_server(inst):
 
 
 class SingleTestCaseWithServerMixin(object):
-    ''' A mixin for unittest.TestCase to start an influxdb server instance
+    """Define the single testcase with server mixin.
+
+    A mixin for unittest.TestCase to start an influxdb server instance
     in a temporary directory **for each test function/case**
-    '''
+    """
 
     # 'influxdb_template_conf' attribute must be set
     # on the TestCase class or instance.
@@ -53,23 +56,29 @@ class SingleTestCaseWithServerMixin(object):
 
 
 class ManyTestCasesWithServerMixin(object):
-    ''' Same than SingleTestCaseWithServerMixin
-    but creates a single instance for the whole class.
-    Also pre-creates a fresh database: 'db'.
-    '''
+    """Define the many testcase with server mixin.
+
+    Same as the SingleTestCaseWithServerMixin but this module creates
+    a single instance for the whole class. Also pre-creates a fresh
+    database: 'db'.
+    """
 
     # 'influxdb_template_conf' attribute must be set on the class itself !
 
     @classmethod
     def setUpClass(cls):
+        """Set up an instance of the ManyTestCasesWithServerMixin."""
         _setup_influxdb_server(cls)
 
     def setUp(self):
+        """Set up an instance of the ManyTestCasesWithServerMixin."""
         self.cli.create_database('db')
 
     @classmethod
     def tearDownClass(cls):
+        """Deconstruct an instance of ManyTestCasesWithServerMixin."""
         _teardown_influxdb_server(cls)
 
     def tearDown(self):
+        """Deconstruct an instance of ManyTestCasesWithServerMixin."""
         self.cli.drop_database('db')

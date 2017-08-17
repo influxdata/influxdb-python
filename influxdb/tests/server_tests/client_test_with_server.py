@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
-"""
-unit tests for checking the good/expected interaction between :
+"""Unit tests for checking the InfluxDB server.
+
+The good/expected interaction between:
 
 + the python client.. (obviously)
 + and a *_real_* server instance running.
 
 This basically duplicates what's in client_test.py
- but without mocking around every call.
-
+but without mocking around every call.
 """
 from __future__ import absolute_import
 from __future__ import division
@@ -20,15 +20,15 @@ import time
 import unittest
 import warnings
 
-# By default, raise exceptions on warnings
-warnings.simplefilter('error', FutureWarning)
-
 from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError
 
 from influxdb.tests import skipIfPYpy, using_pypy, skipServerTests
 from influxdb.tests.server_tests.base import ManyTestCasesWithServerMixin
 from influxdb.tests.server_tests.base import SingleTestCaseWithServerMixin
+
+# By default, raise exceptions on warnings
+warnings.simplefilter('error', FutureWarning)
 
 if not using_pypy:
     import pandas as pd
@@ -39,11 +39,15 @@ THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
 def point(serie_name, timestamp=None, tags=None, **fields):
+    """Define what a point looks like."""
     res = {'measurement': serie_name}
+
     if timestamp:
         res['time'] = timestamp
+
     if tags:
         res['tags'] = tags
+
     res['fields'] = fields
     return res
 
@@ -117,15 +121,17 @@ dummy_point_without_timestamp = [
 
 
 @skipServerTests
-class SimpleTests(SingleTestCaseWithServerMixin,
-                  unittest.TestCase):
+class SimpleTests(SingleTestCaseWithServerMixin, unittest.TestCase):
+    """Define the class of simple tests."""
 
     influxdb_template_conf = os.path.join(THIS_DIR, 'influxdb.conf.template')
 
     def test_fresh_server_no_db(self):
+        """Test a fresh server without database."""
         self.assertEqual([], self.cli.get_list_database())
 
     def test_create_database(self):
+        """Test create a database."""
         self.assertIsNone(self.cli.create_database('new_db_1'))
         self.assertIsNone(self.cli.create_database('new_db_2'))
         self.assertEqual(
@@ -134,44 +140,52 @@ class SimpleTests(SingleTestCaseWithServerMixin,
         )
 
     def test_drop_database(self):
+        """Test drop a database."""
         self.test_create_database()
         self.assertIsNone(self.cli.drop_database('new_db_1'))
         self.assertEqual([{'name': 'new_db_2'}], self.cli.get_list_database())
 
     def test_query_fail(self):
+        """Test that a query failed."""
         with self.assertRaises(InfluxDBClientError) as ctx:
             self.cli.query('select column_one from foo')
         self.assertIn('database not found: db',
                       ctx.exception.content)
 
     def test_query_fail_ignore_errors(self):
+        """Test query failed but ignore errors."""
         result = self.cli.query('select column_one from foo',
                                 raise_errors=False)
         self.assertEqual(result.error, 'database not found: db')
 
     def test_create_user(self):
+        """Test create user."""
         self.cli.create_user('test_user', 'secret_password')
         rsp = list(self.cli.query("SHOW USERS")['results'])
         self.assertIn({'user': 'test_user', 'admin': False},
                       rsp)
 
     def test_create_user_admin(self):
+        """Test create admin user."""
         self.cli.create_user('test_user', 'secret_password', True)
         rsp = list(self.cli.query("SHOW USERS")['results'])
         self.assertIn({'user': 'test_user', 'admin': True},
                       rsp)
 
     def test_create_user_blank_password(self):
+        """Test create user with a blank pass."""
         self.cli.create_user('test_user', '')
         rsp = list(self.cli.query("SHOW USERS")['results'])
         self.assertIn({'user': 'test_user', 'admin': False},
                       rsp)
 
     def test_get_list_users_empty(self):
+        """Test get list of users, but empty."""
         rsp = self.cli.get_list_users()
         self.assertEqual([], rsp)
 
     def test_get_list_users(self):
+        """Test get list of users."""
         self.cli.query("CREATE USER test WITH PASSWORD 'test'")
         rsp = self.cli.get_list_users()
 
@@ -181,6 +195,7 @@ class SimpleTests(SingleTestCaseWithServerMixin,
         )
 
     def test_create_user_blank_username(self):
+        """Test create blank username."""
         with self.assertRaises(InfluxDBClientError) as ctx:
             self.cli.create_user('', 'secret_password')
         self.assertIn('username required',
@@ -189,12 +204,14 @@ class SimpleTests(SingleTestCaseWithServerMixin,
         self.assertEqual(rsp, [])
 
     def test_drop_user(self):
+        """Test drop a user."""
         self.cli.query("CREATE USER test WITH PASSWORD 'test'")
         self.cli.drop_user('test')
         users = list(self.cli.query("SHOW USERS")['results'])
         self.assertEqual(users, [])
 
     def test_drop_user_nonexisting(self):
+        """Test dropping a nonexistant user."""
         with self.assertRaises(InfluxDBClientError) as ctx:
             self.cli.drop_user('test')
         self.assertIn('user not found',
@@ -202,6 +219,7 @@ class SimpleTests(SingleTestCaseWithServerMixin,
 
     @unittest.skip("Broken as of 0.9.0")
     def test_revoke_admin_privileges(self):
+        """Test revoking admin privs, deprecated as of v0.9.0."""
         self.cli.create_user('test', 'test', admin=True)
         self.assertEqual([{'user': 'test', 'admin': True}],
                          self.cli.get_list_users())
@@ -210,12 +228,14 @@ class SimpleTests(SingleTestCaseWithServerMixin,
                          self.cli.get_list_users())
 
     def test_grant_privilege(self):
+        """Test grant privs to user."""
         self.cli.create_user('test', 'test')
         self.cli.create_database('testdb')
         self.cli.grant_privilege('all', 'testdb', 'test')
         # TODO: when supported by InfluxDB, check if privileges are granted
 
     def test_grant_privilege_invalid(self):
+        """Test grant invalid privs to user."""
         self.cli.create_user('test', 'test')
         self.cli.create_database('testdb')
         with self.assertRaises(InfluxDBClientError) as ctx:
@@ -225,12 +245,14 @@ class SimpleTests(SingleTestCaseWithServerMixin,
                       ctx.exception.content)
 
     def test_revoke_privilege(self):
+        """Test revoke privs from user."""
         self.cli.create_user('test', 'test')
         self.cli.create_database('testdb')
         self.cli.revoke_privilege('all', 'testdb', 'test')
         # TODO: when supported by InfluxDB, check if privileges are revoked
 
     def test_revoke_privilege_invalid(self):
+        """Test revoke invalid privs from user."""
         self.cli.create_user('test', 'test')
         self.cli.create_database('testdb')
         with self.assertRaises(InfluxDBClientError) as ctx:
@@ -240,23 +262,26 @@ class SimpleTests(SingleTestCaseWithServerMixin,
                       ctx.exception.content)
 
     def test_invalid_port_fails(self):
+        """Test invalid port access fails."""
         with self.assertRaises(ValueError):
             InfluxDBClient('host', '80/redir', 'username', 'password')
 
 
 @skipServerTests
-class CommonTests(ManyTestCasesWithServerMixin,
-                  unittest.TestCase):
+class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
+    """Define a class to handle common tests for the server."""
 
     influxdb_template_conf = os.path.join(THIS_DIR, 'influxdb.conf.template')
 
     def test_write(self):
+        """Test write to the server."""
         self.assertIs(True, self.cli.write(
             {'points': dummy_point},
             params={'db': 'db'},
         ))
 
     def test_write_check_read(self):
+        """Test write and check read of data to server."""
         self.test_write()
         time.sleep(1)
         rsp = self.cli.query('SELECT * FROM cpu_load_short', database='db')
@@ -265,10 +290,12 @@ class CommonTests(ManyTestCasesWithServerMixin,
                              list(rsp.get_points()))
 
     def test_write_points(self):
+        """Test writing points to the server."""
         self.assertIs(True, self.cli.write_points(dummy_point))
 
     @skipIfPYpy
     def test_write_points_DF(self):
+        """Test writing points with dataframe."""
         self.assertIs(
             True,
             self.cliDF.write_points(
@@ -279,6 +306,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         )
 
     def test_write_points_check_read(self):
+        """Test writing points and check read back."""
         self.test_write_points()
         time.sleep(1)  # same as test_write_check_read()
         rsp = self.cli.query('SELECT * FROM cpu_load_short')
@@ -307,6 +335,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
     @unittest.skip("Broken as of 0.9.0")
     def test_write_points_check_read_DF(self):
+        """Test write points and check back with dataframe."""
         self.test_write_points_DF()
         time.sleep(1)  # same as test_write_check_read()
 
@@ -326,6 +355,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         )
 
     def test_write_multiple_points_different_series(self):
+        """Test write multiple points to different series."""
         self.assertIs(True, self.cli.write_points(dummy_points))
         time.sleep(1)
         rsp = self.cli.query('SELECT * FROM cpu_load_short')
@@ -355,6 +385,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
     @unittest.skip("Broken as of 0.9.0")
     def test_write_multiple_points_different_series_DF(self):
+        """Test write multiple points using dataframe to different series."""
         for i in range(2):
             self.assertIs(
                 True, self.cliDF.write_points(
@@ -376,6 +407,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         )
 
     def test_write_points_batch(self):
+        """Test writing points in a batch."""
         dummy_points = [
             {"measurement": "cpu_usage", "tags": {"unit": "percent"},
              "time": "2009-11-10T23:00:00Z", "fields": {"value": 12.34}},
@@ -399,10 +431,12 @@ class CommonTests(ManyTestCasesWithServerMixin,
         self.assertIn(12.34, cpu['series'][0]['values'][0])
 
     def test_query(self):
+        """Test querying data back from server."""
         self.assertIs(True, self.cli.write_points(dummy_point))
 
     @unittest.skip('Not implemented for 0.9')
     def test_query_chunked(self):
+        """Test query for chunked response from server."""
         cli = InfluxDBClient(database='db')
         example_object = {
             'points': [
@@ -424,10 +458,12 @@ class CommonTests(ManyTestCasesWithServerMixin,
         # TODO ?
 
     def test_delete_series_invalid(self):
+        """Test delete invalid series."""
         with self.assertRaises(InfluxDBClientError):
             self.cli.delete_series()
 
     def test_default_retention_policy(self):
+        """Test add default retention policy."""
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
             [
@@ -441,6 +477,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         )
 
     def test_create_retention_policy_default(self):
+        """Test create a new default retention policy."""
         self.cli.create_retention_policy('somename', '1d', 1, default=True)
         self.cli.create_retention_policy('another', '2d', 1, default=False)
         rsp = self.cli.get_list_retention_policies()
@@ -467,6 +504,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         )
 
     def test_create_retention_policy(self):
+        """Test creating a new retention policy, not default."""
         self.cli.create_retention_policy('somename', '1d', 1)
         # NB: creating a retention policy without specifying
         # shard group duration
@@ -489,6 +527,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         )
 
     def test_alter_retention_policy(self):
+        """Test alter a retention policy, not default."""
         self.cli.create_retention_policy('somename', '1d', 1)
 
         # Test alter duration
@@ -555,6 +594,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         )
 
     def test_alter_retention_policy_invalid(self):
+        """Test invalid alter retention policy."""
         self.cli.create_retention_policy('somename', '1d', 1)
         with self.assertRaises(InfluxDBClientError) as ctx:
             self.cli.alter_retention_policy('somename', 'db')
@@ -579,6 +619,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         )
 
     def test_drop_retention_policy(self):
+        """Test drop a retention policy."""
         self.cli.create_retention_policy('somename', '1d', 1)
 
         # Test drop retention
@@ -624,6 +665,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         self.assertEqual(cqs, expected_cqs)
 
     def test_issue_143(self):
+        """Test for PR#143 from repo."""
         pt = partial(point, 'a_serie_name', timestamp='2015-03-30T16:16:37Z')
         pts = [
             pt(value=15),
@@ -672,6 +714,7 @@ class CommonTests(ManyTestCasesWithServerMixin,
         )
 
     def test_query_multiple_series(self):
+        """Test query for multiple series."""
         pt = partial(point, 'serie1', timestamp='2015-03-30T16:16:37Z')
         pts = [
             pt(tags={'tag1': 'value1', 'tag2': 'v1'}, value=0),
@@ -687,14 +730,15 @@ class CommonTests(ManyTestCasesWithServerMixin,
 
 
 @skipServerTests
-class UdpTests(ManyTestCasesWithServerMixin,
-               unittest.TestCase):
+class UdpTests(ManyTestCasesWithServerMixin, unittest.TestCase):
+    """Define a class to test UDP series."""
 
     influxdb_udp_enabled = True
     influxdb_template_conf = os.path.join(THIS_DIR,
                                           'influxdb.conf.template')
 
     def test_write_points_udp(self):
+        """Test write points UDP."""
         cli = InfluxDBClient(
             'localhost',
             self.influxd_inst.http_port,

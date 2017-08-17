@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
-DataFrame client for InfluxDB
-"""
+"""DataFrame client for InfluxDB."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -16,9 +15,13 @@ except ImportError as err:
     from .client import InfluxDBClient
 
     class DataFrameClient(InfluxDBClient):
+        """DataFrameClient default class instantiation."""
+
         err = err
 
         def __init__(self, *a, **kw):
+            """Initialize the default DataFrameClient."""
+            super(DataFrameClient, self).__init__()
             raise ImportError("DataFrameClient requires Pandas "
                               "which couldn't be imported: %s" % self.err)
 else:
