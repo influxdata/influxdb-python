@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Define the test module for an influxdb instance."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -6,13 +7,13 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
+import distutils
 import os
 import tempfile
-import distutils
-import time
 import shutil
 import subprocess
 import sys
+import time
 import unittest
 
 from influxdb.tests.misc import is_port_open, get_free_ports
@@ -20,6 +21,7 @@ from influxdb.tests.misc import is_port_open, get_free_ports
 # hack in check_output if it's not defined, like for python 2.6
 if "check_output" not in dir(subprocess):
     def f(*popenargs, **kwargs):
+        """Check for output."""
         if 'stdout' in kwargs:
             raise ValueError(
                 'stdout argument not allowed, it will be overridden.'
@@ -39,14 +41,14 @@ if "check_output" not in dir(subprocess):
 
 
 class InfluxDbInstance(object):
-    """ A class to launch of fresh influxdb server instance
+    """Define an instance of InfluxDB.
+
+    A class to launch of fresh influxdb server instance
     in a temporary place, using a config file template.
     """
 
-    def __init__(self,
-                 conf_template,
-                 udp_enabled=False):
-
+    def __init__(self, conf_template, udp_enabled=False):
+        """Initialize an instance of InfluxDbInstance."""
         if os.environ.get("INFLUXDB_PYTHON_SKIP_SERVER_TESTS", None) == 'True':
             raise unittest.SkipTest(
                 "Skipping server test (INFLUXDB_PYTHON_SKIP_SERVER_TESTS)"
@@ -66,7 +68,6 @@ class InfluxDbInstance(object):
                     raise e
 
     def _start_server(self, conf_template, udp_enabled):
-
         # create a temporary dir to store all needed files
         # for the influxdb server instance :
         self.temp_dir_base = tempfile.mkdtemp()
@@ -149,6 +150,7 @@ class InfluxDbInstance(object):
                                % data)
 
     def find_influxd_path(self):
+        """Find the path for InfluxDB."""
         influxdb_bin_path = os.environ.get(
             'INFLUXDB_PYTHON_INFLUXD_PATH',
             None
@@ -174,6 +176,7 @@ class InfluxDbInstance(object):
         return influxdb_bin_path
 
     def get_logs_and_output(self):
+        """Query for logs and output."""
         proc = self.proc
         try:
             with open(self.logs_file) as fh:
@@ -188,6 +191,7 @@ class InfluxDbInstance(object):
         }
 
     def close(self, remove_tree=True):
+        """Close an instance of InfluxDB."""
         self.proc.terminate()
         self.proc.wait()
         if remove_tree:
