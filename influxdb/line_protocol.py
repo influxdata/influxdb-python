@@ -22,7 +22,6 @@ def _convert_timestamp(timestamp, precision=None):
 
     if isinstance(_get_unicode(timestamp), text_type):
         timestamp = parse(timestamp)
-<<<<<<< HEAD
     if isinstance(timestamp, datetime.datetime):
         if not timestamp.tzinfo:
             timestamp = UTC.localize(timestamp)
@@ -30,14 +29,7 @@ def _convert_timestamp(timestamp, precision=None):
         ns = ((ns_no_total.microseconds + (
             ns_no_total.seconds + ns_no_total.days * 24 * 3600) *
             10 ** 6) / 10 ** 6) * 1e9
-=======
 
-    if isinstance(timestamp, datetime):
-        if not timestamp.tzinfo:
-            timestamp = UTC.localize(timestamp)
-
-        ns = (timestamp - EPOCH).total_seconds() * 1e9
->>>>>>> e07dafccf48646f1c795a71fde467fa448b02605
         if precision is None or precision == 'n':
             return ns
         elif precision == 'u':
@@ -50,12 +42,7 @@ def _convert_timestamp(timestamp, precision=None):
             return ns / 1e9 / 60
         elif precision == 'h':
             return ns / 1e9 / 3600
-<<<<<<< HEAD
         raise ValueError(timestamp)
-=======
-
-    raise ValueError(timestamp)
->>>>>>> e07dafccf48646f1c795a71fde467fa448b02605
 
 
 def _escape_tag(tag):
