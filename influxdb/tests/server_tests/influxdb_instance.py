@@ -133,7 +133,7 @@ class InfluxDbInstance(object):
             while time.time() < timeout:
                 if (is_port_open(self.http_port) and
                         not (LooseVersion("1.3.0") >= LooseVersion(self._influxd_version) and  # In version 1.3, the web admin interface is no longer available in InfluxDB
-                        not is_port_open(self.admin_port))):
+                                 not is_port_open(self.admin_port))):
                     # it's hard to check if a UDP port is open..
                     if udp_enabled:
                         # so let's just sleep 0.5 sec in this case
