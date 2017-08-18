@@ -16,7 +16,10 @@ import sys
 import time
 import unittest
 
+import re
+
 from influxdb.tests.misc import is_port_open, get_free_ports
+from distutils.version import LooseVersion
 
 # hack in check_output if it's not defined, like for python 2.6
 if "check_output" not in dir(subprocess):
@@ -37,6 +40,8 @@ if "check_output" not in dir(subprocess):
                 cmd = popenargs[0]
             raise subprocess.CalledProcessError(retcode, cmd)
         return output
+
+
     subprocess.check_output = f
 
 
@@ -55,7 +60,7 @@ class InfluxDbInstance(object):
             )
 
         self.influxd_path = self.find_influxd_path()
-
+        self._influxd_version = self.get_version()
         errors = 0
         while True:
             try:
@@ -123,10 +128,12 @@ class InfluxDbInstance(object):
         timeout = time.time() + 10  # so 10 secs should be enough,
         # otherwise either your system load is high,
         # or you run a 286 @ 1Mhz ?
+
         try:
             while time.time() < timeout:
                 if (is_port_open(self.http_port) and
-                        is_port_open(self.admin_port)):
+                        not (LooseVersion("1.3.0") >= LooseVersion(self._influxd_version) and  # In version 1.3, the web admin interface is no longer available in InfluxDB
+                        not is_port_open(self.admin_port))):
                     # it's hard to check if a UDP port is open..
                     if udp_enabled:
                         # so let's just sleep 0.5 sec in this case
@@ -174,6 +181,22 @@ class InfluxDbInstance(object):
         print("InfluxDB version: %s" % version, file=sys.stderr)
 
         return influxdb_bin_path
+
+    def get_version(self):
+        """ Get influxd version from stderr"""
+
+        regex = r".*v(\d\.\d\.\d).*"
+        p = re.compile(regex)
+        _cmd = self.influxd_path + ' version'
+        _r = subprocess.Popen(_cmd, shell=True, stdout=subprocess.PIPE)
+        try:
+            for line in _r.stdout.readlines():
+                t = p.findall(line)
+                if (len(t) > 0):
+                    return t[0]
+            return '0.0.0'
+        finally:
+            _r.terminate()
 
     def get_logs_and_output(self):
         """Query for logs and output."""

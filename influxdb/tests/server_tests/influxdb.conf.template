@@ -15,6 +15,7 @@
   enabled = true
   bind-address = ":{http_port}"
   auth-enabled = false
+  log-enable = true
 
 [[udp]]
   enabled = {udp_enabled}
