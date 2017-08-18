@@ -50,7 +50,7 @@ class InfluxDbInstance(object):
     in a temporary place, using a config file template.
     """
 
-    def __init__(self, conf_template, udp_enabled=False):
+    def __init__(self, conf_template, udp_enabled=False, auth_enabled=False):
         """Initialize an instance of InfluxDbInstance."""
         self.admin_port = None
         self.http_port = None
@@ -65,7 +65,7 @@ class InfluxDbInstance(object):
         errors = 0
         while True:
             try:
-                self._start_server(conf_template, udp_enabled)
+                self._start_server(conf_template, udp_enabled, auth_enabled)
                 break
             # Happens when the ports are already in use.
             except RuntimeError as e:
@@ -73,7 +73,7 @@ class InfluxDbInstance(object):
                 if errors > 2:
                     raise e
 
-    def _start_server(self, conf_template, udp_enabled):
+    def _start_server(self, conf_template, udp_enabled, auth_enabled=False):
         # create a temporary dir to store all needed files
         # for the influxdb server instance :
         self.temp_dir_base = tempfile.mkdtemp()
@@ -99,6 +99,7 @@ class InfluxDbInstance(object):
             handoff_dir=os.path.join(tempdir, 'handoff'),
             logs_file=os.path.join(self.temp_dir_base, 'logs.txt'),
             udp_enabled='true' if udp_enabled else 'false',
+            auth_enabled='true' if auth_enabled else 'false'
         )
         conf_data.update(ports)
         self.__dict__.update(conf_data)

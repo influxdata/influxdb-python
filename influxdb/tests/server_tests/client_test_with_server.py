@@ -268,6 +268,19 @@ class SimpleTests(SingleTestCaseWithServerMixin, unittest.TestCase):
 
 
 @skipServerTests
+class SimpleAuthTests(SingleTestCaseWithServerMixin, unittest.TestCase):
+    """Define the class of simple tests."""
+
+    influxdb_template_conf = os.path.join(THIS_DIR, 'influxdb.conf.template')
+    influxdb_auth_enabled = True
+
+    def test_create_database(self):
+        """Test create a database."""
+        with self.assertRaises(InfluxDBClientError):
+            self.cli.create_database('new_db_1')
+
+
+@skipServerTests
 class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
     """Define a class to handle common tests for the server."""
 
