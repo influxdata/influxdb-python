@@ -183,8 +183,7 @@ class InfluxDbInstance(object):
         return influxdb_bin_path
 
     def get_version(self):
-        """ Get influxd version from stderr"""
-
+        """ Get influxd version from stderr."""
         regex = r".*v(\d\.\d\.\d).*"
         p = re.compile(regex)
         _cmd = self.influxd_path + ' version'
@@ -192,7 +191,7 @@ class InfluxDbInstance(object):
         try:
             for line in _r.stdout.readlines():
                 t = p.findall(line)
-                if (len(t) > 0):
+                if len(t) > 0:
                     return t[0]
             return '0.0.0'
         finally:
