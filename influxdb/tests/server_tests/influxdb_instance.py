@@ -40,8 +40,6 @@ if "check_output" not in dir(subprocess):
                 cmd = popenargs[0]
             raise subprocess.CalledProcessError(retcode, cmd)
         return output
-
-
     subprocess.check_output = f
 
 
@@ -128,12 +126,13 @@ class InfluxDbInstance(object):
         timeout = time.time() + 10  # so 10 secs should be enough,
         # otherwise either your system load is high,
         # or you run a 286 @ 1Mhz ?
-
         try:
             while time.time() < timeout:
+                # In version 1.3, the web admin is no longer available
                 if (is_port_open(self.http_port) and
-                        not (LooseVersion("1.3.0") >= LooseVersion(self._influxd_version) and  # In version 1.3, the web admin interface is no longer available in InfluxDB
-                                 not is_port_open(self.admin_port))):
+                        not (LooseVersion("1.3.0") >= LooseVersion(
+                            self._influxd_version) and
+                            not is_port_open(self.admin_port))):
                     # it's hard to check if a UDP port is open..
                     if udp_enabled:
                         # so let's just sleep 0.5 sec in this case
@@ -190,7 +189,7 @@ class InfluxDbInstance(object):
         _r = subprocess.Popen(_cmd, shell=True, stdout=subprocess.PIPE)
         try:
             for line in _r.stdout.readlines():
-                t = p.findall(line)
+                t = p.findall(line.decode('utf-8'))
                 if len(t) > 0:
                     return t[0]
             return '0.0.0'
