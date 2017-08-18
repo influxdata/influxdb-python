@@ -183,7 +183,7 @@ class InfluxDbInstance(object):
         return influxdb_bin_path
 
     def get_version(self):
-        """ Get influxd version from stderr."""
+        """Get influxd version from stderr."""
         regex = r".*v(\d\.\d\.\d).*"
         p = re.compile(regex)
         _cmd = self.influxd_path + ' version'
