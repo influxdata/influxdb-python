@@ -52,6 +52,9 @@ class InfluxDbInstance(object):
 
     def __init__(self, conf_template, udp_enabled=False):
         """Initialize an instance of InfluxDbInstance."""
+        self.admin_port = None
+        self.http_port = None
+        self.logs_file = None
         if os.environ.get("INFLUXDB_PYTHON_SKIP_SERVER_TESTS", None) == 'True':
             raise unittest.SkipTest(
                 "Skipping server test (INFLUXDB_PYTHON_SKIP_SERVER_TESTS)"
