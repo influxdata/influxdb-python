@@ -270,7 +270,8 @@ class InfluxDBClient(object):
 
         :param data: the data to be written
         :type data: (if protocol is 'json') dict
-                    (if protocol is 'line') sequence of line protocol strings or single string
+                    (if protocol is 'line') sequence of line protocol strings 
+                                            or single string
         :param params: additional parameters for the request, defaults to None
         :type params: dict
         :param expected_response_code: the expected response code of the write
