@@ -294,7 +294,7 @@ class InfluxDBClient(object):
             data = make_lines(data, precision).encode('utf-8')
         elif protocol == 'line':
             if isinstance(data, str):
-                data = list(data)
+                data = [data]
             data = ('\n'.join(data) + '\n').encode('utf-8')
 
         self.request(
