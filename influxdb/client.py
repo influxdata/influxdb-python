@@ -271,6 +271,7 @@ class InfluxDBClient(object):
         :param data: the data to be written
         :type data: (if protocol is 'json') dict
                     (if protocol is 'line') sequence of line protocol strings
+                                            or single string
         :param params: additional parameters for the request, defaults to None
         :type params: dict
         :param expected_response_code: the expected response code of the write
@@ -292,6 +293,8 @@ class InfluxDBClient(object):
         if protocol == 'json':
             data = make_lines(data, precision).encode('utf-8')
         elif protocol == 'line':
+            if isinstance(data, str):
+                data = [data]
             data = ('\n'.join(data) + '\n').encode('utf-8')
 
         self.request(
