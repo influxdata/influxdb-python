@@ -21,6 +21,7 @@ def _setup_influxdb_server(inst):
     inst.influxd_inst = InfluxDbInstance(
         inst.influxdb_template_conf,
         udp_enabled=getattr(inst, 'influxdb_udp_enabled', False),
+        auth_enabled=getattr(inst, 'influxdb_auth_enabled', False),
     )
 
     inst.cli = InfluxDBClient('localhost',

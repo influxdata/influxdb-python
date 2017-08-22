@@ -14,7 +14,8 @@
 [http]
   enabled = true
   bind-address = ":{http_port}"
-  auth-enabled = false
+  auth-enabled = {auth_enabled}
+  log-enable = true
 
 [[udp]]
   enabled = {udp_enabled}
