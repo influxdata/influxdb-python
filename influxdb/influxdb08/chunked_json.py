@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Module to generate chunked JSON replies for influxdb08."""
 
 #
 # Author: Adrian Sampson <adrian@radbox.org>
@@ -12,11 +13,11 @@ from __future__ import unicode_literals
 
 import json
 
-_decoder = json.JSONDecoder()
-
 
 def loads(s):
-    """A generator reading a sequence of JSON values from a string."""
+    """Generate a sequence of JSON values from a string."""
+    _decoder = json.JSONDecoder()
+
     while s:
         s = s.strip()
         obj, pos = _decoder.raw_decode(s)

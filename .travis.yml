@@ -12,19 +12,21 @@ matrix:
   include:
     - python: 2.7
       env: TOX_ENV=py27
+    - python: 2.7
+      env: TOX_ENV=pep257
     - python: pypy-5.3.1
       env: TOX_ENV=pypy
     - python: 3.4
       env: TOX_ENV=py34
-# An issue in travis-ci prevents this case from running
-# Link to issue: https://github.com/travis-ci/travis-ci/issues/6304
-#    - python: pypy3.3-5.2-alpha1
-#      env: TOX_ENV=pypy3
-    - python: 3.4
+    - python: 3.5
+      env: TOX_ENV=py35
+    - python: 3.6
+      env: TOX_ENV=py36
+    - python: 3.6
       env: TOX_ENV=docs
-    - python: 3.4
+    - python: 3.6
       env: TOX_ENV=flake8
-    - python: 3.4
+    - python: 3.6
       env: TOX_ENV=coverage
 
 install:

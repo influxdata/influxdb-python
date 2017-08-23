@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
-"""
-unit tests for the InfluxDBClient.
+"""Unit tests for the InfluxDBClient.
 
-NB/WARNING :
+NB/WARNING:
 This module implements tests for the InfluxDBClient class
 but does so
  + without any server instance running
@@ -14,22 +13,24 @@ detected by this module.
 See client_test_with_server.py for tests against a running server instance.
 
 """
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import random
+import socket
+import unittest
+import warnings
+
 import json
+import mock
 import requests
 import requests.exceptions
-import socket
 import requests_mock
-import random
+
 from nose.tools import raises
-from mock import patch
-import warnings
-import mock
-import unittest
 
 from influxdb import InfluxDBClient
 from influxdb.resultset import ResultSet
@@ -43,10 +44,10 @@ def _build_response_object(status_code=200, content=""):
 
 
 def _mocked_session(cli, method="GET", status_code=200, content=""):
-
     method = method.upper()
 
     def request(*args, **kwargs):
+        """Request content from the mocked session."""
         c = content
 
         # Check method
@@ -70,18 +71,14 @@ def _mocked_session(cli, method="GET", status_code=200, content=""):
 
         return _build_response_object(status_code=status_code, content=c)
 
-    mocked = patch.object(
-        cli._session,
-        'request',
-        side_effect=request
-    )
-
-    return mocked
+    return mock.patch.object(cli._session, 'request', side_effect=request)
 
 
 class TestInfluxDBClient(unittest.TestCase):
+    """Set up the TestInfluxDBClient object."""
 
     def setUp(self):
+        """Initialize an instance of TestInfluxDBClient object."""
         # By default, raise exceptions on warnings
         warnings.simplefilter('error', FutureWarning)
 
@@ -103,6 +100,7 @@ class TestInfluxDBClient(unittest.TestCase):
         self.dsn_string = 'influxdb://uSr:pWd@my.host.fr:1886/db'
 
     def test_scheme(self):
+        """Set up the test schema for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
         self.assertEqual('http://host:8086', cli._baseurl)
 
@@ -112,38 +110,42 @@ class TestInfluxDBClient(unittest.TestCase):
         self.assertEqual('https://host:8086', cli._baseurl)
 
     def test_dsn(self):
-        cli = InfluxDBClient.from_DSN('influxdb://192.168.0.1:1886')
+        """Set up the test datasource name for TestInfluxDBClient object."""
+        cli = InfluxDBClient.from_dsn('influxdb://192.168.0.1:1886')
         self.assertEqual('http://192.168.0.1:1886', cli._baseurl)
 
-        cli = InfluxDBClient.from_DSN(self.dsn_string)
+        cli = InfluxDBClient.from_dsn(self.dsn_string)
         self.assertEqual('http://my.host.fr:1886', cli._baseurl)
         self.assertEqual('uSr', cli._username)
         self.assertEqual('pWd', cli._password)
         self.assertEqual('db', cli._database)
-        self.assertFalse(cli.use_udp)
+        self.assertFalse(cli._use_udp)
 
-        cli = InfluxDBClient.from_DSN('udp+' + self.dsn_string)
-        self.assertTrue(cli.use_udp)
+        cli = InfluxDBClient.from_dsn('udp+' + self.dsn_string)
+        self.assertTrue(cli._use_udp)
 
-        cli = InfluxDBClient.from_DSN('https+' + self.dsn_string)
+        cli = InfluxDBClient.from_dsn('https+' + self.dsn_string)
         self.assertEqual('https://my.host.fr:1886', cli._baseurl)
 
-        cli = InfluxDBClient.from_DSN('https+' + self.dsn_string,
+        cli = InfluxDBClient.from_dsn('https+' + self.dsn_string,
                                       **{'ssl': False})
         self.assertEqual('http://my.host.fr:1886', cli._baseurl)
 
     def test_switch_database(self):
+        """Test switch database in TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
         cli.switch_database('another_database')
         self.assertEqual('another_database', cli._database)
 
     def test_switch_user(self):
+        """Test switch user in TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
         cli.switch_user('another_username', 'another_password')
         self.assertEqual('another_username', cli._username)
         self.assertEqual('another_password', cli._password)
 
     def test_write(self):
+        """Test write in TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.POST,
@@ -168,6 +170,7 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
     def test_write_points(self):
+        """Test write points for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.POST,
@@ -186,6 +189,7 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
     def test_write_points_toplevel_attributes(self):
+        """Test write points attrs for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.POST,
@@ -207,6 +211,7 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
     def test_write_points_batch(self):
+        """Test write points batch for TestInfluxDBClient object."""
         dummy_points = [
             {"measurement": "cpu_usage", "tags": {"unit": "percent"},
              "time": "2009-11-10T23:00:00Z", "fields": {"value": 12.34}},
@@ -235,6 +240,7 @@ class TestInfluxDBClient(unittest.TestCase):
                          m.last_request.body.decode('utf-8'))
 
     def test_write_points_udp(self):
+        """Test write points UDP for TestInfluxDBClient object."""
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         port = random.randint(4000, 8000)
         s.bind(('0.0.0.0', port))
@@ -254,6 +260,7 @@ class TestInfluxDBClient(unittest.TestCase):
         )
 
     def test_write_bad_precision_udp(self):
+        """Test write bad precision in UDP for TestInfluxDBClient object."""
         cli = InfluxDBClient(
             'localhost', 8086, 'root', 'root',
             'test', use_udp=True, udp_port=4444
@@ -270,11 +277,13 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_write_points_fails(self):
+        """Test write points fail for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
         with _mocked_session(cli, 'post', 500):
             cli.write_points([])
 
     def test_write_points_with_precision(self):
+        """Test write points with precision for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.POST,
@@ -327,6 +336,7 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
     def test_write_points_bad_precision(self):
+        """Test write points w/bad precision TestInfluxDBClient object."""
         cli = InfluxDBClient()
         with self.assertRaisesRegexp(
             Exception,
@@ -340,11 +350,13 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_write_points_with_precision_fails(self):
+        """Test write points w/precision fail for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
         with _mocked_session(cli, 'post', 500):
             cli.write_points_with_precision([])
 
     def test_query(self):
+        """Test query method for TestInfluxDBClient object."""
         example_response = (
             '{"results": [{"series": [{"measurement": "sdfsdfsdf", '
             '"columns": ["time", "value"], "values": '
@@ -368,6 +380,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @unittest.skip('Not implemented for 0.9')
     def test_query_chunked(self):
+        """Test chunked query for TestInfluxDBClient object."""
         cli = InfluxDBClient(database='db')
         example_object = {
             'points': [
@@ -401,10 +414,12 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_query_fail(self):
+        """Test query failed for TestInfluxDBClient object."""
         with _mocked_session(self.cli, 'get', 401):
             self.cli.query('select column_one from foo;')
 
     def test_create_database(self):
+        """Test create database for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.GET,
@@ -418,6 +433,7 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
     def test_create_numeric_named_database(self):
+        """Test create db w/numeric name for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.GET,
@@ -432,10 +448,12 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_create_database_fails(self):
+        """Test create database fail for TestInfluxDBClient object."""
         with _mocked_session(self.cli, 'post', 401):
             self.cli.create_database('new_db')
 
     def test_drop_database(self):
+        """Test drop database for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.GET,
@@ -449,6 +467,7 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
     def test_drop_numeric_named_database(self):
+        """Test drop numeric db for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.GET,
@@ -462,6 +481,7 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
     def test_get_list_database(self):
+        """Test get list of databases for TestInfluxDBClient object."""
         data = {'results': [
             {'series': [
                 {'name': 'databases',
@@ -479,11 +499,13 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_get_list_database_fails(self):
+        """Test get list of dbs fail for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password')
         with _mocked_session(cli, 'get', 401):
             cli.get_list_database()
 
     def test_create_retention_policy_default(self):
+        """Test create default ret policy for TestInfluxDBClient object."""
         example_response = '{"results":[{}]}'
 
         with requests_mock.Mocker() as m:
@@ -503,6 +525,7 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
     def test_create_retention_policy(self):
+        """Test create retention policy for TestInfluxDBClient object."""
         example_response = '{"results":[{}]}'
 
         with requests_mock.Mocker() as m:
@@ -522,6 +545,7 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
     def test_alter_retention_policy(self):
+        """Test alter retention policy for TestInfluxDBClient object."""
         example_response = '{"results":[{}]}'
 
         with requests_mock.Mocker() as m:
@@ -555,11 +579,13 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_alter_retention_policy_invalid(self):
+        """Test invalid alter ret policy for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password')
         with _mocked_session(cli, 'get', 400):
             self.cli.alter_retention_policy('somename', 'db')
 
     def test_drop_retention_policy(self):
+        """Test drop retention policy for TestInfluxDBClient object."""
         example_response = '{"results":[{}]}'
 
         with requests_mock.Mocker() as m:
@@ -576,11 +602,13 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_drop_retention_policy_fails(self):
+        """Test failed drop ret policy for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password')
         with _mocked_session(cli, 'delete', 401):
             cli.drop_retention_policy('default', 'db')
 
     def test_get_list_retention_policies(self):
+        """Test get retention policies for TestInfluxDBClient object."""
         example_response = \
             '{"results": [{"series": [{"values": [["fsfdsdf", "24h0m0s", 2]],'\
             ' "columns": ["name", "duration", "replicaN"]}]}]}'
@@ -599,20 +627,23 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @mock.patch('requests.Session.request')
     def test_request_retry(self, mock_request):
-        """Tests that two connection errors will be handled"""
-
+        """Test that two connection errors will be handled."""
         class CustomMock(object):
-            i = 0
+            """Create custom mock object for test."""
+
+            def __init__(self):
+                self.i = 0
 
             def connection_error(self, *args, **kwargs):
+                """Handle a connection error for the CustomMock object."""
                 self.i += 1
 
                 if self.i < 3:
                     raise requests.exceptions.ConnectionError
-                else:
-                    r = requests.Response()
-                    r.status_code = 204
-                    return r
+
+                r = requests.Response()
+                r.status_code = 204
+                return r
 
         mock_request.side_effect = CustomMock().connection_error
 
@@ -623,12 +654,15 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @mock.patch('requests.Session.request')
     def test_request_retry_raises(self, mock_request):
-        """Tests that three connection errors will not be handled"""
-
+        """Test that three connection errors will not be handled."""
         class CustomMock(object):
-            i = 0
+            """Create custom mock object for test."""
+
+            def __init__(self):
+                self.i = 0
 
             def connection_error(self, *args, **kwargs):
+                """Handle a connection error for the CustomMock object."""
                 self.i += 1
 
                 if self.i < 4:
@@ -647,14 +681,16 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @mock.patch('requests.Session.request')
     def test_random_request_retry(self, mock_request):
-        """Tests that a random number of connection errors will be handled"""
-
+        """Test that a random number of connection errors will be handled."""
         class CustomMock(object):
+            """Create custom mock object for test."""
+
             def __init__(self, retries):
                 self.i = 0
                 self.retries = retries
 
             def connection_error(self, *args, **kwargs):
+                """Handle a connection error for the CustomMock object."""
                 self.i += 1
 
                 if self.i < self.retries:
@@ -668,21 +704,20 @@ class TestInfluxDBClient(unittest.TestCase):
         mock_request.side_effect = CustomMock(retries).connection_error
 
         cli = InfluxDBClient(database='db', retries=retries)
-        cli.write_points(
-            self.dummy_points
-        )
+        cli.write_points(self.dummy_points)
 
     @mock.patch('requests.Session.request')
     def test_random_request_retry_raises(self, mock_request):
-        """Tests that a random number of connection errors plus one \
-                will not be handled"""
-
+        """Test a random number of conn errors plus one will not be handled."""
         class CustomMock(object):
+            """Create custom mock object for test."""
+
             def __init__(self, retries):
                 self.i = 0
                 self.retries = retries
 
             def connection_error(self, *args, **kwargs):
+                """Handle a connection error for the CustomMock object."""
                 self.i += 1
 
                 if self.i < self.retries + 1:
@@ -701,6 +736,7 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.write_points(self.dummy_points)
 
     def test_get_list_users(self):
+        """Test get users for TestInfluxDBClient object."""
         example_response = (
             '{"results":[{"series":[{"columns":["user","admin"],'
             '"values":[["test",false]]}]}]}'
@@ -719,6 +755,7 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
     def test_get_list_users_empty(self):
+        """Test get empty userlist for TestInfluxDBClient object."""
         example_response = (
             '{"results":[{"series":[{"columns":["user","admin"]}]}]}'
         )
@@ -732,6 +769,7 @@ class TestInfluxDBClient(unittest.TestCase):
             self.assertListEqual(self.cli.get_list_users(), [])
 
     def test_grant_admin_privileges(self):
+        """Test grant admin privs for TestInfluxDBClient object."""
         example_response = '{"results":[{}]}'
 
         with requests_mock.Mocker() as m:
@@ -749,11 +787,13 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_grant_admin_privileges_invalid(self):
+        """Test grant invalid admin privs for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password')
         with _mocked_session(cli, 'get', 400):
             self.cli.grant_admin_privileges('')
 
     def test_revoke_admin_privileges(self):
+        """Test revoke admin privs for TestInfluxDBClient object."""
         example_response = '{"results":[{}]}'
 
         with requests_mock.Mocker() as m:
@@ -771,11 +811,13 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_revoke_admin_privileges_invalid(self):
+        """Test revoke invalid admin privs for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password')
         with _mocked_session(cli, 'get', 400):
             self.cli.revoke_admin_privileges('')
 
     def test_grant_privilege(self):
+        """Test grant privs for TestInfluxDBClient object."""
         example_response = '{"results":[{}]}'
 
         with requests_mock.Mocker() as m:
@@ -793,11 +835,13 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_grant_privilege_invalid(self):
+        """Test grant invalid privs for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password')
         with _mocked_session(cli, 'get', 400):
             self.cli.grant_privilege('', 'testdb', 'test')
 
     def test_revoke_privilege(self):
+        """Test revoke privs for TestInfluxDBClient object."""
         example_response = '{"results":[{}]}'
 
         with requests_mock.Mocker() as m:
@@ -815,11 +859,13 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_revoke_privilege_invalid(self):
+        """Test revoke invalid privs for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password')
         with _mocked_session(cli, 'get', 400):
             self.cli.revoke_privilege('', 'testdb', 'test')
 
     def test_get_list_privileges(self):
+        """Tst get list of privs for TestInfluxDBClient object."""
         data = {'results': [
             {'series': [
                 {'columns': ['database', 'privilege'],
@@ -840,15 +886,18 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_get_list_privileges_fails(self):
+        """Test failed get list of privs for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password')
         with _mocked_session(cli, 'get', 401):
             cli.get_list_privileges('test')
 
     def test_invalid_port_fails(self):
+        """Test invalid port fail for TestInfluxDBClient object."""
         with self.assertRaises(ValueError):
             InfluxDBClient('host', '80/redir', 'username', 'password')
 
     def test_chunked_response(self):
+        """Test chunked reponse for TestInfluxDBClient object."""
         example_response = \
             u'{"results":[{"statement_id":0,"series":' \
             '[{"name":"cpu","columns":["fieldKey","fieldType"],"values":' \
@@ -887,8 +936,10 @@ class TestInfluxDBClient(unittest.TestCase):
 
 
 class FakeClient(InfluxDBClient):
+    """Set up a fake client instance of InfluxDBClient."""
 
     def __init__(self, *args, **kwargs):
+        """Initialize an instance of the FakeClient object."""
         super(FakeClient, self).__init__(*args, **kwargs)
 
     def query(self,
@@ -896,6 +947,7 @@ class FakeClient(InfluxDBClient):
               params=None,
               expected_response_code=200,
               database=None):
+        """Query data from the FakeClient object."""
         if query == 'Fail':
             raise Exception("Fail")
         elif query == 'Fail once' and self._host == 'host1':
