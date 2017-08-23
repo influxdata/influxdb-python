@@ -10,6 +10,7 @@ import math
 from collections import defaultdict
 
 import pandas as pd
+import numpy as np
 
 from .client import InfluxDBClient
 from .line_protocol import _escape_tag
@@ -257,7 +258,7 @@ class DataFrameClient(InfluxDBClient):
             {'measurement': measurement,
              'tags': dict(list(tag.items()) + list(tags.items())),
              'fields': rec,
-             'time': int(ts.value / precision_factor)}
+             'time': np.int64(ts.value / precision_factor)}
             for ts, tag, rec in zip(dataframe.index,
                                     dataframe[tag_columns].to_dict('record'),
                                     dataframe[field_columns].to_dict('record'))
@@ -325,11 +326,11 @@ class DataFrameClient(InfluxDBClient):
 
         # Make array of timestamp ints
         if isinstance(dataframe.index, pd.PeriodIndex):
-            time = ((dataframe.index.to_timestamp().values.astype(int) /
-                     precision_factor).astype(int).astype(str))
+            time = ((dataframe.index.to_timestamp().values.astype(np.int64) /
+                     precision_factor).astype(np.int64).astype(str))
         else:
-            time = ((pd.to_datetime(dataframe.index).values.astype(int) /
-                     precision_factor).astype(int).astype(str))
+            time = ((pd.to_datetime(dataframe.index).values.astype(np.int64) /
+                     precision_factor).astype(np.int64).astype(str))
 
         # If tag columns exist, make an array of formatted tag keys and values
         if tag_columns:
