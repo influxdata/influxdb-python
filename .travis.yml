@@ -32,9 +32,6 @@ matrix:
       env: TOX_ENV=coverage
 
 install:
-    - if [[ $TRAVIS_PYTHON_VERSION == 2.6 ]]; then pip install importlib unittest2 tox coveralls;mkdir influxdb_install;
-      wget https://dl.influxdata.com/influxdb/releases/influxdb_1.2.4_amd64.deb;dpkg -x influxdb*.deb influxdb_install;
-      fi
     - pip install tox
     - pip install coveralls
     - mkdir influxdb_install
