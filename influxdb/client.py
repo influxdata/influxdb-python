@@ -547,6 +547,32 @@ class InfluxDBClient(object):
         """
         self.query("DROP DATABASE {0}".format(quote_ident(dbname)))
 
+    def get_list_measurements(self):
+        """Get the list of measurements in InfluxDB.
+
+        :returns: all measurements in InfluxDB
+        :rtype: list of dictionaries
+
+        :Example:
+
+        ::
+
+            >> dbs = client.get_list_measurements()
+            >> dbs
+            [{u'name': u'measurements1'},
+             {u'name': u'measurements2'},
+             {u'name': u'measurements3'}]
+        """
+        return list(self.query("SHOW MEASUREMENTS").get_points())
+
+    def drop_measurement(self, measurement):
+        """Drop a measurement from InfluxDB.
+
+        :param measurement: the name of the measurement to drop
+        :type measurement: str
+        """
+        self.query("DROP MEASUREMENT {0}".format(quote_ident(measurement)))
+
     def create_retention_policy(self, name, duration, replication,
                                 database=None, default=False):
         """Create a retention policy for a database.
