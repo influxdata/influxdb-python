@@ -467,6 +467,7 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
     def test_drop_measurement(self):
+        """Test drop measurement for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.GET,
@@ -518,6 +519,7 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.get_list_database()
 
     def test_get_list_measurements(self):
+        """Test get list of measurements for TestInfluxDBClient object."""
         data = {
             "results": [{
                 "series": [
