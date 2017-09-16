@@ -466,6 +466,20 @@ class TestInfluxDBClient(unittest.TestCase):
                 'drop database "new_db"'
             )
 
+    def test_drop_measurement(self):
+        """Test drop measurement for TestInfluxDBClient object."""
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text='{"results":[{}]}'
+            )
+            self.cli.drop_measurement('new_measurement')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'drop measurement "new_measurement"'
+            )
+
     def test_drop_numeric_named_database(self):
         """Test drop numeric db for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
@@ -503,6 +517,24 @@ class TestInfluxDBClient(unittest.TestCase):
         cli = InfluxDBClient('host', 8086, 'username', 'password')
         with _mocked_session(cli, 'get', 401):
             cli.get_list_database()
+
+    def test_get_list_measurements(self):
+        """Test get list of measurements for TestInfluxDBClient object."""
+        data = {
+            "results": [{
+                "series": [
+                    {"name": "measurements",
+                     "columns": ["name"],
+                     "values": [["cpu"], ["disk"]
+                                ]}]}
+            ]
+        }
+
+        with _mocked_session(self.cli, 'get', 200, json.dumps(data)):
+            self.assertListEqual(
+                self.cli.get_list_measurements(),
+                [{'name': 'cpu'}, {'name': 'disk'}]
+            )
 
     def test_create_retention_policy_default(self):
         """Test create default ret policy for TestInfluxDBClient object."""
