@@ -42,7 +42,7 @@ def _convert_timestamp(timestamp, precision=None):
             return ns / 1e9 / 60
         elif precision == 'h':
             return ns / 1e9 / 3600
-        raise ValueError(timestamp)
+    raise ValueError(timestamp)
 
 
 def _escape_tag(tag):
