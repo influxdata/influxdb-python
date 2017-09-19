@@ -143,7 +143,7 @@ class SeriesHelper(object):
             client = cls._client
         rtn = client.write_points(
             cls._json_body_(),
-            time_precision=cls.time_precision)
+            time_precision=cls._time_precision)
         #will be None if not set and will default to ns
         cls._reset_()
         return rtn
