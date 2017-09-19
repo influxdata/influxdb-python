@@ -65,7 +65,7 @@ class SeriesHelper(object):
                     'Missing Meta class in {0}.'.format(
                         cls.__name__))
 
-            for attr in ['series_name', 'fields', 'tags','time_precision']:
+            for attr in ['series_name', 'fields', 'tags']:
                 try:
                     setattr(cls, '_' + attr, getattr(_meta, attr))
                 except AttributeError:
@@ -75,6 +75,7 @@ class SeriesHelper(object):
                             cls.__name__))
 
             cls._autocommit = getattr(_meta, 'autocommit', False)
+            cls._time_precision = getattr(_meta,'time_precision',None)
 
             cls._client = getattr(_meta, 'client', None)
             if cls._autocommit and not cls._client:
