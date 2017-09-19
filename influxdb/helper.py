@@ -41,6 +41,10 @@ class SeriesHelper(object):
                 # Only applicable if autocommit is True.
                 autocommit = True
                 # If True and no bulk_size, then will set bulk_size to 1.
+                time_precions= "s"|"ns"|"ms"|"u" 
+                #default is ns (nanoseconds)
+                #Setting time precision while writing point
+                #you should also make sure time set is in the given precision
 
     """
 
@@ -61,7 +65,7 @@ class SeriesHelper(object):
                     'Missing Meta class in {0}.'.format(
                         cls.__name__))
 
-            for attr in ['series_name', 'fields', 'tags']:
+            for attr in ['series_name', 'fields', 'tags','time_precision']:
                 try:
                     setattr(cls, '_' + attr, getattr(_meta, attr))
                 except AttributeError:
@@ -136,7 +140,10 @@ class SeriesHelper(object):
         """
         if not client:
             client = cls._client
-        rtn = client.write_points(cls._json_body_())
+        rtn = client.write_points(
+            cls._json_body_(),
+            time_precision=cls.time_precision)
+        #will be None if not set and will default to ns
         cls._reset_()
         return rtn
 
