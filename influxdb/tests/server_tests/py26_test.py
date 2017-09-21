@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Define the resultset test package."""
 
 from __future__ import unicode_literals
 
