@@ -118,8 +118,7 @@ class TestDataFrameClient(unittest.TestCase):
                                  columns=["column_one", "column_two",
                                           "column_three"])
         expected = (
-            b"foo column_one=\"2\",column_two=2.0,column_three=2.0 "
-            b"3600000000000\n"
+            b"\n"
         )
 
         with requests_mock.Mocker() as m:
