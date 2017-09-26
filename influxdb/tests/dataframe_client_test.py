@@ -59,6 +59,82 @@ class TestDataFrameClient(unittest.TestCase):
             cli.write_points(dataframe, 'foo', tags=None)
             self.assertEqual(m.last_request.body, expected)
 
+    def test_write_points_from_dataframe_with_none(self):
+        """Test write points from df in TestDataFrameClient object."""
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[["1", None, 1.0], ["2", 2.0, 2.0]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["column_one", "column_two",
+                                          "column_three"])
+        expected = (
+            b"foo column_one=\"1\",column_three=1.0 0\n"
+            b"foo column_one=\"2\",column_two=2.0,column_three=2.0 "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo')
+            self.assertEqual(m.last_request.body, expected)
+
+            cli.write_points(dataframe, 'foo', tags=None)
+            self.assertEqual(m.last_request.body, expected)
+
+    def test_write_points_from_dataframe_with_line_of_none(self):
+        """Test write points from df in TestDataFrameClient object."""
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[[None, None, None], ["2", 2.0, 2.0]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["column_one", "column_two",
+                                          "column_three"])
+        expected = (
+            b"foo column_one=\"2\",column_two=2.0,column_three=2.0 "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo')
+            self.assertEqual(m.last_request.body, expected)
+
+            cli.write_points(dataframe, 'foo', tags=None)
+            self.assertEqual(m.last_request.body, expected)
+
+    def test_write_points_from_dataframe_with_all_none(self):
+        """Test write points from df in TestDataFrameClient object."""
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[[None, None, None], [None, None, None]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["column_one", "column_two",
+                                          "column_three"])
+        expected = (
+            b"foo column_one=\"2\",column_two=2.0,column_three=2.0 "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo')
+            self.assertEqual(m.last_request.body, expected)
+
+            cli.write_points(dataframe, 'foo', tags=None)
+            self.assertEqual(m.last_request.body, expected)
+
     def test_write_points_from_dataframe_in_batches(self):
         """Test write points in batch from df in TestDataFrameClient object."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
