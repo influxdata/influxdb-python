@@ -94,7 +94,8 @@ class ResultSet(object):
             raise TypeError('measurement must be an str or None')
 
         for series in self._get_series():
-            series_name = series.get('measurement', series.get('name', 'results'))
+            series_name = series.get('measurement',
+                                     series.get('name', 'results'))
             if series_name is None:
                 # this is a "system" query or a query which
                 # doesn't return a name attribute.
@@ -106,9 +107,8 @@ class ResultSet(object):
             elif measurement in (None, series_name):
                 # by default if no tags was provided then
                 # we will matches every returned series
-                series_tags = series.get('tags', {})
-                if tags is None or self._tag_matches(series_tags, tags):
-                    for item in self._get_points_for_series(series):
+                for item in self._get_points_for_series(series):
+                    if tags is None or self._tag_matches(item, tags):
                         yield item
 
     def __repr__(self):
@@ -156,7 +156,7 @@ class ResultSet(object):
         for series in self._get_series():
             keys.append(
                 (series.get('measurement',
-                           series.get('name', 'results')),
+                            series.get('name', 'results')),
                  series.get('tags', None))
             )
         return keys
@@ -169,8 +169,8 @@ class ResultSet(object):
         items = []
         for series in self._get_series():
             series_key = (series.get('measurement',
-                                   series.get('name', 'results')),
-                         series.get('tags', None))
+                                     series.get('name', 'results')),
+                          series.get('tags', None))
             items.append(
                 (series_key, self._get_points_for_series(series))
             )
