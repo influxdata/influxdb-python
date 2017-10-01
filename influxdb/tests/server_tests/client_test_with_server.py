@@ -646,13 +646,15 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         ]
         self.cli.write_points(pts)
         time.sleep(1)
-        rsp = list(self.cli.query('SELECT * FROM a_serie_name GROUP BY tag_1'))
+        rsp = list(self.cli.query('SELECT * FROM a_serie_name GROUP BY tag_1').get_points())
+        import pprint
+        pp = pprint.PrettyPrinter(indent=4)
 
         self.assertEqual(
             [
-                [{'value': 15, 'time': '2015-03-30T16:16:37Z'}],
-                [{'value': 5, 'time': '2015-03-30T16:16:37Z'}],
-                [{'value': 10, 'time': '2015-03-30T16:16:37Z'}]
+                {'time': '2015-03-30T16:16:37Z', 'value': 15},
+                {'time': '2015-03-30T16:16:37Z', 'value': 5},
+                {'time': '2015-03-30T16:16:37Z', 'value': 10}
             ],
             rsp
         )
@@ -667,17 +669,18 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         self.cli.write_points(pts)
         time.sleep(1)
         rsp = self.cli.query('SELECT * FROM serie2 GROUP BY tag1,tag2')
+        pp.pprint(list(rsp))
 
         self.assertEqual(
             [
-                [{'value': 0, 'time': '2015-03-30T16:16:37Z'}],
-                [{'value': 5, 'time': '2015-03-30T16:16:37Z'}],
-                [{'value': 10, 'time': '2015-03-30T16:16:37Z'}]
+                {'value': 0, 'time': '2015-03-30T16:16:37Z'},
+                {'value': 5, 'time': '2015-03-30T16:16:37Z'},
+                {'value': 10, 'time': '2015-03-30T16:16:37Z'}
             ],
             list(rsp)
         )
 
-        all_tag2_equal_v1 = list(rsp[None, {'tag2': 'v1'}])
+        all_tag2_equal_v1 = list(rsp)[None, {'tag2': 'v1'}]
 
         self.assertEqual(
             [{'value': 0, 'time': '2015-03-30T16:16:37Z'},
