@@ -338,9 +338,11 @@ class DataFrameClient(InfluxDBClient):
             for tag_col_i in tag_columns:
                 if pdcom.is_categorical_dtype(tag_df[tag_col_i]):
                     if '' not in tag_df[tag_col_i].cat.categories:
-                        tag_df[tag_col_i] = tag_df[tag_col_i].cat.add_categories('').fillna('').astype(str)
+                        tag_df[tag_col_i] = tag_df[tag_col_i].cat /
+                        .add_categories('').fillna('').astype(str)
                     else:
-                        tag_df[tag_col_i] = tag_df[tag_col_i].fillna('').astype(str)
+                        tag_df[tag_col_i] = tag_df[tag_col_i] /
+                        fillna('').astype(str)
             tag_df = tag_df.fillna('')  # replace NA with empty string
             tag_df = tag_df.sort_index(axis=1)
             tag_df = self._stringify_dataframe(
