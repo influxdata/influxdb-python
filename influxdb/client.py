@@ -113,7 +113,7 @@ class InfluxDBClient(object):
             self._port)
 
         self._headers = {
-            'Content-type': 'application/json',
+            'Content-Type': 'application/json',
             'Accept': 'text/plain'
         }
 
@@ -283,7 +283,7 @@ class InfluxDBClient(object):
         :rtype: bool
         """
         headers = self._headers
-        headers['Content-type'] = 'application/octet-stream'
+        headers['Content-Type'] = 'application/octet-stream'
 
         if params:
             precision = params.get('precision')
