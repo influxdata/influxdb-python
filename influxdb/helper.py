@@ -115,11 +115,14 @@ class SeriesHelper(object):
         fields = set(cls._fields)
         keys = set(kw.keys())
 
-        # all tags should be passed, and keys - tags should be a subset of fields
+        # all tags should be passed, and keys - tags should be a subset of keys
         if not(tags <= keys):
-            raise NameError('Expected arguments to contain all tags {0}, instead got {1}.'.format(cls._tags, kw.keys()))
+            raise NameError(
+                'Expected arguments to contain all tags {0}, instead got {1}.'
+                .format(cls._tags, kw.keys()))
         if not(keys - tags <= fields):
-            raise NameError('Got arguments not in tags or fields: {0}'.format(keys - tags - fields))
+            raise NameError('Got arguments not in tags or fields: {0}'
+                            .format(keys - tags - fields))
 
         cls._datapoints[cls._series_name.format(**kw)].append(
             cls._type(time=timestamp, **kw)
