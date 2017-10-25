@@ -308,9 +308,13 @@ class InfluxDBClient(object):
         return True
 
     @staticmethod
-    def _read_chunked_response(response, raise_errors=True):
+    def _read_chunked_response(
+        response,
+        raise_errors=True,
+        chunk_size=requests.models.ITER_CHUNK_SIZE):
+        
         result_set = {}
-        for line in response.iter_lines():
+        for line in response.iter_lines(chunk_size=chunk_size):
             if isinstance(line, bytes):
                 line = line.decode('utf-8')
             data = json.loads(line)
@@ -329,7 +333,7 @@ class InfluxDBClient(object):
               database=None,
               raise_errors=True,
               chunked=False,
-              chunk_size=0):
+              chunk_size=512):
         """Send a query to InfluxDB.
 
         :param query: the actual query string
@@ -377,8 +381,7 @@ class InfluxDBClient(object):
 
         if chunked:
             params['chunked'] = 'true'
-            if chunk_size > 0:
-                params['chunk_size'] = chunk_size
+            params['chunk_size'] = chunk_size
 
         response = self.request(
             url="query",
@@ -389,7 +392,10 @@ class InfluxDBClient(object):
         )
 
         if chunked:
-            return self._read_chunked_response(response)
+            return self._read_chunked_response(
+                response,
+                chunk_size=params['chunk_size']
+            )
 
         data = response.json()
 
