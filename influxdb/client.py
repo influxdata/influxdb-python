@@ -312,7 +312,7 @@ class InfluxDBClient(object):
         response,
         raise_errors=True,
         chunk_size=requests.models.ITER_CHUNK_SIZE):
-        
+
         result_set = {}
         for line in response.iter_lines(chunk_size=chunk_size):
             if isinstance(line, bytes):
@@ -333,7 +333,7 @@ class InfluxDBClient(object):
               database=None,
               raise_errors=True,
               chunked=False,
-              chunk_size=512):
+              chunk_size=requests.models.ITER_CHUNK_SIZE):
         """Send a query to InfluxDB.
 
         :param query: the actual query string
