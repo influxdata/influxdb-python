@@ -298,12 +298,6 @@ class DataFrameClient(InfluxDBClient):
         field_columns = list(field_columns) if list(field_columns) else []
         tag_columns = list(tag_columns) if list(tag_columns) else []
 
-        # Make global_tags as tag_columns
-        if global_tags:
-            for tag in global_tags:
-                dataframe[tag] = global_tags[tag]
-                tag_columns.append(tag)
-
         # If field columns but no tag columns, assume rest of columns are tags
         if field_columns and (not tag_columns):
             tag_columns = list(column_series[~column_series.isin(
@@ -333,6 +327,13 @@ class DataFrameClient(InfluxDBClient):
 
         # If tag columns exist, make an array of formatted tag keys and values
         if tag_columns:
+
+            # Make global_tags as tag_columns
+            if global_tags:
+                for tag in global_tags:
+                    dataframe[tag] = global_tags[tag]
+                    tag_columns.append(tag)
+
             tag_df = dataframe[tag_columns]
             tag_df = tag_df.fillna('')  # replace NA with empty string
             tag_df = tag_df.sort_index(axis=1)
@@ -345,6 +346,12 @@ class DataFrameClient(InfluxDBClient):
             tags = tags.sum(axis=1)
 
             del tag_df
+        elif global_tags:
+            tag_string = ''.join(
+                [",{}={}".format(k, _escape_tag(v)) if v else ''
+                 for k, v in sorted(global_tags.items())]
+            )
+            tags = pd.Series(tag_string, index=dataframe.index)
         else:
             tags = ''
 
