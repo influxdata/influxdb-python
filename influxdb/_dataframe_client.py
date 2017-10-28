@@ -86,7 +86,7 @@ class DataFrameClient(InfluxDBClient):
 
                 if protocol == 'line':
                     points = self._convert_dataframe_to_lines(
-                        dataframe.ix[start_index:end_index].copy(),
+                        dataframe.iloc[start_index:end_index].copy(),
                         measurement=measurement,
                         global_tags=tags,
                         time_precision=time_precision,
@@ -95,7 +95,7 @@ class DataFrameClient(InfluxDBClient):
                         numeric_precision=numeric_precision)
                 else:
                     points = self._convert_dataframe_to_json(
-                        dataframe.ix[start_index:end_index].copy(),
+                        dataframe.iloc[start_index:end_index].copy(),
                         measurement=measurement,
                         tags=tags,
                         time_precision=time_precision,
