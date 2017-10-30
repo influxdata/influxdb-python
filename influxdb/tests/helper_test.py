@@ -231,6 +231,23 @@ class TestSeriesHelper(unittest.TestCase):
         self.assertEqual(point1['time'], current_date)
         self.assertEqual(point2['time'], yesterday)
 
+    def testSeriesWithoutAllTags(self):
+        """Test that creating a data point without a tag throws an error"""
+
+        class MyTimeFieldSeriesHelper(SeriesHelper):
+
+            class Meta:
+                client = TestSeriesHelper.client
+                series_name = 'events.stats.{server_name}'
+                fields = ['some_stat', 'time']
+                tags = ['server_name', 'other_tag']
+                bulk_size = 5
+                autocommit = True
+
+        self.assertRaises(NameError, MyTimeFieldSeriesHelper, 
+                **{"server_name":'us.east-1', "some_stat":158})
+
+
     @mock.patch('influxdb.helper.SeriesHelper._current_timestamp')
     def testSeriesWithTimeField(self, current_timestamp):
         """Test that time is optional on a series with a time field."""
