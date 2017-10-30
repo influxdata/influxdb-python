@@ -233,7 +233,6 @@ class TestSeriesHelper(unittest.TestCase):
 
     def testSeriesWithoutAllTags(self):
         """Test that creating a data point without a tag throws an error."""
-
         class MyTimeFieldSeriesHelper(SeriesHelper):
 
             class Meta:
