@@ -59,7 +59,7 @@ class DataFrameClient(InfluxDBClient):
                         self._convert_dataframe_to_json(
                             name=key,
                             dataframe=data_frame
-                            .ix[start_index:end_index].copy(),
+                            .iloc[start_index:end_index].copy(),
                             time_precision=time_precision)]
                     InfluxDBClient.write_points(self, outdata, *args, **kwargs)
             return True

@@ -7,6 +7,8 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from sys import version_info
+import time
+import random
 
 import json
 import socket
@@ -237,6 +239,7 @@ class InfluxDBClient(object):
         _try = 0
         while retry:
             try:
+                _error = False
                 response = self._session.request(
                     method=method,
                     url=url,
@@ -249,20 +252,27 @@ class InfluxDBClient(object):
                     timeout=self._timeout
                 )
                 break
-            except requests.exceptions.ConnectionError:
+            except (requests.exceptions.ConnectionError,
+                    requests.exceptions.HTTPError,
+                    requests.exceptions.Timeout) as _e:
+                _error = _e
                 _try += 1
                 if self._retries != 0:
                     retry = _try < self._retries
-
+                if method == "POST":
+                    time.sleep((2 ** _try) * random.random() / 100.0)
+        if _error:
+            raise(_error)
         else:
-            raise requests.exceptions.ConnectionError
-
-        if 500 <= response.status_code < 600:
-            raise InfluxDBServerError(response.content)
-        elif response.status_code == expected_response_code:
-            return response
-        else:
-            raise InfluxDBClientError(response.content, response.status_code)
+            # if there's not an error, there must have been a successful
+            # response
+            if 500 <= response.status_code < 600:
+                raise InfluxDBServerError(response.content)
+            elif response.status_code == expected_response_code:
+                return response
+            else:
+                raise InfluxDBClientError(response.content,
+                                          response.status_code)
 
     def write(self, data, params=None, expected_response_code=204,
               protocol='json'):
