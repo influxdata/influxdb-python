@@ -59,7 +59,7 @@ def _escape_tag(tag):
 
 def _escape_tag_value(value):
     ret = _escape_tag(value)
-    if ret.endswith('\\ ')
+    if ret.endswith('\\'):
         ret += ' '
     return ret
 
