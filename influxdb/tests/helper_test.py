@@ -232,7 +232,7 @@ class TestSeriesHelper(unittest.TestCase):
         self.assertEqual(point2['time'], yesterday)
 
     def testSeriesWithoutAllTags(self):
-        """Test that creating a data point without a tag throws an error"""
+        """Test that creating a data point without a tag throws an error."""
 
         class MyTimeFieldSeriesHelper(SeriesHelper):
 
