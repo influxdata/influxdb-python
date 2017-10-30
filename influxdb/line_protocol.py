@@ -57,6 +57,13 @@ def _escape_tag(tag):
     )
 
 
+def _escape_tag_value(value):
+    ret = _escape_tag(value)
+    if ret.endswith('\\'):
+        ret += ' '
+    return ret
+
+
 def quote_ident(value):
     """Indent the quotes."""
     return "\"{}\"".format(value
@@ -135,7 +142,7 @@ def make_lines(data, precision=None):
         # tags should be sorted client-side to take load off server
         for tag_key, tag_value in sorted(iteritems(tags)):
             key = _escape_tag(tag_key)
-            value = _escape_tag(tag_value)
+            value = _escape_tag_value(tag_value)
 
             if key != '' and value != '':
                 key_values.append(key + "=" + value)
