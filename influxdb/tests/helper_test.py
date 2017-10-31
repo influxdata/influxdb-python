@@ -243,9 +243,9 @@ class TestSeriesHelper(unittest.TestCase):
                 bulk_size = 5
                 autocommit = True
 
-        self.assertRaises(NameError, MyTimeFieldSeriesHelper, 
-                **{"server_name":'us.east-1', "some_stat":158})
-
+        self.assertRaises(NameError, MyTimeFieldSeriesHelper,
+                          **{"server_name": 'us.east-1',
+                             "some_stat": 158})
 
     @mock.patch('influxdb.helper.SeriesHelper._current_timestamp')
     def testSeriesWithTimeField(self, current_timestamp):
