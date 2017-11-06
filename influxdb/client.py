@@ -33,9 +33,11 @@ else:
 
 class InfluxDBClient(object):
     """InfluxDBClient primary client object to connect InfluxDB.
+
     The :class:`~.InfluxDBClient` object holds information necessary to
     connect to InfluxDB. Requests can be made to InfluxDB directly through
     the client.
+
     :param host: hostname to connect to InfluxDB, defaults to 'localhost'
     :type host: str
     :param port: port to connect to InfluxDB, defaults to 8086
@@ -103,6 +105,7 @@ class InfluxDBClient(object):
             self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         self._scheme = "http"
+
         if ssl is True:
             self._scheme = "https"
 
