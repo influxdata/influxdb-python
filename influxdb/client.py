@@ -99,7 +99,8 @@ class InfluxDBClient(object):
         self.__use_udp = use_udp
         self.__udp_port = udp_port
         self._session = requests.Session()
-        adapter = requests.adapters.HTTPAdapter(pool_connections=pool_size, pool_maxsize=pool_size)
+        adapter = requests.adapters.HTTPAdapter(pool_connections=pool_size,
+                                                pool_maxsize=pool_size)
 
         if use_udp:
             self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
