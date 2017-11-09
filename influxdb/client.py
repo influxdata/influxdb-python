@@ -21,6 +21,7 @@ from influxdb.resultset import ResultSet
 from .exceptions import InfluxDBClientError
 from .exceptions import InfluxDBServerError
 
+
 class InfluxDBClient(object):
     """InfluxDBClient primary client object to connect InfluxDB.
 
