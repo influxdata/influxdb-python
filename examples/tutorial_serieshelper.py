@@ -51,7 +51,8 @@ class MySeriesHelper(SeriesHelper):
 MySeriesHelper(server_name='us.east-1', some_stat=159, other_stat=10)
 MySeriesHelper(server_name='us.east-1', some_stat=158, other_stat=20)
 MySeriesHelper(server_name='us.east-1', some_stat=157, other_stat=30)
-MySeriesHelper(server_name='us.east-1', some_stat=156, other_stat=40)
+MySeriesHelper(server_name='us.east-1', some_stat=156, other_stat=30)
+MySeriesHelper(server_name='us.east-1', some_stat=156)
 MySeriesHelper(server_name='us.east-1', some_stat=155, other_stat=50)
 
 # To manually submit data points which are not yet written, call commit:
