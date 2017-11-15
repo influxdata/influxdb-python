@@ -6,7 +6,6 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from sys import version_info
 import time
 import random
 
@@ -14,21 +13,13 @@ import json
 import socket
 import requests
 import requests.exceptions
+from six.moves import xrange
+from six.moves.urllib.parse import urlparse
 
 from influxdb.line_protocol import make_lines, quote_ident, quote_literal
 from influxdb.resultset import ResultSet
 from .exceptions import InfluxDBClientError
 from .exceptions import InfluxDBServerError
-
-try:
-    xrange
-except NameError:
-    xrange = range
-
-if version_info[0] == 3:
-    from urllib.parse import urlparse
-else:
-    from urlparse import urlparse
 
 
 class InfluxDBClient(object):
@@ -247,7 +238,6 @@ class InfluxDBClient(object):
         _try = 0
         while retry:
             try:
-                _error = False
                 response = self._session.request(
                     method=method,
                     url=url,
@@ -262,25 +252,21 @@ class InfluxDBClient(object):
                 break
             except (requests.exceptions.ConnectionError,
                     requests.exceptions.HTTPError,
-                    requests.exceptions.Timeout) as _e:
-                _error = _e
+                    requests.exceptions.Timeout):
                 _try += 1
                 if self._retries != 0:
                     retry = _try < self._retries
                 if method == "POST":
                     time.sleep((2 ** _try) * random.random() / 100.0)
-        if _error:
-            raise(_error)
+                if not retry:
+                    raise
+        # if there's not an error, there must have been a successful response
+        if 500 <= response.status_code < 600:
+            raise InfluxDBServerError(response.content)
+        elif response.status_code == expected_response_code:
+            return response
         else:
-            # if there's not an error, there must have been a successful
-            # response
-            if 500 <= response.status_code < 600:
-                raise InfluxDBServerError(response.content)
-            elif response.status_code == expected_response_code:
-                return response
-            else:
-                raise InfluxDBClientError(response.content,
-                                          response.status_code)
+            raise InfluxDBClientError(response.content, response.status_code)
 
     def write(self, data, params=None, expected_response_code=204,
               protocol='json'):
