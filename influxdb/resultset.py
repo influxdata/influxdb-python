@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Module to prepare the resultset."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -13,18 +14,19 @@ _sentinel = object()
 
 
 class ResultSet(object):
-    """A wrapper around a single InfluxDB query result"""
+    """A wrapper around a single InfluxDB query result."""
 
     def __init__(self, series, raise_errors=True):
+        """Initialize the ResultSet."""
         self._raw = series
-        self._error = self.raw.get('error', None)
+        self._error = self._raw.get('error', None)
 
         if self.error is not None and raise_errors is True:
             raise InfluxDBClientError(self.error)
 
     @property
     def raw(self):
-        """Raw JSON from InfluxDB"""
+        """Raw JSON from InfluxDB."""
         return self._raw
 
     @raw.setter
@@ -33,11 +35,12 @@ class ResultSet(object):
 
     @property
     def error(self):
-        """Error returned by InfluxDB"""
+        """Error returned by InfluxDB."""
         return self._error
 
     def __getitem__(self, key):
-        """
+        """Retrieve the series name or specific set based on key.
+
         :param key: Either a serie name, or a tags_dict, or
                     a 2-tuple(serie_name, tags_dict).
                     If the serie name is None (or not given) then any serie
@@ -50,7 +53,6 @@ class ResultSet(object):
         The order in which the points are yielded is actually undefined but
         it might change..
         """
-
         warnings.warn(
             ("ResultSet's ``__getitem__`` method will be deprecated. Use"
              "``get_points`` instead."),
@@ -58,10 +60,12 @@ class ResultSet(object):
         )
 
         if isinstance(key, tuple):
-            if 2 != len(key):
+            if len(key) != 2:
                 raise TypeError('only 2-tuples allowed')
+
             name = key[0]
             tags = key[1]
+
             if not isinstance(tags, dict) and tags is not None:
                 raise TypeError('tags should be a dict')
         elif isinstance(key, dict):
@@ -74,8 +78,7 @@ class ResultSet(object):
         return self.get_points(name, tags)
 
     def get_points(self, measurement=None, tags=None):
-        """
-        Returns a generator for all the points that match the given filters.
+        """Return a generator for all the points that match the given filters.
 
         :param measurement: The measurement name
         :type measurement: str
@@ -85,7 +88,6 @@ class ResultSet(object):
 
         :return: Points generator
         """
-
         # Raise error if measurement is not str or bytes
         if not isinstance(measurement,
                           (bytes, type(b''.decode()), type(None))):
@@ -110,6 +112,7 @@ class ResultSet(object):
                         yield item
 
     def __repr__(self):
+        """Representation of ResultSet object."""
         items = []
 
         for item in self.items():
@@ -118,13 +121,13 @@ class ResultSet(object):
         return "ResultSet({%s})" % ", ".join(items)
 
     def __iter__(self):
-        """ Iterating a ResultSet will yield one dict instance per serie result.
-        """
+        """Yield one dict instance per serie result."""
         for key in self.keys():
             yield list(self.__getitem__(key))
 
-    def _tag_matches(self, tags, filter):
-        """Checks if all key/values in filter match in tags"""
+    @staticmethod
+    def _tag_matches(tags, filter):
+        """Check if all key/values in filter match in tags."""
         for tag_name, tag_value in filter.items():
             # using _sentinel as I'm not sure that "None"
             # could be used, because it could be a valid
@@ -133,17 +136,20 @@ class ResultSet(object):
             serie_tag_value = tags.get(tag_name, _sentinel)
             if serie_tag_value != tag_value:
                 return False
+
         return True
 
     def _get_series(self):
-        """Returns all series"""
+        """Return all series."""
         return self.raw.get('series', [])
 
     def __len__(self):
+        """Return the len of the keys in the ResultSet."""
         return len(self.keys())
 
     def keys(self):
-        """
+        """Return the list of keys in the ResultSet.
+
         :return: List of keys. Keys are tuples (serie_name, tags)
         """
         keys = []
@@ -156,7 +162,8 @@ class ResultSet(object):
         return keys
 
     def items(self):
-        """
+        """Return the set of items from the ResultSet.
+
         :return: List of tuples, (key, generator)
         """
         items = []
@@ -170,7 +177,7 @@ class ResultSet(object):
         return items
 
     def _get_points_for_serie(self, serie):
-        """ Return generator of dict from columns and values of a serie
+        """Return generator of dict from columns and values of a serie.
 
         :param serie: One serie
         :return: Generator of dicts
@@ -183,7 +190,7 @@ class ResultSet(object):
 
     @staticmethod
     def point_from_cols_vals(cols, vals):
-        """ Creates a dict from columns and values lists
+        """Create a dict from columns and values lists.
 
         :param cols: List of columns
         :param vals: List of values
@@ -192,4 +199,5 @@ class ResultSet(object):
         point = {}
         for col_index, col_name in enumerate(cols):
             point[col_name] = vals[col_index]
+
         return point
