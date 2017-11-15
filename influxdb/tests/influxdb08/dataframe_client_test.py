@@ -1,17 +1,20 @@
 # -*- coding: utf-8 -*-
-"""
-unit tests for misc module
-"""
-from .client_test import _mocked_session
+"""Unit tests for misc module."""
 
-import unittest
-import json
-import requests_mock
-from nose.tools import raises
 from datetime import timedelta
-from influxdb.tests import skipIfPYpy, using_pypy
+
 import copy
+import json
+import unittest
 import warnings
+
+import requests_mock
+
+from nose.tools import raises
+
+from influxdb.tests import skipIfPYpy, using_pypy
+
+from .client_test import _mocked_session
 
 if not using_pypy:
     import pandas as pd
@@ -21,12 +24,15 @@ if not using_pypy:
 
 @skipIfPYpy
 class TestDataFrameClient(unittest.TestCase):
+    """Define the DataFramClient test object."""
 
     def setUp(self):
+        """Set up an instance of TestDataFrameClient object."""
         # By default, raise exceptions on warnings
         warnings.simplefilter('error', FutureWarning)
 
     def test_write_points_from_dataframe(self):
+        """Test write points from dataframe."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
                                  index=[now, now + timedelta(hours=1)],
@@ -53,6 +59,7 @@ class TestDataFrameClient(unittest.TestCase):
             self.assertListEqual(json.loads(m.last_request.body), points)
 
     def test_write_points_from_dataframe_with_float_nan(self):
+        """Test write points from dataframe with NaN float."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.DataFrame(data=[[1, float("NaN"), 1.0], [2, 2, 2.0]],
                                  index=[now, now + timedelta(hours=1)],
@@ -79,6 +86,7 @@ class TestDataFrameClient(unittest.TestCase):
             self.assertListEqual(json.loads(m.last_request.body), points)
 
     def test_write_points_from_dataframe_in_batches(self):
+        """Test write points from dataframe in batches."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
                                  index=[now, now + timedelta(hours=1)],
@@ -92,6 +100,7 @@ class TestDataFrameClient(unittest.TestCase):
             self.assertTrue(cli.write_points({"foo": dataframe}, batch_size=1))
 
     def test_write_points_from_dataframe_with_numeric_column_names(self):
+        """Test write points from dataframe with numeric columns."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         # df with numeric column names
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
@@ -117,6 +126,7 @@ class TestDataFrameClient(unittest.TestCase):
             self.assertListEqual(json.loads(m.last_request.body), points)
 
     def test_write_points_from_dataframe_with_period_index(self):
+        """Test write points from dataframe with period index."""
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
                                  index=[pd.Period('1970-01-01'),
                                         pd.Period('1970-01-02')],
@@ -143,6 +153,7 @@ class TestDataFrameClient(unittest.TestCase):
             self.assertListEqual(json.loads(m.last_request.body), points)
 
     def test_write_points_from_dataframe_with_time_precision(self):
+        """Test write points from dataframe with time precision."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
                                  index=[now, now + timedelta(hours=1)],
@@ -182,6 +193,7 @@ class TestDataFrameClient(unittest.TestCase):
 
     @raises(TypeError)
     def test_write_points_from_dataframe_fails_without_time_index(self):
+        """Test write points from dataframe that fails without time index."""
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
                                  columns=["column_one", "column_two",
                                           "column_three"])
@@ -195,6 +207,7 @@ class TestDataFrameClient(unittest.TestCase):
 
     @raises(TypeError)
     def test_write_points_from_dataframe_fails_with_series(self):
+        """Test failed write points from dataframe with series."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.Series(data=[1.0, 2.0],
                               index=[now, now + timedelta(hours=1)])
@@ -207,6 +220,7 @@ class TestDataFrameClient(unittest.TestCase):
             cli.write_points({"foo": dataframe})
 
     def test_query_into_dataframe(self):
+        """Test query into a dataframe."""
         data = [
             {
                 "name": "foo",
@@ -229,6 +243,7 @@ class TestDataFrameClient(unittest.TestCase):
             assert_frame_equal(dataframe, result)
 
     def test_query_multiple_time_series(self):
+        """Test query for multiple time series."""
         data = [
             {
                 "name": "series1",
@@ -269,12 +284,14 @@ class TestDataFrameClient(unittest.TestCase):
                 assert_frame_equal(dataframes[key], result[key])
 
     def test_query_with_empty_result(self):
+        """Test query with empty results."""
         with _mocked_session('get', 200, []):
             cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
             result = cli.query('select column_one from foo;')
             self.assertEqual(result, [])
 
     def test_list_series(self):
+        """Test list of series for dataframe object."""
         response = [
             {
                 'columns': ['time', 'name'],
@@ -288,6 +305,7 @@ class TestDataFrameClient(unittest.TestCase):
             self.assertEqual(series_list, ['seriesA', 'seriesB'])
 
     def test_datetime_to_epoch(self):
+        """Test convert datetime to epoch."""
         timestamp = pd.Timestamp('2013-01-01 00:00:00.000+00:00')
         cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
 

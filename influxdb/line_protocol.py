@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
+"""Define the line_protocol handler."""
 
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from copy import copy
 from datetime import datetime
 from numbers import Integral
 
 from pytz import UTC
 from dateutil.parser import parse
-from six import binary_type, text_type, integer_types, PY2
+from six import iteritems, binary_type, text_type, integer_types, PY2
 
 EPOCH = UTC.localize(datetime.utcfromtimestamp(0))
 
@@ -19,11 +19,14 @@ EPOCH = UTC.localize(datetime.utcfromtimestamp(0))
 def _convert_timestamp(timestamp, precision=None):
     if isinstance(timestamp, Integral):
         return timestamp  # assume precision is correct if timestamp is int
+
     if isinstance(_get_unicode(timestamp), text_type):
         timestamp = parse(timestamp)
+
     if isinstance(timestamp, datetime):
         if not timestamp.tzinfo:
             timestamp = UTC.localize(timestamp)
+
         ns = (timestamp - EPOCH).total_seconds() * 1e9
         if precision is None or precision == 'n':
             return ns
@@ -37,6 +40,7 @@ def _convert_timestamp(timestamp, precision=None):
             return ns / 1e9 / 60
         elif precision == 'h':
             return ns / 1e9 / 3600
+
     raise ValueError(timestamp)
 
 
@@ -54,41 +58,44 @@ def _escape_tag(tag):
 
 
 def quote_ident(value):
-    return "\"{0}\"".format(
-        value.replace(
-            "\\", "\\\\"
-        ).replace(
-            "\"", "\\\""
-        ).replace(
-            "\n", "\\n"
-        )
-    )
+    """Indent the quotes."""
+    return "\"{}\"".format(value
+                           .replace("\\", "\\\\")
+                           .replace("\"", "\\\"")
+                           .replace("\n", "\\n"))
 
 
 def quote_literal(value):
-    return "'{0}'".format(
-        value.replace(
-            "\\", "\\\\"
-        ).replace(
-            "'", "\\'"
-        )
-    )
+    """Quote provided literal."""
+    return "'{}'".format(value
+                         .replace("\\", "\\\\")
+                         .replace("'", "\\'"))
+
+
+def _is_float(value):
+    try:
+        float(value)
+    except (TypeError, ValueError):
+        return False
+
+    return True
 
 
 def _escape_value(value):
     value = _get_unicode(value)
+
     if isinstance(value, text_type) and value != '':
         return quote_ident(value)
     elif isinstance(value, integer_types) and not isinstance(value, bool):
         return str(value) + 'i'
-    else:
-        return str(value)
+    elif _is_float(value):
+        return repr(value)
+
+    return str(value)
 
 
 def _get_unicode(data, force=False):
-    """
-    Try to return a text aka unicode object from the given data.
-    """
+    """Try to return a text aka unicode object from the given data."""
     if isinstance(data, binary_type):
         return data.decode('utf-8')
     elif data is None:
@@ -103,59 +110,56 @@ def _get_unicode(data, force=False):
 
 
 def make_lines(data, precision=None):
-    """
+    """Extract points from given dict.
+
     Extracts the points from the given dict and returns a Unicode string
     matching the line protocol introduced in InfluxDB 0.9.0.
     """
     lines = []
-    static_tags = data.get('tags', None)
+    static_tags = data.get('tags')
     for point in data['points']:
         elements = []
 
         # add measurement name
         measurement = _escape_tag(_get_unicode(
-            point.get('measurement', data.get('measurement'))
-        ))
+            point.get('measurement', data.get('measurement'))))
         key_values = [measurement]
 
         # add tags
-        if static_tags is None:
-            tags = point.get('tags', {})
+        if static_tags:
+            tags = dict(static_tags)  # make a copy, since we'll modify
+            tags.update(point.get('tags') or {})
         else:
-            tags = copy(static_tags)
-            tags.update(point.get('tags', {}))
+            tags = point.get('tags') or {}
 
         # tags should be sorted client-side to take load off server
-        for tag_key in sorted(tags.keys()):
+        for tag_key, tag_value in sorted(iteritems(tags)):
             key = _escape_tag(tag_key)
-            value = _escape_tag(tags[tag_key])
+            value = _escape_tag(tag_value)
 
             if key != '' and value != '':
-                key_values.append("{key}={value}".format(key=key, value=value))
-        key_values = ','.join(key_values)
-        elements.append(key_values)
+                key_values.append(key + "=" + value)
+
+        elements.append(','.join(key_values))
 
         # add fields
         field_values = []
-        for field_key in sorted(point['fields'].keys()):
+        for field_key, field_value in sorted(iteritems(point['fields'])):
             key = _escape_tag(field_key)
-            value = _escape_value(point['fields'][field_key])
+            value = _escape_value(field_value)
+
             if key != '' and value != '':
-                field_values.append("{key}={value}".format(
-                    key=key,
-                    value=value
-                ))
-        field_values = ','.join(field_values)
-        elements.append(field_values)
+                field_values.append(key + "=" + value)
+
+        elements.append(','.join(field_values))
 
         # add timestamp
         if 'time' in point:
             timestamp = _get_unicode(str(int(
-                _convert_timestamp(point['time'], precision)
-            )))
+                _convert_timestamp(point['time'], precision))))
             elements.append(timestamp)
 
         line = ' '.join(elements)
         lines.append(line)
-    lines = '\n'.join(lines)
-    return lines + '\n'
+
+    return '\n'.join(lines) + '\n'

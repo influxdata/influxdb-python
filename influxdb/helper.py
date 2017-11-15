@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
-"""
-Helper class for InfluxDB
-"""
+"""Helper class for InfluxDB."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
@@ -15,10 +14,9 @@ import six
 
 
 class SeriesHelper(object):
+    """Subclass this helper eases writing data points in bulk.
 
-    """
-    Subclassing this helper eases writing data points in bulk.
-    All data points are immutable, insuring they do not get overwritten.
+    All data points are immutable, ensuring they do not get overwritten.
     Each subclass can write to its own database.
     The time series names can also be based on one or more defined fields.
     The field "time" can be specified when creating a point, and may be any of
@@ -45,11 +43,11 @@ class SeriesHelper(object):
                 # If True and no bulk_size, then will set bulk_size to 1.
 
     """
+
     __initialized__ = False
 
     def __new__(cls, *args, **kwargs):
-        """
-        Initializes class attributes for subsequent constructor calls.
+        """Initialize class attributes for subsequent constructor calls.
 
         :note: *args and **kwargs are not explicitly used in this function,
         but needed for Python 2 compatibility.
@@ -100,24 +98,31 @@ class SeriesHelper(object):
             if 'time' in cls._fields:
                 cls._fields.remove('time')
             cls._type = namedtuple(cls.__name__,
-                                   cls._fields + cls._tags + ['time'])
+                                   ['time'] + cls._tags + cls._fields)
+            cls._type.__new__.__defaults__ = (None,) * len(cls._fields)
+
         return super(SeriesHelper, cls).__new__(cls)
 
     def __init__(self, **kw):
-        """
-        Constructor call creates a new data point. All fields must be present.
+        """Call to constructor creates a new data point.
 
         :note: Data points written when `bulk_size` is reached per Helper.
         :warning: Data points are *immutable* (`namedtuples`).
         """
         cls = self.__class__
         timestamp = kw.pop('time', self._current_timestamp())
+        tags = set(cls._tags)
+        fields = set(cls._fields)
+        keys = set(kw.keys())
 
-        if sorted(cls._fields + cls._tags) != sorted(kw.keys()):
+        # all tags should be passed, and keys - tags should be a subset of keys
+        if not(tags <= keys):
             raise NameError(
-                'Expected {0}, got {1}.'.format(
-                    sorted(cls._fields + cls._tags),
-                    kw.keys()))
+                'Expected arguments to contain all tags {0}, instead got {1}.'
+                .format(cls._tags, kw.keys()))
+        if not(keys - tags <= fields):
+            raise NameError('Got arguments not in tags or fields: {0}'
+                            .format(keys - tags - fields))
 
         cls._datapoints[cls._series_name.format(**kw)].append(
             cls._type(time=timestamp, **kw)
@@ -130,8 +135,7 @@ class SeriesHelper(object):
 
     @classmethod
     def commit(cls, client=None):
-        """
-        Commit everything from datapoints via the client.
+        """Commit everything from datapoints via the client.
 
         :param client: InfluxDBClient instance for writing points to InfluxDB.
         :attention: any provided client will supersede the class client.
@@ -145,7 +149,8 @@ class SeriesHelper(object):
 
     @classmethod
     def _json_body_(cls):
-        """
+        """Return the JSON body of given datapoints.
+
         :return: JSON body of these datapoints.
         """
         json = []
@@ -159,7 +164,9 @@ class SeriesHelper(object):
                 }
 
                 for field in cls._fields:
-                    json_point['fields'][field] = getattr(point, field)
+                    value = getattr(point, field)
+                    if value is not None:
+                        json_point['fields'][field] = value
 
                 for tag in cls._tags:
                     json_point['tags'][tag] = getattr(point, tag)
@@ -169,10 +176,9 @@ class SeriesHelper(object):
 
     @classmethod
     def _reset_(cls):
-        """
-        Reset data storage.
-        """
+        """Reset data storage."""
         cls._datapoints = defaultdict(list)
 
-    def _current_timestamp(self):
+    @staticmethod
+    def _current_timestamp():
         return datetime.utcnow()
