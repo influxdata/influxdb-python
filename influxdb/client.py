@@ -6,27 +6,20 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from sys import version_info
+import time
+import random
 
 import json
 import socket
 import requests
 import requests.exceptions
+from six.moves import xrange
+from six.moves.urllib.parse import urlparse
 
 from influxdb.line_protocol import make_lines, quote_ident, quote_literal
 from influxdb.resultset import ResultSet
 from .exceptions import InfluxDBClientError
 from .exceptions import InfluxDBServerError
-
-try:
-    xrange
-except NameError:
-    xrange = range
-
-if version_info[0] == 3:
-    from urllib.parse import urlparse
-else:
-    from urlparse import urlparse
 
 
 class InfluxDBClient(object):
@@ -113,7 +106,7 @@ class InfluxDBClient(object):
             self._port)
 
         self._headers = {
-            'Content-type': 'application/json',
+            'Content-Type': 'application/json',
             'Accept': 'text/plain'
         }
 
@@ -249,14 +242,17 @@ class InfluxDBClient(object):
                     timeout=self._timeout
                 )
                 break
-            except requests.exceptions.ConnectionError:
+            except (requests.exceptions.ConnectionError,
+                    requests.exceptions.HTTPError,
+                    requests.exceptions.Timeout):
                 _try += 1
                 if self._retries != 0:
                     retry = _try < self._retries
-
-        else:
-            raise requests.exceptions.ConnectionError
-
+                if method == "POST":
+                    time.sleep((2 ** _try) * random.random() / 100.0)
+                if not retry:
+                    raise
+        # if there's not an error, there must have been a successful response
         if 500 <= response.status_code < 600:
             raise InfluxDBServerError(response.content)
         elif response.status_code == expected_response_code:
@@ -271,6 +267,7 @@ class InfluxDBClient(object):
         :param data: the data to be written
         :type data: (if protocol is 'json') dict
                     (if protocol is 'line') sequence of line protocol strings
+                                            or single string
         :param params: additional parameters for the request, defaults to None
         :type params: dict
         :param expected_response_code: the expected response code of the write
@@ -282,7 +279,7 @@ class InfluxDBClient(object):
         :rtype: bool
         """
         headers = self._headers
-        headers['Content-type'] = 'application/octet-stream'
+        headers['Content-Type'] = 'application/octet-stream'
 
         if params:
             precision = params.get('precision')
@@ -292,6 +289,8 @@ class InfluxDBClient(object):
         if protocol == 'json':
             data = make_lines(data, precision).encode('utf-8')
         elif protocol == 'line':
+            if isinstance(data, str):
+                data = [data]
             data = ('\n'.join(data) + '\n').encode('utf-8')
 
         self.request(
@@ -543,6 +542,32 @@ class InfluxDBClient(object):
         :type dbname: str
         """
         self.query("DROP DATABASE {0}".format(quote_ident(dbname)))
+
+    def get_list_measurements(self):
+        """Get the list of measurements in InfluxDB.
+
+        :returns: all measurements in InfluxDB
+        :rtype: list of dictionaries
+
+        :Example:
+
+        ::
+
+            >> dbs = client.get_list_measurements()
+            >> dbs
+            [{u'name': u'measurements1'},
+             {u'name': u'measurements2'},
+             {u'name': u'measurements3'}]
+        """
+        return list(self.query("SHOW MEASUREMENTS").get_points())
+
+    def drop_measurement(self, measurement):
+        """Drop a measurement from InfluxDB.
+
+        :param measurement: the name of the measurement to drop
+        :type measurement: str
+        """
+        self.query("DROP MEASUREMENT {0}".format(quote_ident(measurement)))
 
     def create_retention_policy(self, name, duration, replication,
                                 database=None, default=False):

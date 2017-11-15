@@ -466,6 +466,20 @@ class TestInfluxDBClient(unittest.TestCase):
                 'drop database "new_db"'
             )
 
+    def test_drop_measurement(self):
+        """Test drop measurement for TestInfluxDBClient object."""
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text='{"results":[{}]}'
+            )
+            self.cli.drop_measurement('new_measurement')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'drop measurement "new_measurement"'
+            )
+
     def test_drop_numeric_named_database(self):
         """Test drop numeric db for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
@@ -503,6 +517,24 @@ class TestInfluxDBClient(unittest.TestCase):
         cli = InfluxDBClient('host', 8086, 'username', 'password')
         with _mocked_session(cli, 'get', 401):
             cli.get_list_database()
+
+    def test_get_list_measurements(self):
+        """Test get list of measurements for TestInfluxDBClient object."""
+        data = {
+            "results": [{
+                "series": [
+                    {"name": "measurements",
+                     "columns": ["name"],
+                     "values": [["cpu"], ["disk"]
+                                ]}]}
+            ]
+        }
+
+        with _mocked_session(self.cli, 'get', 200, json.dumps(data)):
+            self.assertListEqual(
+                self.cli.get_list_measurements(),
+                [{'name': 'cpu'}, {'name': 'disk'}]
+            )
 
     def test_create_retention_policy_default(self):
         """Test create default ret policy for TestInfluxDBClient object."""
@@ -654,7 +686,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @mock.patch('requests.Session.request')
     def test_request_retry_raises(self, mock_request):
-        """Test that three connection errors will not be handled."""
+        """Test that three requests errors will not be handled."""
         class CustomMock(object):
             """Create custom mock object for test."""
 
@@ -666,7 +698,7 @@ class TestInfluxDBClient(unittest.TestCase):
                 self.i += 1
 
                 if self.i < 4:
-                    raise requests.exceptions.ConnectionError
+                    raise requests.exceptions.HTTPError
                 else:
                     r = requests.Response()
                     r.status_code = 200
@@ -676,7 +708,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         cli = InfluxDBClient(database='db')
 
-        with self.assertRaises(requests.exceptions.ConnectionError):
+        with self.assertRaises(requests.exceptions.HTTPError):
             cli.write_points(self.dummy_points)
 
     @mock.patch('requests.Session.request')
@@ -700,7 +732,7 @@ class TestInfluxDBClient(unittest.TestCase):
                     r.status_code = 204
                     return r
 
-        retries = random.randint(1, 100)
+        retries = random.randint(1, 5)
         mock_request.side_effect = CustomMock(retries).connection_error
 
         cli = InfluxDBClient(database='db', retries=retries)
@@ -727,7 +759,7 @@ class TestInfluxDBClient(unittest.TestCase):
                     r.status_code = 200
                     return r
 
-        retries = random.randint(1, 100)
+        retries = random.randint(1, 5)
         mock_request.side_effect = CustomMock(retries).connection_error
 
         cli = InfluxDBClient(database='db', retries=retries)
