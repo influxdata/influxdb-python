@@ -2,24 +2,15 @@
 """Python client for InfluxDB v0.8."""
 
 import warnings
-from sys import version_info
 
 import json
 import socket
 import requests
 import requests.exceptions
+from six.moves import xrange
+from six.moves.urllib.parse import urlparse
 
 from influxdb import chunked_json
-
-try:
-    xrange
-except NameError:
-    xrange = range
-
-if version_info[0] == 3:
-    from urllib.parse import urlparse
-else:
-    from urlparse import urlparse
 
 session = requests.Session()
 

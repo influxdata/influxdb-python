@@ -86,7 +86,7 @@ class DataFrameClient(InfluxDBClient):
 
                 if protocol == 'line':
                     points = self._convert_dataframe_to_lines(
-                        dataframe.ix[start_index:end_index].copy(),
+                        dataframe.iloc[start_index:end_index].copy(),
                         measurement=measurement,
                         global_tags=tags,
                         time_precision=time_precision,
@@ -95,7 +95,7 @@ class DataFrameClient(InfluxDBClient):
                         numeric_precision=numeric_precision)
                 else:
                     points = self._convert_dataframe_to_json(
-                        dataframe.ix[start_index:end_index].copy(),
+                        dataframe.iloc[start_index:end_index].copy(),
                         measurement=measurement,
                         tags=tags,
                         time_precision=time_precision,
@@ -222,8 +222,8 @@ class DataFrameClient(InfluxDBClient):
                             .format(type(dataframe)))
         if not (isinstance(dataframe.index, pd.PeriodIndex) or
                 isinstance(dataframe.index, pd.DatetimeIndex)):
-            raise TypeError('Must be DataFrame with DatetimeIndex or \
-                            PeriodIndex.')
+            raise TypeError('Must be DataFrame with DatetimeIndex or '
+                            'PeriodIndex.')
 
         # Make sure tags and tag columns are correctly typed
         tag_columns = tag_columns if tag_columns is not None else []
@@ -279,8 +279,8 @@ class DataFrameClient(InfluxDBClient):
                             .format(type(dataframe)))
         if not (isinstance(dataframe.index, pd.PeriodIndex) or
                 isinstance(dataframe.index, pd.DatetimeIndex)):
-            raise TypeError('Must be DataFrame with DatetimeIndex or \
-                            PeriodIndex.')
+            raise TypeError('Must be DataFrame with DatetimeIndex or '
+                            'PeriodIndex.')
 
         # Create a Series of columns for easier indexing
         column_series = pd.Series(dataframe.columns)

@@ -31,6 +31,7 @@ matrix:
 
 install:
     - pip install tox
+    - pip install setuptools==20.6.6
     - pip install coveralls
     - mkdir influxdb_install
     - wget https://dl.influxdata.com/influxdb/releases/influxdb_1.2.4_amd64.deb
