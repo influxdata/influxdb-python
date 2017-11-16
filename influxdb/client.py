@@ -66,7 +66,6 @@ class InfluxDBClient(object):
                  port=8086,
                  username='root',
                  password='root',
-                 pool_size=10,
                  database=None,
                  ssl=False,
                  verify_ssl=False,
@@ -75,6 +74,7 @@ class InfluxDBClient(object):
                  use_udp=False,
                  udp_port=4444,
                  proxies=None,
+                 pool_size=10,
                  ):
         """Construct a new InfluxDBClient object."""
         self.__host = host
@@ -90,8 +90,10 @@ class InfluxDBClient(object):
         self.__use_udp = use_udp
         self.__udp_port = udp_port
         self._session = requests.Session()
-        adapter = requests.adapters.HTTPAdapter(pool_connections=int(pool_size),
-                                                pool_maxsize=int(pool_size))
+        adapter = requests.adapters.HTTPAdapter(
+            pool_connections=int(pool_size),
+            pool_maxsize=int(pool_size)
+        )
 
         if use_udp:
             self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
