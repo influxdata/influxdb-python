@@ -419,6 +419,7 @@ class TestInfluxDBClient(unittest.TestCase):
             self.cli.query('select column_one from foo;')
 
     def test_ping(self):
+        """Test ping querying InfluxDB version."""
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.GET,
