@@ -465,6 +465,19 @@ class InfluxDBClient(object):
                                   retention_policy=retention_policy,
                                   tags=tags, protocol=protocol)
 
+    def ping(self):
+        """Check connectivity to InfluxDB.
+
+        :returns: The version of the InfluxDB the client is connected to
+        """
+        response = self.request(
+            url="ping",
+            method='GET',
+            expected_response_code=204
+        )
+
+        return response.headers['X-Influxdb-Version']
+
     @staticmethod
     def _batches(iterable, size):
         for i in xrange(0, len(iterable), size):
