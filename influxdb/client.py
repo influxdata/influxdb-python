@@ -450,7 +450,7 @@ class InfluxDBClient(object):
                                    retention_policy=retention_policy,
                                    tags=tags, protocol=protocol)
             return True
-          
+
         return self._write_points(points=points,
                                   time_precision=time_precision,
                                   database=database,
