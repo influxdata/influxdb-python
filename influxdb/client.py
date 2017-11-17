@@ -37,6 +37,8 @@ class InfluxDBClient(object):
     :type username: str
     :param password: password of the user, defaults to 'root'
     :type password: str
+    :param pool_size: urllib3 connection pool size, defaults to 10.
+    :type pool_size: int
     :param database: database name to connect to, defaults to None
     :type database: str
     :param ssl: use https instead of http to connect to InfluxDB, defaults to
@@ -72,6 +74,7 @@ class InfluxDBClient(object):
                  use_udp=False,
                  udp_port=4444,
                  proxies=None,
+                 pool_size=10,
                  ):
         """Construct a new InfluxDBClient object."""
         self.__host = host
@@ -87,6 +90,11 @@ class InfluxDBClient(object):
         self.__use_udp = use_udp
         self.__udp_port = udp_port
         self._session = requests.Session()
+        adapter = requests.adapters.HTTPAdapter(
+            pool_connections=int(pool_size),
+            pool_maxsize=int(pool_size)
+        )
+
         if use_udp:
             self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
@@ -94,6 +102,8 @@ class InfluxDBClient(object):
 
         if ssl is True:
             self._scheme = "https"
+
+        self._session.mount(self._scheme, adapter)
 
         if proxies is None:
             self._proxies = {}
