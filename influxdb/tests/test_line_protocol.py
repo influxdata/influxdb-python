@@ -40,7 +40,6 @@ class TestLineProtocol(unittest.TestCase):
             ]
         }
 
-        print(line_protocol.make_lines(data))
         self.assertEqual(
             line_protocol.make_lines(data),
             'test,backslash_tag=C:\\\\ ,integer_tag=2,string_tag=hello '
