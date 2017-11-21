@@ -107,11 +107,11 @@ class ResultSet(object):
             elif measurement in (None, series_name):
                 # by default if no tags was provided then
                 # we will matches every returned series
+                series_tags = series.get('tags', {})
                 for item in self._get_points_for_series(series):
                     if tags is None or \
                             self._tag_matches(item, tags) or \
-                            ("tags" in series and
-                             self._tag_matches(series["tags"], tags)):
+                            self._tag_matches(series_tags, tags):
                         yield item
 
     def __repr__(self):
