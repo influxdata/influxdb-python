@@ -108,7 +108,10 @@ class ResultSet(object):
                 # by default if no tags was provided then
                 # we will matches every returned series
                 for item in self._get_points_for_series(series):
-                    if tags is None or self._tag_matches(item, tags):
+                    if tags is None or \
+                            self._tag_matches(item, tags) or \
+                            ("tags" in series and
+                             self._tag_matches(series["tags"], tags)):
                         yield item
 
     def __repr__(self):
