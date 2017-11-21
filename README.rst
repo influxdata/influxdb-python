@@ -12,7 +12,9 @@ InfluxDB-Python
   :target: https://coveralls.io/r/influxdata/influxdb-python
   :alt: Coverage
 
-
+.. image:: https://img.shields.io/pypi/v/influxdb.svg
+   :target: https://pypi.python.org/pypi/influxdb
+   :alt: PyPI Status
 
 InfluxDB-Python is a client for interacting with InfluxDB_. Development of this library is maintained by 
 
