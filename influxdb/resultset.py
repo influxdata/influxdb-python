@@ -41,12 +41,12 @@ class ResultSet(object):
     def __getitem__(self, key):
         """Retrieve the series name or specific set based on key.
 
-        :param key: Either a serie name, or a tags_dict, or
-                    a 2-tuple(serie_name, tags_dict).
-                    If the serie name is None (or not given) then any serie
+        :param key: Either a series name, or a tags_dict, or
+                    a 2-tuple(series_name, tags_dict).
+                    If the series name is None (or not given) then any serie
                     matching the eventual given tags will be given its points
                     one after the other.
-                    To get the points of every serie in this resultset then
+                    To get the points of every series in this resultset then
                     you have to provide None as key.
         :return: A generator yielding `Point`s matching the given key.
         NB:
@@ -93,22 +93,25 @@ class ResultSet(object):
                           (bytes, type(b''.decode()), type(None))):
             raise TypeError('measurement must be an str or None')
 
-        for serie in self._get_series():
-            serie_name = serie.get('measurement', serie.get('name', 'results'))
-            if serie_name is None:
+        for series in self._get_series():
+            series_name = series.get('measurement',
+                                     series.get('name', 'results'))
+            if series_name is None:
                 # this is a "system" query or a query which
                 # doesn't return a name attribute.
                 # like 'show retention policies' ..
                 if tags is None:
-                    for item in self._get_points_for_serie(serie):
+                    for item in self._get_points_for_series(series):
                         yield item
 
-            elif measurement in (None, serie_name):
+            elif measurement in (None, series_name):
                 # by default if no tags was provided then
-                # we will matches every returned serie
-                serie_tags = serie.get('tags', {})
-                if tags is None or self._tag_matches(serie_tags, tags):
-                    for item in self._get_points_for_serie(serie):
+                # we will matches every returned series
+                series_tags = series.get('tags', {})
+                for item in self._get_points_for_series(series):
+                    if tags is None or \
+                            self._tag_matches(item, tags) or \
+                            self._tag_matches(series_tags, tags):
                         yield item
 
     def __repr__(self):
@@ -121,7 +124,7 @@ class ResultSet(object):
         return "ResultSet({%s})" % ", ".join(items)
 
     def __iter__(self):
-        """Yield one dict instance per serie result."""
+        """Yield one dict instance per series result."""
         for key in self.keys():
             yield list(self.__getitem__(key))
 
@@ -131,10 +134,10 @@ class ResultSet(object):
         for tag_name, tag_value in filter.items():
             # using _sentinel as I'm not sure that "None"
             # could be used, because it could be a valid
-            # serie_tags value : when a serie has no such tag
+            # series_tags value : when a series has no such tag
             # then I think it's set to /null/None/.. TBC..
-            serie_tag_value = tags.get(tag_name, _sentinel)
-            if serie_tag_value != tag_value:
+            series_tag_value = tags.get(tag_name, _sentinel)
+            if series_tag_value != tag_value:
                 return False
 
         return True
@@ -150,14 +153,14 @@ class ResultSet(object):
     def keys(self):
         """Return the list of keys in the ResultSet.
 
-        :return: List of keys. Keys are tuples (serie_name, tags)
+        :return: List of keys. Keys are tuples (series_name, tags)
         """
         keys = []
-        for serie in self._get_series():
+        for series in self._get_series():
             keys.append(
-                (serie.get('measurement',
-                           serie.get('name', 'results')),
-                 serie.get('tags', None))
+                (series.get('measurement',
+                            series.get('name', 'results')),
+                 series.get('tags', None))
             )
         return keys
 
@@ -167,24 +170,24 @@ class ResultSet(object):
         :return: List of tuples, (key, generator)
         """
         items = []
-        for serie in self._get_series():
-            serie_key = (serie.get('measurement',
-                                   serie.get('name', 'results')),
-                         serie.get('tags', None))
+        for series in self._get_series():
+            series_key = (series.get('measurement',
+                                     series.get('name', 'results')),
+                          series.get('tags', None))
             items.append(
-                (serie_key, self._get_points_for_serie(serie))
+                (series_key, self._get_points_for_series(series))
             )
         return items
 
-    def _get_points_for_serie(self, serie):
-        """Return generator of dict from columns and values of a serie.
+    def _get_points_for_series(self, series):
+        """Return generator of dict from columns and values of a series.
 
-        :param serie: One serie
+        :param series: One series
         :return: Generator of dicts
         """
-        for point in serie.get('values', []):
+        for point in series.get('values', []):
             yield self.point_from_cols_vals(
-                serie['columns'],
+                series['columns'],
                 point
             )
 

@@ -86,7 +86,7 @@ class DataFrameClient(InfluxDBClient):
 
                 if protocol == 'line':
                     points = self._convert_dataframe_to_lines(
-                        dataframe.ix[start_index:end_index].copy(),
+                        dataframe.iloc[start_index:end_index].copy(),
                         measurement=measurement,
                         global_tags=tags,
                         time_precision=time_precision,
@@ -95,7 +95,7 @@ class DataFrameClient(InfluxDBClient):
                         numeric_precision=numeric_precision)
                 else:
                     points = self._convert_dataframe_to_json(
-                        dataframe.ix[start_index:end_index].copy(),
+                        dataframe.iloc[start_index:end_index].copy(),
                         measurement=measurement,
                         tags=tags,
                         time_precision=time_precision,
@@ -222,8 +222,8 @@ class DataFrameClient(InfluxDBClient):
                             .format(type(dataframe)))
         if not (isinstance(dataframe.index, pd.PeriodIndex) or
                 isinstance(dataframe.index, pd.DatetimeIndex)):
-            raise TypeError('Must be DataFrame with DatetimeIndex or \
-                            PeriodIndex.')
+            raise TypeError('Must be DataFrame with DatetimeIndex or '
+                            'PeriodIndex.')
 
         # Make sure tags and tag columns are correctly typed
         tag_columns = tag_columns if tag_columns is not None else []
@@ -279,8 +279,8 @@ class DataFrameClient(InfluxDBClient):
                             .format(type(dataframe)))
         if not (isinstance(dataframe.index, pd.PeriodIndex) or
                 isinstance(dataframe.index, pd.DatetimeIndex)):
-            raise TypeError('Must be DataFrame with DatetimeIndex or \
-                            PeriodIndex.')
+            raise TypeError('Must be DataFrame with DatetimeIndex or '
+                            'PeriodIndex.')
 
         # Create a Series of columns for easier indexing
         column_series = pd.Series(dataframe.columns)
@@ -297,12 +297,6 @@ class DataFrameClient(InfluxDBClient):
         # Make sure field_columns and tag_columns are lists
         field_columns = list(field_columns) if list(field_columns) else []
         tag_columns = list(tag_columns) if list(tag_columns) else []
-
-        # Make global_tags as tag_columns
-        if global_tags:
-            for tag in global_tags:
-                dataframe[tag] = global_tags[tag]
-                tag_columns.append(tag)
 
         # If field columns but no tag columns, assume rest of columns are tags
         if field_columns and (not tag_columns):
@@ -333,6 +327,13 @@ class DataFrameClient(InfluxDBClient):
 
         # If tag columns exist, make an array of formatted tag keys and values
         if tag_columns:
+
+            # Make global_tags as tag_columns
+            if global_tags:
+                for tag in global_tags:
+                    dataframe[tag] = global_tags[tag]
+                    tag_columns.append(tag)
+
             tag_df = dataframe[tag_columns]
             tag_df = tag_df.fillna('')  # replace NA with empty string
             tag_df = tag_df.sort_index(axis=1)
@@ -345,6 +346,12 @@ class DataFrameClient(InfluxDBClient):
             tags = tags.sum(axis=1)
 
             del tag_df
+        elif global_tags:
+            tag_string = ''.join(
+                [",{}={}".format(k, _escape_tag(v)) if v else ''
+                 for k, v in sorted(global_tags.items())]
+            )
+            tags = pd.Series(tag_string, index=dataframe.index)
         else:
             tags = ''
 
