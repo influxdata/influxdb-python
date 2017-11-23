@@ -435,7 +435,7 @@ class InfluxDBClient(object):
         else:
             chunked_param = 'false'
 
-        # Build the URL of the serie to query
+        # Build the URL of the series to query
         url = "db/{0}/series".format(self._database)
 
         params = {

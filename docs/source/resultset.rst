@@ -18,7 +18,7 @@ Using ``rs.get_points()`` will return a generator for all the points in the Resu
 Filtering by measurement
 ------------------------
 
-Using ``rs.get_points('cpu')`` will return a generator for all the points that are in a serie with measurement name ``cpu``, no matter the tags.
+Using ``rs.get_points('cpu')`` will return a generator for all the points that are in a series with measurement name ``cpu``, no matter the tags.
 ::
 
     rs = cli.query("SELECT * from cpu")
@@ -36,7 +36,7 @@ Using ``rs.get_points(tags={'host_name': 'influxdb.com'})`` will return a genera
 Filtering by measurement and tags
 ---------------------------------
 
-Using measurement name and tags will return a generator for all the points that are in a serie with the specified measurement name AND whose tags match the given tags.
+Using measurement name and tags will return a generator for all the points that are in a series with the specified measurement name AND whose tags match the given tags.
 ::
 
     rs = cli.query("SELECT * from cpu")
