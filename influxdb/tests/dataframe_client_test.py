@@ -1,21 +1,22 @@
 # -*- coding: utf-8 -*-
-"""
-unit tests for misc module
-"""
+"""Unit tests for misc module."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from .client_test import _mocked_session
-
-import unittest
-import json
-import requests_mock
-from nose.tools import raises
 from datetime import timedelta
-from influxdb.tests import skipIfPYpy, using_pypy
+
+import json
+import unittest
 import warnings
+import requests_mock
+
+from influxdb.tests import skipIfPYpy, using_pypy
+from nose.tools import raises
+
+from .client_test import _mocked_session
 
 if not using_pypy:
     import pandas as pd
@@ -26,12 +27,15 @@ if not using_pypy:
 
 @skipIfPYpy
 class TestDataFrameClient(unittest.TestCase):
+    """Set up a test DataFrameClient object."""
 
     def setUp(self):
+        """Instantiate a TestDataFrameClient object."""
         # By default, raise exceptions on warnings
         warnings.simplefilter('error', FutureWarning)
 
     def test_write_points_from_dataframe(self):
+        """Test write points from df in TestDataFrameClient object."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
                                  index=[now, now + timedelta(hours=1)],
@@ -57,6 +61,7 @@ class TestDataFrameClient(unittest.TestCase):
             self.assertEqual(m.last_request.body, expected)
 
     def test_write_points_from_dataframe_in_batches(self):
+        """Test write points in batch from df in TestDataFrameClient object."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
                                  index=[now, now + timedelta(hours=1)],
@@ -71,6 +76,7 @@ class TestDataFrameClient(unittest.TestCase):
             self.assertTrue(cli.write_points(dataframe, "foo", batch_size=1))
 
     def test_write_points_from_dataframe_with_tag_columns(self):
+        """Test write points from df w/tag in TestDataFrameClient object."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.DataFrame(data=[['blue', 1, "1", 1, 1.0],
                                        ['red', 0, "2", 2, 2.0]],
@@ -102,6 +108,7 @@ class TestDataFrameClient(unittest.TestCase):
             self.assertEqual(m.last_request.body, expected)
 
     def test_write_points_from_dataframe_with_tag_cols_and_global_tags(self):
+        """Test write points from df w/tag + cols in TestDataFrameClient."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.DataFrame(data=[['blue', 1, "1", 1, 1.0],
                                        ['red', 0, "2", 2, 2.0]],
@@ -130,6 +137,7 @@ class TestDataFrameClient(unittest.TestCase):
             self.assertEqual(m.last_request.body, expected)
 
     def test_write_points_from_dataframe_with_tag_cols_and_defaults(self):
+        """Test default write points from df w/tag in TestDataFrameClient."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.DataFrame(data=[['blue', 1, "1", 1, 1.0, 'hot'],
                                        ['red', 0, "2", 2, 2.0, 'cold']],
@@ -200,6 +208,7 @@ class TestDataFrameClient(unittest.TestCase):
             self.assertEqual(m.last_request.body, expected_no_tags_no_fields)
 
     def test_write_points_from_dataframe_with_tag_escaped(self):
+        """Test write points from df w/escaped tag in TestDataFrameClient."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.DataFrame(
             data=[
@@ -242,6 +251,7 @@ class TestDataFrameClient(unittest.TestCase):
             self.assertEqual(m.last_request.body, expected_escaped_tags)
 
     def test_write_points_from_dataframe_with_numeric_column_names(self):
+        """Test write points from df with numeric cols."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         # df with numeric column names
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
@@ -263,6 +273,7 @@ class TestDataFrameClient(unittest.TestCase):
             self.assertEqual(m.last_request.body, expected)
 
     def test_write_points_from_dataframe_with_numeric_precision(self):
+        """Test write points from df with numeric precision."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         # df with numeric column names
         dataframe = pd.DataFrame(data=[["1", 1, 1.1111111111111],
@@ -307,6 +318,7 @@ class TestDataFrameClient(unittest.TestCase):
             self.assertEqual(m.last_request.body, expected_full_precision)
 
     def test_write_points_from_dataframe_with_period_index(self):
+        """Test write points from df with period index."""
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
                                  index=[pd.Period('1970-01-01'),
                                         pd.Period('1970-01-02')],
@@ -330,6 +342,7 @@ class TestDataFrameClient(unittest.TestCase):
             self.assertEqual(m.last_request.body, expected)
 
     def test_write_points_from_dataframe_with_time_precision(self):
+        """Test write points from df with time precision."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
                                  index=[now, now + timedelta(hours=1)],
@@ -395,6 +408,7 @@ class TestDataFrameClient(unittest.TestCase):
 
     @raises(TypeError)
     def test_write_points_from_dataframe_fails_without_time_index(self):
+        """Test failed write points from df without time index."""
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
                                  columns=["column_one", "column_two",
                                           "column_three"])
@@ -409,6 +423,7 @@ class TestDataFrameClient(unittest.TestCase):
 
     @raises(TypeError)
     def test_write_points_from_dataframe_fails_with_series(self):
+        """Test failed write points from df with series."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.Series(data=[1.0, 2.0],
                               index=[now, now + timedelta(hours=1)])
@@ -422,6 +437,7 @@ class TestDataFrameClient(unittest.TestCase):
             cli.write_points(dataframe, "foo")
 
     def test_query_into_dataframe(self):
+        """Test query into df for TestDataFrameClient object."""
         data = {
             "results": [{
                 "series": [
@@ -463,6 +479,7 @@ class TestDataFrameClient(unittest.TestCase):
                 assert_frame_equal(expected[k], result[k])
 
     def test_multiquery_into_dataframe(self):
+        """Test multiquyer into df for TestDataFrameClient object."""
         data = {
             "results": [
                 {
@@ -513,12 +530,14 @@ class TestDataFrameClient(unittest.TestCase):
                     assert_frame_equal(e[k], r[k])
 
     def test_query_with_empty_result(self):
+        """Test query with empty results in TestDataFrameClient object."""
         cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
         with _mocked_session(cli, 'GET', 200, {"results": [{}]}):
             result = cli.query('select column_one from foo;')
             self.assertEqual(result, {})
 
     def test_get_list_database(self):
+        """Test get list of databases in TestDataFrameClient object."""
         data = {'results': [
             {'series': [
                 {'measurement': 'databases',
@@ -536,6 +555,7 @@ class TestDataFrameClient(unittest.TestCase):
             )
 
     def test_datetime_to_epoch(self):
+        """Test convert datetime to epoch in TestDataFrameClient object."""
         timestamp = pd.Timestamp('2013-01-01 00:00:00.000+00:00')
         cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
 
@@ -569,7 +589,8 @@ class TestDataFrameClient(unittest.TestCase):
         )
 
     def test_dsn_constructor(self):
-        client = DataFrameClient.from_DSN('influxdb://localhost:8086')
+        """Test data source name deconstructor in TestDataFrameClient."""
+        client = DataFrameClient.from_dsn('influxdb://localhost:8086')
         self.assertIsInstance(client, DataFrameClient)
         self.assertEqual('http://localhost:8086', client._baseurl)
 

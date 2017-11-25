@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Define the line protocol test module."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -13,8 +14,10 @@ from influxdb import line_protocol
 
 
 class TestLineProtocol(unittest.TestCase):
+    """Define the LineProtocol test object."""
 
     def test_make_lines(self):
+        """Test make new lines in TestLineProtocol object."""
         data = {
             "tags": {
                 "empty_tag": "",
@@ -43,6 +46,7 @@ class TestLineProtocol(unittest.TestCase):
         )
 
     def test_timezone(self):
+        """Test timezone in TestLineProtocol object."""
         dt = datetime(2009, 11, 10, 23, 0, 0, 123456)
         utc = UTC.localize(dt)
         berlin = timezone('Europe/Berlin').localize(dt)
@@ -72,6 +76,7 @@ class TestLineProtocol(unittest.TestCase):
         )
 
     def test_string_val_newline(self):
+        """Test string value with newline in TestLineProtocol object."""
         data = {
             "points": [
                 {
@@ -89,6 +94,7 @@ class TestLineProtocol(unittest.TestCase):
         )
 
     def test_make_lines_unicode(self):
+        """Test make unicode lines in TestLineProtocol object."""
         data = {
             "tags": {
                 "unicode_tag": "\'Привет!\'"  # Hello! in Russian
@@ -109,12 +115,14 @@ class TestLineProtocol(unittest.TestCase):
         )
 
     def test_quote_ident(self):
+        """Test quote indentation in TestLineProtocol object."""
         self.assertEqual(
             line_protocol.quote_ident(r"""\foo ' bar " Örf"""),
             r'''"\\foo ' bar \" Örf"'''
         )
 
     def test_quote_literal(self):
+        """Test quote literal in TestLineProtocol object."""
         self.assertEqual(
             line_protocol.quote_literal(r"""\foo ' bar " Örf"""),
             r"""'\\foo \' bar " Örf'"""

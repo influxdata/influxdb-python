@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Initialize the influxdb package."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -17,4 +18,4 @@ __all__ = [
 ]
 
 
-__version__ = '4.1.0'
+__version__ = '5.0.0'

@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
-"""
-DataFrame client for InfluxDB
-"""
+"""DataFrame client for InfluxDB."""
+
 from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
 import math
+from collections import defaultdict
 
 import pandas as pd
 import numpy as np
@@ -33,7 +33,8 @@ def _escape_pandas_series(s):
 
 
 class DataFrameClient(InfluxDBClient):
-    """
+    """DataFrameClient instantiates InfluxDBClient to connect to the backend.
+
     The ``DataFrameClient`` object holds information necessary to connect
     to InfluxDB. Requests can be made to InfluxDB directly through the client.
     The client reads and writes from pandas DataFrames.
@@ -53,8 +54,7 @@ class DataFrameClient(InfluxDBClient):
                      batch_size=None,
                      protocol='line',
                      numeric_precision=None):
-        """
-        Write to multiple time series names.
+        """Write to multiple time series names.
 
         :param dataframe: data points in a DataFrame
         :param measurement: name of measurement
@@ -71,20 +71,23 @@ class DataFrameClient(InfluxDBClient):
             precision. 'full' preserves full precision for int and float
             datatypes. Defaults to None, which preserves 14-15 significant
             figures for float and all significant figures for int datatypes.
-
         """
         if tag_columns is None:
             tag_columns = []
+
         if field_columns is None:
             field_columns = []
+
         if batch_size:
             number_batches = int(math.ceil(len(dataframe) / float(batch_size)))
+
             for batch in range(number_batches):
                 start_index = batch * batch_size
                 end_index = (batch + 1) * batch_size
+
                 if protocol == 'line':
                     points = self._convert_dataframe_to_lines(
-                        dataframe.ix[start_index:end_index].copy(),
+                        dataframe.iloc[start_index:end_index].copy(),
                         measurement=measurement,
                         global_tags=tags,
                         time_precision=time_precision,
@@ -93,66 +96,100 @@ class DataFrameClient(InfluxDBClient):
                         numeric_precision=numeric_precision)
                 else:
                     points = self._convert_dataframe_to_json(
-                        dataframe.ix[start_index:end_index].copy(),
+                        dataframe.iloc[start_index:end_index].copy(),
                         measurement=measurement,
                         tags=tags,
                         time_precision=time_precision,
                         tag_columns=tag_columns,
                         field_columns=field_columns)
+
                 super(DataFrameClient, self).write_points(
                     points,
                     time_precision,
                     database,
                     retention_policy,
                     protocol=protocol)
-            return True
-        else:
-            if protocol == 'line':
-                points = self._convert_dataframe_to_lines(
-                    dataframe,
-                    measurement=measurement,
-                    global_tags=tags,
-                    tag_columns=tag_columns,
-                    field_columns=field_columns,
-                    time_precision=time_precision,
-                    numeric_precision=numeric_precision)
-            else:
-                points = self._convert_dataframe_to_json(
-                    dataframe,
-                    measurement=measurement,
-                    tags=tags,
-                    time_precision=time_precision,
-                    tag_columns=tag_columns,
-                    field_columns=field_columns)
-            super(DataFrameClient, self).write_points(
-                points,
-                time_precision,
-                database,
-                retention_policy,
-                protocol=protocol)
+
             return True
 
-    def query(self, query, chunked=False, database=None):
+        if protocol == 'line':
+            points = self._convert_dataframe_to_lines(
+                dataframe,
+                measurement=measurement,
+                global_tags=tags,
+                tag_columns=tag_columns,
+                field_columns=field_columns,
+                time_precision=time_precision,
+                numeric_precision=numeric_precision)
+        else:
+            points = self._convert_dataframe_to_json(
+                dataframe,
+                measurement=measurement,
+                tags=tags,
+                time_precision=time_precision,
+                tag_columns=tag_columns,
+                field_columns=field_columns)
+
+        super(DataFrameClient, self).write_points(
+            points,
+            time_precision,
+            database,
+            retention_policy,
+            protocol=protocol)
+
+        return True
+
+    def query(self,
+              query,
+              params=None,
+              epoch=None,
+              expected_response_code=200,
+              database=None,
+              raise_errors=True,
+              chunked=False,
+              chunk_size=0,
+              dropna=True):
         """
         Quering data into a DataFrame.
 
-        :param chunked: [Optional, default=False] True if the data shall be
-            retrieved in chunks, False otherwise.
-
+        :param query: the actual query string
+        :param params: additional parameters for the request, defaults to {}
+        :param epoch: response timestamps to be in epoch format either 'h',
+            'm', 's', 'ms', 'u', or 'ns',defaults to `None` which is
+            RFC3339 UTC format with nanosecond precision
+        :param expected_response_code: the expected status code of response,
+            defaults to 200
+        :param database: database to query, defaults to None
+        :param raise_errors: Whether or not to raise exceptions when InfluxDB
+            returns errors, defaults to True
+        :param chunked: Enable to use chunked responses from InfluxDB.
+            With ``chunked`` enabled, one ResultSet is returned per chunk
+            containing all results within that chunk
+        :param chunk_size: Size of each chunk to tell InfluxDB to use.
+        :param dropna: drop columns where all values are missing
+        :returns: the queried data
+        :rtype: :class:`~.ResultSet`
         """
-        results = super(DataFrameClient, self).query(query, database=database)
+        query_args = dict(params=params,
+                          epoch=epoch,
+                          expected_response_code=expected_response_code,
+                          raise_errors=raise_errors,
+                          chunked=chunked,
+                          chunk_size=chunk_size)
+        results = super(DataFrameClient, self).query(query, **query_args)
         if query.strip().upper().startswith("SELECT"):
             if len(results) > 0:
-                return self._to_dataframe(results)
+                return self._to_dataframe(results, dropna)
             else:
                 return {}
         else:
             return results
 
-    def _to_dataframe(self, rs):
-        result = {}
+    def _to_dataframe(self, rs, dropna=True):
+        result = defaultdict(list)
         if isinstance(rs, list):
             return map(self._to_dataframe, rs)
+
         for key, data in rs.items():
             name, tags = key
             if tags is None:
@@ -164,11 +201,17 @@ class DataFrameClient(InfluxDBClient):
             df.set_index('time', inplace=True)
             df.index = df.index.tz_localize('UTC')
             df.index.name = None
+            result[key].append(df)
+        for key, data in result.items():
+            df = pd.concat(data).sort_index()
+            if dropna:
+                df.dropna(how='all', axis=1, inplace=True)
             result[key] = df
+
         return result
 
-    def _convert_dataframe_to_json(self,
-                                   dataframe,
+    @staticmethod
+    def _convert_dataframe_to_json(dataframe,
                                    measurement,
                                    tags=None,
                                    tag_columns=None,
@@ -180,8 +223,8 @@ class DataFrameClient(InfluxDBClient):
                             .format(type(dataframe)))
         if not (isinstance(dataframe.index, pd.PeriodIndex) or
                 isinstance(dataframe.index, pd.DatetimeIndex)):
-            raise TypeError('Must be DataFrame with DatetimeIndex or \
-                            PeriodIndex.')
+            raise TypeError('Must be DataFrame with DatetimeIndex or '
+                            'PeriodIndex.')
 
         # Make sure tags and tag columns are correctly typed
         tag_columns = tag_columns if tag_columns is not None else []
@@ -237,28 +280,24 @@ class DataFrameClient(InfluxDBClient):
                             .format(type(dataframe)))
         if not (isinstance(dataframe.index, pd.PeriodIndex) or
                 isinstance(dataframe.index, pd.DatetimeIndex)):
-            raise TypeError('Must be DataFrame with DatetimeIndex or \
-                            PeriodIndex.')
+            raise TypeError('Must be DataFrame with DatetimeIndex or '
+                            'PeriodIndex.')
 
         # Create a Series of columns for easier indexing
         column_series = pd.Series(dataframe.columns)
 
         if field_columns is None:
             field_columns = []
+
         if tag_columns is None:
             tag_columns = []
+
         if global_tags is None:
             global_tags = {}
 
         # Make sure field_columns and tag_columns are lists
         field_columns = list(field_columns) if list(field_columns) else []
         tag_columns = list(tag_columns) if list(tag_columns) else []
-
-        # Make global_tags as tag_columns
-        if global_tags:
-            for tag in global_tags:
-                dataframe[tag] = global_tags[tag]
-                tag_columns.append(tag)
 
         # If field columns but no tag columns, assume rest of columns are tags
         if field_columns and (not tag_columns):
@@ -289,25 +328,31 @@ class DataFrameClient(InfluxDBClient):
 
         # If tag columns exist, make an array of formatted tag keys and values
         if tag_columns:
+
+            # Make global_tags as tag_columns
+            if global_tags:
+                for tag in global_tags:
+                    dataframe[tag] = global_tags[tag]
+                    tag_columns.append(tag)
+
             tag_df = dataframe[tag_columns]
             tag_df = tag_df.fillna('')  # replace NA with empty string
             tag_df = tag_df.sort_index(axis=1)
             tag_df = self._stringify_dataframe(
                 tag_df, numeric_precision, datatype='tag')
 
-            # prepend tag keys
-            tag_df = tag_df.apply(
-                lambda s: s.apply(
-                    lambda v, l: l + '=' + v if v else None, l=s.name))
-
-            # join tags, but leave out None values
+            # join preprendded tags, leaving None values out
             tags = tag_df.apply(
-                lambda r: ','.join(r.dropna()), axis=1)
-
-            # prepend comma
-            tags = tags.apply(lambda v: ',' + v if v else '')
+                lambda s: [',' + s.name + '=' + v if v else '' for v in s])
+            tags = tags.sum(axis=1)
 
             del tag_df
+        elif global_tags:
+            tag_string = ''.join(
+                [",{}={}".format(k, _escape_tag(v)) if v else ''
+                 for k, v in sorted(global_tags.items())]
+            )
+            tags = pd.Series(tag_string, index=dataframe.index)
         else:
             tags = ''
 
@@ -326,56 +371,52 @@ class DataFrameClient(InfluxDBClient):
         points = (measurement + tags + ' ' + fields + ' ' + time).tolist()
         return points
 
-    def _stringify_dataframe(self,
-                             dataframe,
-                             numeric_precision,
-                             datatype='field'):
-
+    @staticmethod
+    def _stringify_dataframe(dframe, numeric_precision, datatype='field'):
         # Find int and string columns for field-type data
-        int_columns = dataframe.select_dtypes(include=['integer']).columns
-        string_columns = dataframe.select_dtypes(include=['object']).columns
+        int_columns = dframe.select_dtypes(include=['integer']).columns
+        string_columns = dframe.select_dtypes(include=['object']).columns
 
-        # Convert dataframe to string
+        # Convert dframe to string
         if numeric_precision is None:
             # If no precision specified, convert directly to string (fast)
-            dataframe = dataframe.astype(str)
+            dframe = dframe.astype(str)
         elif numeric_precision == 'full':
             # If full precision, use repr to get full float precision
-            float_columns = (dataframe.select_dtypes(include=['floating'])
-                             .columns)
-            nonfloat_columns = dataframe.columns[~dataframe.columns.isin(
+            float_columns = (dframe.select_dtypes(
+                include=['floating']).columns)
+            nonfloat_columns = dframe.columns[~dframe.columns.isin(
                 float_columns)]
-            dataframe[float_columns] = dataframe[float_columns].applymap(repr)
-            dataframe[nonfloat_columns] = (dataframe[nonfloat_columns]
-                                           .astype(str))
+            dframe[float_columns] = dframe[float_columns].applymap(repr)
+            dframe[nonfloat_columns] = (dframe[nonfloat_columns].astype(str))
         elif isinstance(numeric_precision, int):
             # If precision is specified, round to appropriate precision
-            float_columns = (dataframe.select_dtypes(include=['floating'])
-                             .columns)
-            nonfloat_columns = dataframe.columns[~dataframe.columns.isin(
+            float_columns = (dframe.select_dtypes(
+                include=['floating']).columns)
+            nonfloat_columns = dframe.columns[~dframe.columns.isin(
                 float_columns)]
-            dataframe[float_columns] = (dataframe[float_columns]
-                                        .round(numeric_precision))
+            dframe[float_columns] = (dframe[float_columns].round(
+                numeric_precision))
+
             # If desired precision is > 10 decimal places, need to use repr
             if numeric_precision > 10:
-                dataframe[float_columns] = (dataframe[float_columns]
-                                            .applymap(repr))
-                dataframe[nonfloat_columns] = (dataframe[nonfloat_columns]
-                                               .astype(str))
+                dframe[float_columns] = (dframe[float_columns].applymap(repr))
+                dframe[nonfloat_columns] = (dframe[nonfloat_columns]
+                                            .astype(str))
             else:
-                dataframe = dataframe.astype(str)
+                dframe = dframe.astype(str)
         else:
             raise ValueError('Invalid numeric precision.')
 
         if datatype == 'field':
             # If dealing with fields, format ints and strings correctly
-            dataframe[int_columns] += 'i'
-            dataframe[string_columns] = '"' + dataframe[string_columns] + '"'
+            dframe[int_columns] += 'i'
+            dframe[string_columns] = '"' + dframe[string_columns] + '"'
         elif datatype == 'tag':
-            dataframe = dataframe.apply(_escape_pandas_series)
+            dframe = dframe.apply(_escape_pandas_series)
 
-        dataframe.columns = dataframe.columns.astype(str)
-        return dataframe
+        dframe.columns = dframe.columns.astype(str)
+        return dframe
 
     def _datetime_to_epoch(self, datetime, time_precision='s'):
         seconds = (datetime - self.EPOCH).total_seconds()
