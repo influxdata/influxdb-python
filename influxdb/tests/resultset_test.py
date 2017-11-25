@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Define the resultset test package."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -12,39 +13,48 @@ from influxdb.resultset import ResultSet
 
 
 class TestResultSet(unittest.TestCase):
+    """Define the ResultSet test object."""
 
     def setUp(self):
+        """Set up an instance of TestResultSet."""
         self.query_response = {
             "results": [
-                {"series": [{"measurement": "cpu_load_short",
-                             "tags": {"host": "server01",
-                                      "region": "us-west"},
-                             "columns": ["time", "value"],
+                {"series": [{"name": "cpu_load_short",
+                             "columns": ["time", "value", "host", "region"],
                             "values": [
-                                ["2015-01-29T21:51:28.968422294Z", 0.64]
+                                ["2015-01-29T21:51:28.968422294Z",
+                                    0.64,
+                                    "server01",
+                                    "us-west"],
+                                ["2015-01-29T21:51:28.968422294Z",
+                                    0.65,
+                                    "server02",
+                                    "us-west"],
                              ]},
-                            {"measurement": "cpu_load_short",
-                             "tags": {"host": "server02",
-                                      "region": "us-west"},
-                             "columns": ["time", "value"],
+                            {"name": "other_series",
+                             "columns": ["time", "value", "host", "region"],
                             "values": [
-                                ["2015-01-29T21:51:28.968422294Z", 0.65]
-                             ]},
-                            {"measurement": "other_serie",
-                             "tags": {"host": "server01",
-                                      "region": "us-west"},
-                             "columns": ["time", "value"],
-                            "values": [
-                                ["2015-01-29T21:51:28.968422294Z", 0.66]
+                                ["2015-01-29T21:51:28.968422294Z",
+                                    0.66,
+                                    "server01",
+                                    "us-west"],
                              ]}]}
             ]
         }
+
         self.rs = ResultSet(self.query_response['results'][0])
 
     def test_filter_by_name(self):
+        """Test filtering by name in TestResultSet object."""
         expected = [
-            {'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'},
-            {'value': 0.65, 'time': '2015-01-29T21:51:28.968422294Z'}
+            {'value': 0.64,
+                'time': '2015-01-29T21:51:28.968422294Z',
+                'host': 'server01',
+                'region': 'us-west'},
+            {'value': 0.65,
+                'time': '2015-01-29T21:51:28.968422294Z',
+                'host': 'server02',
+                'region': 'us-west'},
         ]
 
         self.assertEqual(expected, list(self.rs['cpu_load_short']))
@@ -53,9 +63,16 @@ class TestResultSet(unittest.TestCase):
                              measurement='cpu_load_short')))
 
     def test_filter_by_tags(self):
+        """Test filter by tags in TestResultSet object."""
         expected = [
-            {'time': '2015-01-29T21:51:28.968422294Z', 'value': 0.64},
-            {'time': '2015-01-29T21:51:28.968422294Z', 'value': 0.66}
+            {'value': 0.64,
+                'time': '2015-01-29T21:51:28.968422294Z',
+                'host': 'server01',
+                'region': 'us-west'},
+            {'value': 0.66,
+                'time': '2015-01-29T21:51:28.968422294Z',
+                'host': 'server01',
+                'region': 'us-west'},
         ]
 
         self.assertEqual(
@@ -69,36 +86,48 @@ class TestResultSet(unittest.TestCase):
         )
 
     def test_filter_by_name_and_tags(self):
+        """Test filter by name and tags in TestResultSet object."""
         self.assertEqual(
             list(self.rs[('cpu_load_short', {"host": "server01"})]),
-            [{'time': '2015-01-29T21:51:28.968422294Z', 'value': 0.64}]
+            [{'value': 0.64,
+                'time': '2015-01-29T21:51:28.968422294Z',
+                'host': 'server01',
+                'region': 'us-west'}]
         )
 
         self.assertEqual(
             list(self.rs[('cpu_load_short', {"region": "us-west"})]),
             [
-                {'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'},
-                {'value': 0.65, 'time': '2015-01-29T21:51:28.968422294Z'}
+                {'value': 0.64,
+                    'time': '2015-01-29T21:51:28.968422294Z',
+                    'host': 'server01',
+                    'region': 'us-west'},
+                {'value': 0.65,
+                    'time': '2015-01-29T21:51:28.968422294Z',
+                    'host': 'server02',
+                    'region': 'us-west'},
             ]
         )
 
     def test_keys(self):
+        """Test keys in TestResultSet object."""
         self.assertEqual(
             self.rs.keys(),
             [
-                ('cpu_load_short', {'host': 'server01', 'region': 'us-west'}),
-                ('cpu_load_short', {'host': 'server02', 'region': 'us-west'}),
-                ('other_serie', {'host': 'server01', 'region': 'us-west'})
+                ('cpu_load_short', None),
+                ('other_series', None),
             ]
         )
 
     def test_len(self):
+        """Test length in TestResultSet object."""
         self.assertEqual(
             len(self.rs),
-            3
+            2
         )
 
     def test_items(self):
+        """Test items in TestResultSet object."""
         items = list(self.rs.items())
         items_lists = [(item[0], list(item[1])) for item in items]
 
@@ -106,24 +135,27 @@ class TestResultSet(unittest.TestCase):
             items_lists,
             [
                 (
-                    ('cpu_load_short',
-                     {'host': 'server01', 'region': 'us-west'}),
-                    [{'value': 0.64, 'time': '2015-01-29T21:51:28.968422294Z'}]
-                ),
+                    ('cpu_load_short', None),
+                    [
+                        {'time': '2015-01-29T21:51:28.968422294Z',
+                            'value': 0.64,
+                            'host': 'server01',
+                            'region': 'us-west'},
+                        {'time': '2015-01-29T21:51:28.968422294Z',
+                            'value': 0.65,
+                            'host': 'server02',
+                            'region': 'us-west'}]),
                 (
-                    ('cpu_load_short',
-                     {'host': 'server02', 'region': 'us-west'}),
-                    [{'value': 0.65, 'time': '2015-01-29T21:51:28.968422294Z'}]
-                ),
-                (
-                    ('other_serie',
-                     {'host': 'server01', 'region': 'us-west'}),
-                    [{'value': 0.66, 'time': '2015-01-29T21:51:28.968422294Z'}]
-                )
-            ]
+                    ('other_series', None),
+                    [
+                        {'time': '2015-01-29T21:51:28.968422294Z',
+                            'value': 0.66,
+                            'host': 'server01',
+                            'region': 'us-west'}])]
         )
 
     def test_point_from_cols_vals(self):
+        """Test points from columns in TestResultSet object."""
         cols = ['col1', 'col2']
         vals = [1, '2']
 
@@ -134,6 +166,7 @@ class TestResultSet(unittest.TestCase):
         )
 
     def test_system_query(self):
+        """Test system query capabilities in TestResultSet object."""
         rs = ResultSet(
             {'series': [
                 {'values': [['another', '48h0m0s', 3, False],
@@ -161,6 +194,7 @@ class TestResultSet(unittest.TestCase):
         )
 
     def test_resultset_error(self):
+        """Test returning error in TestResultSet object."""
         with self.assertRaises(InfluxDBClientError):
             ResultSet({
                 "series": [],

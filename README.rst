@@ -1,12 +1,8 @@
-
-
-InfluxDB-Python is a client for interacting with InfluxDB_. Maintained by @aviau (https://github.com/aviau).
-
-**Help needed:** Development of this library is made by the community and help is needed. A co-maintainer would be welcome. To contribute, take a look at the issues list of simply contact @aviau.
+InfluxDB-Python
+===============
 
 .. image:: https://travis-ci.org/influxdata/influxdb-python.svg?branch=master
     :target: https://travis-ci.org/influxdata/influxdb-python
-
 .. image:: https://readthedocs.org/projects/influxdb-python/badge/?version=latest&style
     :target: http://influxdb-python.readthedocs.org/
     :alt: Documentation Status
@@ -15,22 +11,43 @@ InfluxDB-Python is a client for interacting with InfluxDB_. Maintained by @aviau
   :target: https://coveralls.io/r/influxdata/influxdb-python
   :alt: Coverage
 
+.. image:: https://img.shields.io/pypi/v/influxdb.svg
+   :target: https://pypi.python.org/pypi/influxdb
+   :alt: PyPI Status
+
+InfluxDB-Python is a client for interacting with InfluxDB_.
+
+Development of this library is maintained by:
+
++-----------+-------------------------------+ 
+| Github ID | URL                           |
++===========+===============================+ 
+| @aviau    | (https://github.com/aviau)    |
++-----------+-------------------------------+ 
+| @xginn8   | (https://github.com/xginn8)   |
++-----------+-------------------------------+ 
+| @sebito91 | (https://github.com/sebito91) |
++-----------+-------------------------------+
+
 .. _readme-about:
 
-InfluxDB is an open-source distributed time series database, find more about InfluxDB_ at http://influxdata.com/
+InfluxDB is an open-source distributed time series database, find more about InfluxDB_ at https://docs.influxdata.com/influxdb/latest
 
 
 .. _installation:
 
 InfluxDB pre v1.1.0 users
-=========================
+-------------------------
 
-InfluxDB 1.1.0 was released and it is the new recommended version. InfluxDB 0.8.x users may still use the legacy client by using ``from influxdb.influxdb08 import InfluxDBClient`` instead.
+This module is tested with InfluxDB v1.2.4, our recommended version. Though there have been v1.3 (initial TSI branch) and v1.4 releases these are not 
+yet supported. 
+
+Those users still on InfluxDB v0.8.x users may still use the legacy client by importing ``from influxdb.influxdb08 import InfluxDBClient``.
 
 Installation
-============
+------------
 
-Install, upgrade and uninstall InfluxDB-Python with these commands::
+Install, upgrade and uninstall influxdb-python with these commands::
 
     $ pip install influxdb
     $ pip install --upgrade influxdb
@@ -41,11 +58,11 @@ On Debian/Ubuntu, you can install it with this command::
     $ sudo apt-get install python-influxdb
 
 Dependencies
-============
+------------
 
-The InfluxDB-Python distribution is supported and tested on Python 2.7, 3.3, 3.4, PyPy and PyPy3.
+The influxdb-python distribution is supported and tested on Python 2.7, 3.3, 3.4, 3.5, 3.6, PyPy and PyPy3.
 
-**Note:** Python 3.2 is currently untested. See ``.travis.yml``. 
+**Note:** Python 3.2 is currently untested. See ``.travis.yml``.
 
 Main dependency is:
 
@@ -61,9 +78,9 @@ Additional dependencies are:
 
 
 Documentation
-=============
+-------------
 
-InfluxDB-Python documentation is available at http://influxdb-python.readthedocs.org
+Documentation is available at https://influxdb-python.readthedocs.io/en/latest/.
 
 You will need Sphinx_ installed to generate the documentation.
 
@@ -76,7 +93,7 @@ Generated documentation can be found in the *docs/build/html/* directory.
 
 
 Examples
-========
+--------
 
 Here's a basic example (for more see the examples directory)::
 
@@ -110,7 +127,7 @@ Here's a basic example (for more see the examples directory)::
 
 
 Testing
-=======
+-------
 
 Make sure you have tox by running the following::
 
@@ -122,14 +139,19 @@ To test influxdb-python with multiple version of Python, you can use Tox_::
 
 
 Support
-=======
+-------
 
 For issues with, questions about, or feedback for InfluxDB_, please look into
 our community page: http://influxdb.com/community/.
 
+We are also lurking on the following:
+
+- #influxdb on irc.freenode.net
+- #influxdb on gophers.slack.com
+
 
 Development
-===========
+-----------
 
 All development is done on Github_. Use Issues_ to report
 problems or submit contributions.
@@ -137,17 +159,21 @@ problems or submit contributions.
 .. _Github: https://github.com/influxdb/influxdb-python/
 .. _Issues: https://github.com/influxdb/influxdb-python/issues
 
-
-TODO
-====
-
-The TODO/Roadmap can be found in Github bug tracker: https://github.com/influxdata/influxdb-python/issues
+Please note that we WILL get to your questions/issues/concerns as quickly as possible. We maintain many
+software repositories and sometimes things may get pushed to the backburner. Please don't take offense,
+we will do our best to reply as soon as possible!
 
 
 Source code
-===========
+-----------
 
 The source code is currently available on Github: https://github.com/influxdata/influxdb-python
+
+
+TODO
+----
+
+The TODO/Roadmap can be found in Github bug tracker: https://github.com/influxdata/influxdb-python/issues
 
 
 .. _InfluxDB: https://influxdata.com/time-series-platform/influxdb/

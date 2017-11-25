@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+"""Tutorial for using pandas and the InfluxDB client."""
+
 import argparse
 import pandas as pd
 
@@ -5,10 +8,11 @@ from influxdb import DataFrameClient
 
 
 def main(host='localhost', port=8086):
+    """Instantiate the connection to the InfluxDB client."""
     user = 'root'
     password = 'root'
     dbname = 'demo'
-    # Temporarily used to avoid line protocol time conversion issues #412, #426, #431.
+    # Temporarily avoid line protocol time conversion issues #412, #426, #431.
     protocol = 'json'
 
     client = DataFrameClient(host, port, user, password, dbname)
@@ -25,7 +29,8 @@ def main(host='localhost', port=8086):
     client.write_points(df, 'demo', protocol=protocol)
 
     print("Write DataFrame with Tags")
-    client.write_points(df, 'demo', {'k1': 'v1', 'k2': 'v2'}, protocol=protocol)
+    client.write_points(df, 'demo',
+                        {'k1': 'v1', 'k2': 'v2'}, protocol=protocol)
 
     print("Read DataFrame")
     client.query("select * from demo")
@@ -35,6 +40,7 @@ def main(host='localhost', port=8086):
 
 
 def parse_args():
+    """Parse the args from main."""
     parser = argparse.ArgumentParser(
         description='example code to play with InfluxDB')
     parser.add_argument('--host', type=str, required=False,

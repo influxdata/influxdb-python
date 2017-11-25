@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+"""Define the misc handler for InfluxDBClient test."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -9,7 +10,9 @@ import socket
 
 
 def get_free_ports(num_ports, ip='127.0.0.1'):
-    """Get `num_ports` free/available ports on the interface linked to the `ip´
+    """Determine free ports on provided interface.
+
+    Get `num_ports` free/available ports on the interface linked to the `ip`
     :param int num_ports: The number of free ports to get
     :param str ip: The ip on which the ports have to be taken
     :return: a set of ports number
@@ -36,6 +39,7 @@ def get_free_ports(num_ports, ip='127.0.0.1'):
 
 
 def is_port_open(port, ip='127.0.0.1'):
+    """Check if given TCP port is open for connection."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     try:
         result = sock.connect_ex((ip, port))
