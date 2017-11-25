@@ -38,9 +38,9 @@ if not using_pypy:
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
-def point(serie_name, timestamp=None, tags=None, **fields):
+def point(series_name, timestamp=None, tags=None, **fields):
     """Define what a point looks like."""
-    res = {'measurement': serie_name}
+    res = {'measurement': series_name}
 
     if timestamp:
         res['time'] = timestamp
@@ -638,7 +638,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
 
     def test_issue_143(self):
         """Test for PR#143 from repo."""
-        pt = partial(point, 'a_serie_name', timestamp='2015-03-30T16:16:37Z')
+        pt = partial(point, 'a_series_name', timestamp='2015-03-30T16:16:37Z')
         pts = [
             pt(value=15),
             pt(tags={'tag_1': 'value1'}, value=5),
@@ -646,19 +646,20 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         ]
         self.cli.write_points(pts)
         time.sleep(1)
-        rsp = list(self.cli.query('SELECT * FROM a_serie_name GROUP BY tag_1'))
+        rsp = list(self.cli.query('SELECT * FROM a_series_name \
+GROUP BY tag_1').get_points())
 
         self.assertEqual(
             [
-                [{'value': 15, 'time': '2015-03-30T16:16:37Z'}],
-                [{'value': 5, 'time': '2015-03-30T16:16:37Z'}],
-                [{'value': 10, 'time': '2015-03-30T16:16:37Z'}]
+                {'time': '2015-03-30T16:16:37Z', 'value': 15},
+                {'time': '2015-03-30T16:16:37Z', 'value': 5},
+                {'time': '2015-03-30T16:16:37Z', 'value': 10}
             ],
             rsp
         )
 
         # a slightly more complex one with 2 tags values:
-        pt = partial(point, 'serie2', timestamp='2015-03-30T16:16:37Z')
+        pt = partial(point, 'series2', timestamp='2015-03-30T16:16:37Z')
         pts = [
             pt(tags={'tag1': 'value1', 'tag2': 'v1'}, value=0),
             pt(tags={'tag1': 'value1', 'tag2': 'v2'}, value=5),
@@ -666,18 +667,18 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         ]
         self.cli.write_points(pts)
         time.sleep(1)
-        rsp = self.cli.query('SELECT * FROM serie2 GROUP BY tag1,tag2')
+        rsp = self.cli.query('SELECT * FROM series2 GROUP BY tag1,tag2')
 
         self.assertEqual(
             [
-                [{'value': 0, 'time': '2015-03-30T16:16:37Z'}],
-                [{'value': 5, 'time': '2015-03-30T16:16:37Z'}],
-                [{'value': 10, 'time': '2015-03-30T16:16:37Z'}]
+                {'value': 0, 'time': '2015-03-30T16:16:37Z'},
+                {'value': 5, 'time': '2015-03-30T16:16:37Z'},
+                {'value': 10, 'time': '2015-03-30T16:16:37Z'}
             ],
-            list(rsp)
+            list(rsp['series2'])
         )
 
-        all_tag2_equal_v1 = list(rsp[None, {'tag2': 'v1'}])
+        all_tag2_equal_v1 = list(rsp.get_points(tags={'tag2': 'v1'}))
 
         self.assertEqual(
             [{'value': 0, 'time': '2015-03-30T16:16:37Z'},
@@ -687,13 +688,13 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
 
     def test_query_multiple_series(self):
         """Test query for multiple series."""
-        pt = partial(point, 'serie1', timestamp='2015-03-30T16:16:37Z')
+        pt = partial(point, 'series1', timestamp='2015-03-30T16:16:37Z')
         pts = [
             pt(tags={'tag1': 'value1', 'tag2': 'v1'}, value=0),
         ]
         self.cli.write_points(pts)
 
-        pt = partial(point, 'serie2', timestamp='1970-03-30T16:16:37Z')
+        pt = partial(point, 'series2', timestamp='1970-03-30T16:16:37Z')
         pts = [
             pt(tags={'tag1': 'value1', 'tag2': 'v1'},
                value=0, data1=33, data2="bla"),
