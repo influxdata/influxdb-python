@@ -98,24 +98,31 @@ class SeriesHelper(object):
             if 'time' in cls._fields:
                 cls._fields.remove('time')
             cls._type = namedtuple(cls.__name__,
-                                   cls._fields + cls._tags + ['time'])
+                                   ['time'] + cls._tags + cls._fields)
+            cls._type.__new__.__defaults__ = (None,) * len(cls._fields)
 
         return super(SeriesHelper, cls).__new__(cls)
 
     def __init__(self, **kw):
-        """Call to constructor creates a new data point. All fields must be present.
+        """Call to constructor creates a new data point.
 
         :note: Data points written when `bulk_size` is reached per Helper.
         :warning: Data points are *immutable* (`namedtuples`).
         """
         cls = self.__class__
         timestamp = kw.pop('time', self._current_timestamp())
+        tags = set(cls._tags)
+        fields = set(cls._fields)
+        keys = set(kw.keys())
 
-        if sorted(cls._fields + cls._tags) != sorted(kw.keys()):
+        # all tags should be passed, and keys - tags should be a subset of keys
+        if not(tags <= keys):
             raise NameError(
-                'Expected {0}, got {1}.'.format(
-                    sorted(cls._fields + cls._tags),
-                    kw.keys()))
+                'Expected arguments to contain all tags {0}, instead got {1}.'
+                .format(cls._tags, kw.keys()))
+        if not(keys - tags <= fields):
+            raise NameError('Got arguments not in tags or fields: {0}'
+                            .format(keys - tags - fields))
 
         cls._datapoints[cls._series_name.format(**kw)].append(
             cls._type(time=timestamp, **kw)
@@ -157,7 +164,9 @@ class SeriesHelper(object):
                 }
 
                 for field in cls._fields:
-                    json_point['fields'][field] = getattr(point, field)
+                    value = getattr(point, field)
+                    if value is not None:
+                        json_point['fields'][field] = value
 
                 for tag in cls._tags:
                     json_point['tags'][tag] = getattr(point, tag)
