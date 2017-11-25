@@ -11,6 +11,7 @@ from collections import defaultdict
 
 import pandas as pd
 import pandas.core.common as pdcom
+import numpy as np
 
 from .client import InfluxDBClient
 from .line_protocol import _escape_tag
@@ -87,7 +88,7 @@ class DataFrameClient(InfluxDBClient):
 
                 if protocol == 'line':
                     points = self._convert_dataframe_to_lines(
-                        dataframe.ix[start_index:end_index].copy(),
+                        dataframe.iloc[start_index:end_index].copy(),
                         measurement=measurement,
                         global_tags=tags,
                         time_precision=time_precision,
@@ -96,7 +97,7 @@ class DataFrameClient(InfluxDBClient):
                         numeric_precision=numeric_precision)
                 else:
                     points = self._convert_dataframe_to_json(
-                        dataframe.ix[start_index:end_index].copy(),
+                        dataframe.iloc[start_index:end_index].copy(),
                         measurement=measurement,
                         tags=tags,
                         time_precision=time_precision,
@@ -223,8 +224,8 @@ class DataFrameClient(InfluxDBClient):
                             .format(type(dataframe)))
         if not (isinstance(dataframe.index, pd.PeriodIndex) or
                 isinstance(dataframe.index, pd.DatetimeIndex)):
-            raise TypeError('Must be DataFrame with DatetimeIndex or \
-                            PeriodIndex.')
+            raise TypeError('Must be DataFrame with DatetimeIndex or '
+                            'PeriodIndex.')
 
         # Make sure tags and tag columns are correctly typed
         tag_columns = tag_columns if tag_columns is not None else []
@@ -258,7 +259,7 @@ class DataFrameClient(InfluxDBClient):
             {'measurement': measurement,
              'tags': dict(list(tag.items()) + list(tags.items())),
              'fields': rec,
-             'time': int(ts.value / precision_factor)}
+             'time': np.int64(ts.value / precision_factor)}
             for ts, tag, rec in zip(dataframe.index,
                                     dataframe[tag_columns].to_dict('record'),
                                     dataframe[field_columns].to_dict('record'))
@@ -275,13 +276,17 @@ class DataFrameClient(InfluxDBClient):
                                     time_precision=None,
                                     numeric_precision=None):
 
+        dataframe = dataframe.dropna(how='all').copy()
+        if len(dataframe) == 0:
+            return []
+
         if not isinstance(dataframe, pd.DataFrame):
             raise TypeError('Must be DataFrame, but type was: {0}.'
                             .format(type(dataframe)))
         if not (isinstance(dataframe.index, pd.PeriodIndex) or
                 isinstance(dataframe.index, pd.DatetimeIndex)):
-            raise TypeError('Must be DataFrame with DatetimeIndex or \
-                            PeriodIndex.')
+            raise TypeError('Must be DataFrame with DatetimeIndex or '
+                            'PeriodIndex.')
 
         # Create a Series of columns for easier indexing
         column_series = pd.Series(dataframe.columns)
@@ -298,12 +303,6 @@ class DataFrameClient(InfluxDBClient):
         # Make sure field_columns and tag_columns are lists
         field_columns = list(field_columns) if list(field_columns) else []
         tag_columns = list(tag_columns) if list(tag_columns) else []
-
-        # Make global_tags as tag_columns
-        if global_tags:
-            for tag in global_tags:
-                dataframe[tag] = global_tags[tag]
-                tag_columns.append(tag)
 
         # If field columns but no tag columns, assume rest of columns are tags
         if field_columns and (not tag_columns):
@@ -326,14 +325,21 @@ class DataFrameClient(InfluxDBClient):
 
         # Make array of timestamp ints
         if isinstance(dataframe.index, pd.PeriodIndex):
-            time = ((dataframe.index.to_timestamp().values.astype(int) /
-                     precision_factor).astype(int).astype(str))
+            time = ((dataframe.index.to_timestamp().values.astype(np.int64) /
+                     precision_factor).astype(np.int64).astype(str))
         else:
-            time = ((pd.to_datetime(dataframe.index).values.astype(int) /
-                     precision_factor).astype(int).astype(str))
+            time = ((pd.to_datetime(dataframe.index).values.astype(np.int64) /
+                     precision_factor).astype(np.int64).astype(str))
 
         # If tag columns exist, make an array of formatted tag keys and values
         if tag_columns:
+
+            # Make global_tags as tag_columns
+            if global_tags:
+                for tag in global_tags:
+                    dataframe[tag] = global_tags[tag]
+                    tag_columns.append(tag)
+
             tag_df = dataframe[tag_columns]
             for tag_col_i in tag_columns:
                 if pdcom.is_categorical_dtype(tag_df[tag_col_i]):
@@ -357,17 +363,27 @@ class DataFrameClient(InfluxDBClient):
             tags = tags.sum(axis=1)
 
             del tag_df
+        elif global_tags:
+            tag_string = ''.join(
+                [",{}={}".format(k, _escape_tag(v)) if v else ''
+                 for k, v in sorted(global_tags.items())]
+            )
+            tags = pd.Series(tag_string, index=dataframe.index)
         else:
             tags = ''
 
         # Make an array of formatted field keys and values
         field_df = dataframe[field_columns]
+
         field_df = self._stringify_dataframe(field_df,
                                              numeric_precision,
                                              datatype='field')
-        field_df = (field_df.columns.values + '=').tolist() + field_df
-        field_df[field_df.columns[1:]] = ',' + field_df[field_df.columns[1:]]
-        fields = field_df.sum(axis=1)
+
+        def format_line(line):
+            line = line[~line.isnull()]  # drop None entries
+            return ",".join((line.index + '=' + line.values))
+
+        fields = field_df.apply(format_line, axis=1)
         del field_df
 
         # Generate line protocol string
@@ -376,6 +392,13 @@ class DataFrameClient(InfluxDBClient):
 
     @staticmethod
     def _stringify_dataframe(dframe, numeric_precision, datatype='field'):
+
+        # Prevent modification of input dataframe
+        dframe = dframe.copy()
+
+        # Keep the positions where Null values are found
+        mask_null = dframe.isnull().values
+
         # Find int and string columns for field-type data
         int_columns = dframe.select_dtypes(include=['integer']).columns
         string_columns = dframe.select_dtypes(include=['object']).columns
@@ -419,6 +442,8 @@ class DataFrameClient(InfluxDBClient):
             dframe = dframe.apply(_escape_pandas_series)
 
         dframe.columns = dframe.columns.astype(str)
+
+        dframe = dframe.where(~mask_null, None)
         return dframe
 
     def _datetime_to_epoch(self, datetime, time_precision='s'):

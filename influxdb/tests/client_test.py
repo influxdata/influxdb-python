@@ -418,6 +418,18 @@ class TestInfluxDBClient(unittest.TestCase):
         with _mocked_session(self.cli, 'get', 401):
             self.cli.query('select column_one from foo;')
 
+    def test_ping(self):
+        """Test ping querying InfluxDB version."""
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/ping",
+                status_code=204,
+                headers={'X-Influxdb-Version': '1.2.3'}
+            )
+            version = self.cli.ping()
+            self.assertEqual(version, '1.2.3')
+
     def test_create_database(self):
         """Test create database for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
@@ -686,7 +698,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @mock.patch('requests.Session.request')
     def test_request_retry_raises(self, mock_request):
-        """Test that three connection errors will not be handled."""
+        """Test that three requests errors will not be handled."""
         class CustomMock(object):
             """Create custom mock object for test."""
 
@@ -698,7 +710,7 @@ class TestInfluxDBClient(unittest.TestCase):
                 self.i += 1
 
                 if self.i < 4:
-                    raise requests.exceptions.ConnectionError
+                    raise requests.exceptions.HTTPError
                 else:
                     r = requests.Response()
                     r.status_code = 200
@@ -708,7 +720,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         cli = InfluxDBClient(database='db')
 
-        with self.assertRaises(requests.exceptions.ConnectionError):
+        with self.assertRaises(requests.exceptions.HTTPError):
             cli.write_points(self.dummy_points)
 
     @mock.patch('requests.Session.request')
@@ -732,7 +744,7 @@ class TestInfluxDBClient(unittest.TestCase):
                     r.status_code = 204
                     return r
 
-        retries = random.randint(1, 100)
+        retries = random.randint(1, 5)
         mock_request.side_effect = CustomMock(retries).connection_error
 
         cli = InfluxDBClient(database='db', retries=retries)
@@ -759,7 +771,7 @@ class TestInfluxDBClient(unittest.TestCase):
                     r.status_code = 200
                     return r
 
-        retries = random.randint(1, 100)
+        retries = random.randint(1, 5)
         mock_request.side_effect = CustomMock(retries).connection_error
 
         cli = InfluxDBClient(database='db', retries=retries)
