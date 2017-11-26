@@ -201,7 +201,7 @@ class InfluxDBClient(object):
         self._password = password
 
     def request(self, url, method='GET', params=None, data=None,
-                expected_response_code=200, headers=None):
+                expected_response_code=200, headers=None, chunked=False):
         """Make a HTTP request to the InfluxDB API.
 
         :param url: the path of the HTTP request, e.g. write, query, etc.
@@ -249,7 +249,8 @@ class InfluxDBClient(object):
                     headers=headers,
                     proxies=self._proxies,
                     verify=self._verify_ssl,
-                    timeout=self._timeout
+                    timeout=self._timeout,
+                    stream=chunked
                 )
                 break
             except (requests.exceptions.ConnectionError,
@@ -315,17 +316,17 @@ class InfluxDBClient(object):
 
     @staticmethod
     def _read_chunked_response(response, raise_errors=True):
-        result_set = {}
         for line in response.iter_lines():
             if isinstance(line, bytes):
                 line = line.decode('utf-8')
             data = json.loads(line)
+            result_set = {}
             for result in data.get('results', []):
                 for _key in result:
                     if isinstance(result[_key], list):
                         result_set.setdefault(
                             _key, []).extend(result[_key])
-        return ResultSet(result_set, raise_errors=raise_errors)
+            yield(ResultSet(result_set, raise_errors=raise_errors))
 
     def query(self,
               query,
@@ -391,7 +392,8 @@ class InfluxDBClient(object):
             method='GET',
             params=params,
             data=None,
-            expected_response_code=expected_response_code
+            expected_response_code=expected_response_code,
+            chunked=chunked
         )
 
         if chunked:
