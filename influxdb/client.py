@@ -326,8 +326,7 @@ class InfluxDBClient(object):
                     if isinstance(result[_key], list):
                         result_set.setdefault(
                             _key, []).extend(result[_key])
-
-        return(ResultSet(result_set, raise_errors=raise_errors))
+        return ResultSet(result_set, raise_errors=raise_errors)
 
     @staticmethod
     def _read_chunked_response_generator(response, raise_errors=True):
@@ -380,12 +379,18 @@ class InfluxDBClient(object):
         :type raise_errors: bool
 
         :param chunked: Enable to use chunked responses from InfluxDB.
-            With ``chunked`` enabled, one ResultSet is returned per chunk
-            containing all results within that chunk
+            Normally all chunks are automaticly combined into one huge
+            ResultSet, unless you use ``stream``.
         :type chunked: bool
 
         :param chunk_size: Size of each chunk to tell InfluxDB to use.
         :type chunk_size: int
+
+        :param stream: Will stream the data and return a generator that
+            generates one ResultSet per chunk containing.
+            This allows for huge datasets with virtually no limit.
+
+        :type stream: bool
 
         :returns: the queried data
         :rtype: :class:`~.ResultSet`
@@ -415,10 +420,11 @@ class InfluxDBClient(object):
 
         if chunked:
             if stream:
-                return self._read_chunked_response_generator(response,raise_errors)
+                return self._read_chunked_response_generator(
+                    response, raise_errors
+                )
             else:
-                return self._read_chunked_response(response,raise_errors)
-                
+                return self._read_chunked_response(response, raise_errors)
 
         data = response.json()
 
