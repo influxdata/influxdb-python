@@ -387,7 +387,7 @@ class InfluxDBClient(object):
         :type chunk_size: int
 
         :param stream: Will stream the data and return a generator that
-            generates one ResultSet per chunk containing.
+            generates one ResultSet per chunk.
             This allows for huge datasets with virtually no limit.
 
         :type stream: bool
