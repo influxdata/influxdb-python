@@ -869,7 +869,7 @@ class InfluxDBClient(object):
 
         :param packet: the packet to be sent
         :type packet: (if protocol is 'json') dict
-                      (if protocol is 'line') sequence of line protocol strings
+                      (if protocol is 'line') list of line protocol strings
         :param protocol: protocol of input data, either 'json' or 'line'
         :type protocol: str
         """
