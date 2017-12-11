@@ -3,7 +3,6 @@ InfluxDB-Python
 
 .. image:: https://travis-ci.org/influxdata/influxdb-python.svg?branch=master
     :target: https://travis-ci.org/influxdata/influxdb-python
-
 .. image:: https://readthedocs.org/projects/influxdb-python/badge/?version=latest&style
     :target: http://influxdb-python.readthedocs.org/
     :alt: Documentation Status
@@ -12,9 +11,13 @@ InfluxDB-Python
   :target: https://coveralls.io/r/influxdata/influxdb-python
   :alt: Coverage
 
+.. image:: https://img.shields.io/pypi/v/influxdb.svg
+   :target: https://pypi.python.org/pypi/influxdb
+   :alt: PyPI Status
 
+InfluxDB-Python is a client for interacting with InfluxDB_.
 
-InfluxDB-Python is a client for interacting with InfluxDB_. Development of this library is maintained by 
+Development of this library is maintained by:
 
 +-----------+-------------------------------+ 
 | Github ID | URL                           |
