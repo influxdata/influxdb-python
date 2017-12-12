@@ -22,6 +22,7 @@ class TestLineProtocol(unittest.TestCase):
             "tags": {
                 "empty_tag": "",
                 "none_tag": None,
+                "backslash_tag": "C:\\",
                 "integer_tag": 2,
                 "string_tag": "hello"
             },
@@ -41,7 +42,7 @@ class TestLineProtocol(unittest.TestCase):
 
         self.assertEqual(
             line_protocol.make_lines(data),
-            'test,integer_tag=2,string_tag=hello '
+            'test,backslash_tag=C:\\\\ ,integer_tag=2,string_tag=hello '
             'bool_val=True,float_val=1.1,int_val=1i,string_val="hello!"\n'
         )
 
