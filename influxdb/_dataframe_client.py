@@ -376,6 +376,7 @@ class DataFrameClient(InfluxDBClient):
         del field_df
 
         # Generate line protocol string
+        measurement = _escape_tag(measurement)
         points = (measurement + tags + ' ' + fields + ' ' + time).tolist()
         return points
 

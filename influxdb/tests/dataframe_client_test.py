@@ -59,6 +59,28 @@ class TestDataFrameClient(unittest.TestCase):
             cli.write_points(dataframe, 'foo', tags=None)
             self.assertEqual(m.last_request.body, expected)
 
+    def test_dataframe_write_points_with_whitespace_measurement(self):
+        """write_points should escape white space in measurements."""
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["column_one", "column_two",
+                                          "column_three"])
+        expected = (
+            b"meas\\ with\\ space "
+            b"column_one=\"1\",column_two=1i,column_three=1.0 0\n"
+            b"meas\\ with\\ space "
+            b"column_one=\"2\",column_two=2i,column_three=2.0 "
+            b"3600000000000\n"
+        )
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+            cli = DataFrameClient(database='db')
+            cli.write_points(dataframe, 'meas with space')
+            self.assertEqual(m.last_request.body, expected)
+
     def test_write_points_from_dataframe_with_none(self):
         """Test write points from df in TestDataFrameClient object."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
