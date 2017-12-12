@@ -10,6 +10,7 @@ import math
 from collections import defaultdict
 
 import pandas as pd
+import numpy as np
 
 from .client import InfluxDBClient
 from .line_protocol import _escape_tag
@@ -174,6 +175,7 @@ class DataFrameClient(InfluxDBClient):
                           expected_response_code=expected_response_code,
                           raise_errors=raise_errors,
                           chunked=chunked,
+                          database=database,
                           chunk_size=chunk_size)
         results = super(DataFrameClient, self).query(query, **query_args)
         if query.strip().upper().startswith("SELECT"):
@@ -257,7 +259,7 @@ class DataFrameClient(InfluxDBClient):
             {'measurement': measurement,
              'tags': dict(list(tag.items()) + list(tags.items())),
              'fields': rec,
-             'time': int(ts.value / precision_factor)}
+             'time': np.int64(ts.value / precision_factor)}
             for ts, tag, rec in zip(dataframe.index,
                                     dataframe[tag_columns].to_dict('record'),
                                     dataframe[field_columns].to_dict('record'))
@@ -273,6 +275,10 @@ class DataFrameClient(InfluxDBClient):
                                     global_tags=None,
                                     time_precision=None,
                                     numeric_precision=None):
+
+        dataframe = dataframe.dropna(how='all').copy()
+        if len(dataframe) == 0:
+            return []
 
         if not isinstance(dataframe, pd.DataFrame):
             raise TypeError('Must be DataFrame, but type was: {0}.'
@@ -319,11 +325,11 @@ class DataFrameClient(InfluxDBClient):
 
         # Make array of timestamp ints
         if isinstance(dataframe.index, pd.PeriodIndex):
-            time = ((dataframe.index.to_timestamp().values.astype(int) /
-                     precision_factor).astype(int).astype(str))
+            time = ((dataframe.index.to_timestamp().values.astype(np.int64) /
+                     precision_factor).astype(np.int64).astype(str))
         else:
-            time = ((pd.to_datetime(dataframe.index).values.astype(int) /
-                     precision_factor).astype(int).astype(str))
+            time = ((pd.to_datetime(dataframe.index).values.astype(np.int64) /
+                     precision_factor).astype(np.int64).astype(str))
 
         # If tag columns exist, make an array of formatted tag keys and values
         if tag_columns:
@@ -357,20 +363,32 @@ class DataFrameClient(InfluxDBClient):
 
         # Make an array of formatted field keys and values
         field_df = dataframe[field_columns]
+
         field_df = self._stringify_dataframe(field_df,
                                              numeric_precision,
                                              datatype='field')
-        field_df = (field_df.columns.values + '=').tolist() + field_df
-        field_df[field_df.columns[1:]] = ',' + field_df[field_df.columns[1:]]
-        fields = field_df.sum(axis=1)
+
+        def format_line(line):
+            line = line[~line.isnull()]  # drop None entries
+            return ",".join((line.index + '=' + line.values))
+
+        fields = field_df.apply(format_line, axis=1)
         del field_df
 
         # Generate line protocol string
+        measurement = _escape_tag(measurement)
         points = (measurement + tags + ' ' + fields + ' ' + time).tolist()
         return points
 
     @staticmethod
     def _stringify_dataframe(dframe, numeric_precision, datatype='field'):
+
+        # Prevent modification of input dataframe
+        dframe = dframe.copy()
+
+        # Keep the positions where Null values are found
+        mask_null = dframe.isnull().values
+
         # Find int and string columns for field-type data
         int_columns = dframe.select_dtypes(include=['integer']).columns
         string_columns = dframe.select_dtypes(include=['object']).columns
@@ -414,6 +432,8 @@ class DataFrameClient(InfluxDBClient):
             dframe = dframe.apply(_escape_pandas_series)
 
         dframe.columns = dframe.columns.astype(str)
+
+        dframe = dframe.where(~mask_null, None)
         return dframe
 
     def _datetime_to_epoch(self, datetime, time_precision='s'):
