@@ -60,7 +60,7 @@ class TestDataFrameClient(unittest.TestCase):
             self.assertEqual(m.last_request.body, expected)
 
     def test_dataframe_write_points_with_whitespace_measurement(self):
-        """write_points should escape white space in measurements"""
+        """write_points should escape white space in measurements."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
                                  index=[now, now + timedelta(hours=1)],
