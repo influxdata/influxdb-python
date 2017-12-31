@@ -175,6 +175,7 @@ class DataFrameClient(InfluxDBClient):
                           expected_response_code=expected_response_code,
                           raise_errors=raise_errors,
                           chunked=chunked,
+                          database=database,
                           chunk_size=chunk_size)
         results = super(DataFrameClient, self).query(query, **query_args)
         if query.strip().upper().startswith("SELECT"):
@@ -375,6 +376,7 @@ class DataFrameClient(InfluxDBClient):
         del field_df
 
         # Generate line protocol string
+        measurement = _escape_tag(measurement)
         points = (measurement + tags + ' ' + fields + ' ' + time).tolist()
         return points
 
