@@ -233,8 +233,10 @@ class DataFrameClient(InfluxDBClient):
         tags = tags if tags is not None else {}
         # Assume field columns are all columns not included in tag columns
         if not field_columns:
-            field_columns = list(
-                set(dataframe.columns).difference(set(tag_columns)))
+            #field_columns = list(
+            #    set(dataframe.columns).difference(set(tag_columns)))
+            field_columns_buf = list(set(dataframe.columns).difference(set(tag_columns)))
+            field_columns = [str(field_column) for field_column in field_columns_buf]
 
         dataframe.index = dataframe.index.to_datetime()
         if dataframe.index.tzinfo is None:
