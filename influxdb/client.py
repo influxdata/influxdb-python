@@ -492,7 +492,7 @@ class InfluxDBClient(object):
                       retention_policy,
                       tags,
                       protocol='json'):
-        if time_precision not in ['n', 'u', 'ms', 's', 'm', 'h', None]:
+        if time_precision not in ['n', 'u', 'ms', 's', 'm', 'h', 'N', 'U', 'L', 'S', 'M', 'H', None]:
             raise ValueError(
                 "Invalid time precision is given. "
                 "(use 'n', 'u', 'ms', 's', 'm' or 'h')")
