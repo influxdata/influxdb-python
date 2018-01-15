@@ -59,6 +59,8 @@ class InfluxDBClient(object):
     :type udp_port: int
     :param proxies: HTTP(S) proxy to use for Requests, defaults to {}
     :type proxies: dict
+    :param path: path of InfluxDB on the server to connect, defaults to ''
+    :type path: str
     """
 
     def __init__(self,
@@ -75,10 +77,12 @@ class InfluxDBClient(object):
                  udp_port=4444,
                  proxies=None,
                  pool_size=10,
+                 path='',
                  ):
         """Construct a new InfluxDBClient object."""
         self.__host = host
         self.__port = int(port)
+        self.__path = path if not path or path[0] == '/' else '/' + path
         self._username = username
         self._password = password
         self._database = database
@@ -110,10 +114,11 @@ class InfluxDBClient(object):
         else:
             self._proxies = proxies
 
-        self.__baseurl = "{0}://{1}:{2}".format(
+        self.__baseurl = "{0}://{1}:{2}{3}".format(
             self._scheme,
             self._host,
-            self._port)
+            self._port,
+            self._path)
 
         self._headers = {
             'Content-Type': 'application/json',
@@ -131,6 +136,10 @@ class InfluxDBClient(object):
     @property
     def _port(self):
         return self.__port
+
+    @property
+    def _path(self):
+        return self.__path
 
     @property
     def _udp_port(self):
