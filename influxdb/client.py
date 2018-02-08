@@ -75,6 +75,7 @@ class InfluxDBClient(object):
                  udp_port=4444,
                  proxies=None,
                  pool_size=10,
+                 ssl_cert=None
                  ):
         """Construct a new InfluxDBClient object."""
         self.__host = host
@@ -86,6 +87,7 @@ class InfluxDBClient(object):
         self._retries = retries
 
         self._verify_ssl = verify_ssl
+        self._ssl_cert = ssl_cert
 
         self.__use_udp = use_udp
         self.__udp_port = udp_port
@@ -249,7 +251,8 @@ class InfluxDBClient(object):
                     headers=headers,
                     proxies=self._proxies,
                     verify=self._verify_ssl,
-                    timeout=self._timeout
+                    timeout=self._timeout,
+                    cert=self._ssl_cert
                 )
                 break
             except (requests.exceptions.ConnectionError,
