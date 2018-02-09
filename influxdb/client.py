@@ -45,8 +45,8 @@ class InfluxDBClient(object):
         False
     :type ssl: bool
     :param verify_ssl: verify SSL certificates for HTTPS requests, defaults to
-        False
-    :type verify_ssl: bool
+        False. If a string it must specify the path of a CA bundle to use.
+    :type verify_ssl: bool or str
     :param timeout: number of seconds Requests will wait for your client to
         establish a connection, defaults to None
     :type timeout: int
@@ -59,6 +59,9 @@ class InfluxDBClient(object):
     :type udp_port: int
     :param proxies: HTTP(S) proxy to use for Requests, defaults to {}
     :type proxies: dict
+    :param ssl_cert: if string, path to ssl client cert file (.pem). If tuple,
+        ('cert', 'key') pair.
+    :type ssl_cert: str or tuple of str
     """
 
     def __init__(self,
