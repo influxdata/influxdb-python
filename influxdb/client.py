@@ -33,6 +33,8 @@ class InfluxDBClient(object):
     :type host: str
     :param port: port to connect to InfluxDB, defaults to 8086
     :type port: int
+    :param endpoint: endpoint
+    :type endpoint: str
     :param username: user to connect, defaults to 'root'
     :type username: str
     :param password: password of the user, defaults to 'root'
@@ -75,10 +77,12 @@ class InfluxDBClient(object):
                  udp_port=4444,
                  proxies=None,
                  pool_size=10,
+                 endpoint=None,
                  ):
         """Construct a new InfluxDBClient object."""
         self.__host = host
         self.__port = int(port)
+        self.__endpoint = endpoint
         self._username = username
         self._password = password
         self._database = database
@@ -110,10 +114,17 @@ class InfluxDBClient(object):
         else:
             self._proxies = proxies
 
-        self.__baseurl = "{0}://{1}:{2}".format(
-            self._scheme,
-            self._host,
-            self._port)
+        if endpoint is not None:
+            self.__baseurl = "{0}://{1}:{2}/{3}".format(
+                self._scheme,
+                self._host,
+                self._port,
+                self._endpoint)
+        else:
+            self.__baseurl = "{0}://{1}:{2}".format(
+                    self._scheme,
+                    self._host,
+                    self._port)
 
         self._headers = {
             'Content-Type': 'application/json',
@@ -131,6 +142,10 @@ class InfluxDBClient(object):
     @property
     def _port(self):
         return self.__port
+
+    @property
+    def _endpoint(self):
+        return self.__endpoint
 
     @property
     def _udp_port(self):
