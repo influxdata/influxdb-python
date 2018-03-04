@@ -497,11 +497,6 @@ class InfluxDBClient(object):
                 "Invalid time precision is given. "
                 "(use 'n', 'u', 'ms', 's', 'm' or 'h')")
 
-        if self._use_udp and time_precision and time_precision != 's':
-            raise ValueError(
-                "InfluxDB only supports seconds precision for udp writes"
-            )
-
         if protocol == 'json':
             data = {
                 'points': points
@@ -523,7 +518,9 @@ class InfluxDBClient(object):
             params['rp'] = retention_policy
 
         if self._use_udp:
-            self.send_packet(data, protocol=protocol)
+            self.send_packet(
+                data, protocol=protocol, time_precision=time_precision
+            )
         else:
             self.write(
                 data=data,
@@ -864,7 +861,7 @@ class InfluxDBClient(object):
         text = "SHOW GRANTS FOR {0}".format(quote_ident(username))
         return list(self.query(text).get_points())
 
-    def send_packet(self, packet, protocol='json'):
+    def send_packet(self, packet, protocol='json', time_precision=None):
         """Send an UDP packet.
 
         :param packet: the packet to be sent
@@ -872,9 +869,11 @@ class InfluxDBClient(object):
                       (if protocol is 'line') list of line protocol strings
         :param protocol: protocol of input data, either 'json' or 'line'
         :type protocol: str
+        :param time_precision: Either 's', 'm', 'ms' or 'u', defaults to None
+        :type time_precision: str
         """
         if protocol == 'json':
-            data = make_lines(packet).encode('utf-8')
+            data = make_lines(packet, time_precision).encode('utf-8')
         elif protocol == 'line':
             data = ('\n'.join(packet) + '\n').encode('utf-8')
         self.udp_socket.sendto(data, (self._host, self._udp_port))
