@@ -82,7 +82,6 @@ class InfluxDBClient(object):
         """Construct a new InfluxDBClient object."""
         self.__host = host
         self.__port = int(port)
-        self.__path = path if not path or path[0] == '/' else '/' + path
         self._username = username
         self._password = password
         self._database = database
@@ -101,6 +100,13 @@ class InfluxDBClient(object):
 
         if use_udp:
             self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        if not path:
+            self.__path = ''
+        elif path[0] == '/':
+            self.__path = path
+        else:
+            self.__path = '/' + path
 
         self._scheme = "http"
 
