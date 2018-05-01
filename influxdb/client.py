@@ -103,7 +103,7 @@ class InfluxDBClient(object):
         if ssl is True:
             self._scheme = "https"
 
-        self._session.mount(self._scheme, adapter)
+        self._session.mount(self._scheme + '://', adapter)
 
         if proxies is None:
             self._proxies = {}
