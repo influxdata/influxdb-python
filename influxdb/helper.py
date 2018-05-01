@@ -86,13 +86,13 @@ class SeriesHelper(object):
             if cls._autocommit and not cls._client:
                 raise AttributeError(
                     'In {0}, autocommit is set to True, but no client is set.'
-                    .format(cls.__name__))
+                        .format(cls.__name__))
 
             cls._client = getattr(_meta, 'client', None)
             if cls._autocommit and not cls._client:
                 raise AttributeError(
                     'In {0}, autocommit is set to True, but no client is set.'
-                    .format(cls.__name__))
+                        .format(cls.__name__))
 
             try:
                 cls._bulk_size = getattr(_meta, 'bulk_size')
@@ -132,11 +132,11 @@ class SeriesHelper(object):
         keys = set(kw.keys())
 
         # all tags should be passed, and keys - tags should be a subset of keys
-        if not(tags <= keys):
+        if not (tags <= keys):
             raise NameError(
                 'Expected arguments to contain all tags {0}, instead got {1}.'
-                .format(cls._tags, kw.keys()))
-        if not(keys - tags <= fields):
+                    .format(cls._tags, kw.keys()))
+        if not (keys - tags <= fields):
             raise NameError('Got arguments not in tags or fields: {0}'
                             .format(keys - tags - fields))
 
@@ -161,7 +161,7 @@ class SeriesHelper(object):
             client = cls._client
         rtn = client.write_points(
             cls._json_body_(),
-            time_precision = cls._time_precision)
+            time_precision=cls._time_precision)
         # will be None if not set and will default to ns
         cls._reset_()
         return rtn
