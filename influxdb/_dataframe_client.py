@@ -113,7 +113,6 @@ class DataFrameClient(InfluxDBClient):
             return True
 
         if protocol == 'line':
-            dataframe = dataframe.rename(columns={item:_escape_tag(item) for item in dataframe.columns})
             points = self._convert_dataframe_to_lines(
                 dataframe,
                 measurement=measurement,
@@ -290,6 +289,7 @@ class DataFrameClient(InfluxDBClient):
                             'PeriodIndex.')
 
         # Create a Series of columns for easier indexing
+        dataframe = dataframe.rename(columns={item:_escape_tag(item) for item in dataframe.columns})
         column_series = pd.Series(dataframe.columns)
 
         if field_columns is None:
