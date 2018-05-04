@@ -86,7 +86,7 @@ class TestDataFrameClient(unittest.TestCase):
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
                                  index=[now, now + timedelta(hours=1)],
-                                 columns=["column one", "column two", 
+                                 columns=["column one", "column two",
                                           "column three"])
         expected = (
             b"foo column\\ one=\"1\",column\\ two=1i,column\\ three=1.0 0\n"
