@@ -12,7 +12,6 @@ def main(host='localhost', port=8086):
     user = 'root'
     password = 'root'
     dbname = 'demo'
-    # Temporarily avoid line protocol time conversion issues #412, #426, #431.
     protocol = 'json'
 
     client = DataFrameClient(host, port, user, password, dbname)
