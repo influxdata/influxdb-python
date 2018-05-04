@@ -82,16 +82,17 @@ class TestDataFrameClient(unittest.TestCase):
             self.assertEqual(m.last_request.body, expected)
 
     def test_dataframe_write_points_with_whitespace_in_column_names(self):
-        """write_points should escape white space in column names (tag and field names)."""
+        """write_points should escape white space in column names."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
                                  index=[now, now + timedelta(hours=1)],
-                                 columns=["column one", "column two", "column three"])
+                                 columns=["column one", "column two", 
+                                          "column three"])
         expected = (
             b"foo column\\ one=\"1\",column\\ two=1i,column\\ three=1.0 0\n"
             b"foo column\\ one=\"2\",column\\ two=2i,column\\ three=2.0 "
             b"3600000000000\n"
-            )
+        )
         with requests_mock.Mocker() as m:
             m.register_uri(requests_mock.POST,
                            "http://localhost:8086/write",
