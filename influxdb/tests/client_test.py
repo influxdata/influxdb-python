@@ -109,6 +109,24 @@ class TestInfluxDBClient(unittest.TestCase):
         )
         self.assertEqual('https://host:8086', cli._baseurl)
 
+        cli = InfluxDBClient(
+            'host', 8086, 'username', 'password', 'database', ssl=True,
+            path="somepath"
+        )
+        self.assertEqual('https://host:8086/somepath', cli._baseurl)
+
+        cli = InfluxDBClient(
+            'host', 8086, 'username', 'password', 'database', ssl=True,
+            path=None
+        )
+        self.assertEqual('https://host:8086', cli._baseurl)
+
+        cli = InfluxDBClient(
+            'host', 8086, 'username', 'password', 'database', ssl=True,
+            path="/somepath"
+        )
+        self.assertEqual('https://host:8086/somepath', cli._baseurl)
+
     def test_dsn(self):
         """Set up the test datasource name for TestInfluxDBClient object."""
         cli = InfluxDBClient.from_dsn('influxdb://192.168.0.1:1886')
@@ -259,22 +277,6 @@ class TestInfluxDBClient(unittest.TestCase):
             received_data.decode()
         )
 
-    def test_write_bad_precision_udp(self):
-        """Test write bad precision in UDP for TestInfluxDBClient object."""
-        cli = InfluxDBClient(
-            'localhost', 8086, 'root', 'root',
-            'test', use_udp=True, udp_port=4444
-        )
-
-        with self.assertRaisesRegexp(
-                Exception,
-                "InfluxDB only supports seconds precision for udp writes"
-        ):
-            cli.write_points(
-                self.dummy_points,
-                time_precision='ms'
-            )
-
     @raises(Exception)
     def test_write_points_fails(self):
         """Test write points fail for TestInfluxDBClient object."""
@@ -334,6 +336,65 @@ class TestInfluxDBClient(unittest.TestCase):
                 b'value=0.64 349415\n',
                 m.last_request.body,
             )
+
+    def test_write_points_with_precision_udp(self):
+        """Test write points with precision for TestInfluxDBClient object."""
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        port = random.randint(4000, 8000)
+        s.bind(('0.0.0.0', port))
+
+        cli = InfluxDBClient(
+            'localhost', 8086, 'root', 'root',
+            'test', use_udp=True, udp_port=port
+        )
+
+        cli.write_points(self.dummy_points, time_precision='n')
+        received_data, addr = s.recvfrom(1024)
+        self.assertEqual(
+            b'cpu_load_short,host=server01,region=us-west '
+            b'value=0.64 1257894000123456000\n',
+            received_data,
+        )
+
+        cli.write_points(self.dummy_points, time_precision='u')
+        received_data, addr = s.recvfrom(1024)
+        self.assertEqual(
+            b'cpu_load_short,host=server01,region=us-west '
+            b'value=0.64 1257894000123456\n',
+            received_data,
+        )
+
+        cli.write_points(self.dummy_points, time_precision='ms')
+        received_data, addr = s.recvfrom(1024)
+        self.assertEqual(
+            b'cpu_load_short,host=server01,region=us-west '
+            b'value=0.64 1257894000123\n',
+            received_data,
+        )
+
+        cli.write_points(self.dummy_points, time_precision='s')
+        received_data, addr = s.recvfrom(1024)
+        self.assertEqual(
+            b"cpu_load_short,host=server01,region=us-west "
+            b"value=0.64 1257894000\n",
+            received_data,
+        )
+
+        cli.write_points(self.dummy_points, time_precision='m')
+        received_data, addr = s.recvfrom(1024)
+        self.assertEqual(
+            b'cpu_load_short,host=server01,region=us-west '
+            b'value=0.64 20964900\n',
+            received_data,
+        )
+
+        cli.write_points(self.dummy_points, time_precision='h')
+        received_data, addr = s.recvfrom(1024)
+        self.assertEqual(
+            b'cpu_load_short,host=server01,region=us-west '
+            b'value=0.64 349415\n',
+            received_data,
+        )
 
     def test_write_points_bad_precision(self):
         """Test write points w/bad precision TestInfluxDBClient object."""

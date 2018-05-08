@@ -59,6 +59,8 @@ class InfluxDBClient(object):
     :type udp_port: int
     :param proxies: HTTP(S) proxy to use for Requests, defaults to {}
     :type proxies: dict
+    :param path: path of InfluxDB on the server to connect, defaults to ''
+    :type path: str
     """
 
     def __init__(self,
@@ -75,6 +77,7 @@ class InfluxDBClient(object):
                  udp_port=4444,
                  proxies=None,
                  pool_size=10,
+                 path='',
                  ):
         """Construct a new InfluxDBClient object."""
         self.__host = host
@@ -98,22 +101,30 @@ class InfluxDBClient(object):
         if use_udp:
             self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
+        if not path:
+            self.__path = ''
+        elif path[0] == '/':
+            self.__path = path
+        else:
+            self.__path = '/' + path
+
         self._scheme = "http"
 
         if ssl is True:
             self._scheme = "https"
 
-        self._session.mount(self._scheme, adapter)
+        self._session.mount(self._scheme + '://', adapter)
 
         if proxies is None:
             self._proxies = {}
         else:
             self._proxies = proxies
 
-        self.__baseurl = "{0}://{1}:{2}".format(
+        self.__baseurl = "{0}://{1}:{2}{3}".format(
             self._scheme,
             self._host,
-            self._port)
+            self._port,
+            self._path)
 
         self._headers = {
             'Content-Type': 'application/json',
@@ -131,6 +142,10 @@ class InfluxDBClient(object):
     @property
     def _port(self):
         return self.__port
+
+    @property
+    def _path(self):
+        return self.__path
 
     @property
     def _udp_port(self):
@@ -526,11 +541,6 @@ class InfluxDBClient(object):
                 "Invalid time precision is given. "
                 "(use 'n', 'u', 'ms', 's', 'm' or 'h')")
 
-        if self._use_udp and time_precision and time_precision != 's':
-            raise ValueError(
-                "InfluxDB only supports seconds precision for udp writes"
-            )
-
         if protocol == 'json':
             data = {
                 'points': points
@@ -552,7 +562,9 @@ class InfluxDBClient(object):
             params['rp'] = retention_policy
 
         if self._use_udp:
-            self.send_packet(data, protocol=protocol)
+            self.send_packet(
+                data, protocol=protocol, time_precision=time_precision
+            )
         else:
             self.write(
                 data=data,
@@ -893,7 +905,7 @@ class InfluxDBClient(object):
         text = "SHOW GRANTS FOR {0}".format(quote_ident(username))
         return list(self.query(text).get_points())
 
-    def send_packet(self, packet, protocol='json'):
+    def send_packet(self, packet, protocol='json', time_precision=None):
         """Send an UDP packet.
 
         :param packet: the packet to be sent
@@ -901,9 +913,11 @@ class InfluxDBClient(object):
                       (if protocol is 'line') list of line protocol strings
         :param protocol: protocol of input data, either 'json' or 'line'
         :type protocol: str
+        :param time_precision: Either 's', 'm', 'ms' or 'u', defaults to None
+        :type time_precision: str
         """
         if protocol == 'json':
-            data = make_lines(packet).encode('utf-8')
+            data = make_lines(packet, time_precision).encode('utf-8')
         elif protocol == 'line':
             data = ('\n'.join(packet) + '\n').encode('utf-8')
         self.udp_socket.sendto(data, (self._host, self._udp_port))
