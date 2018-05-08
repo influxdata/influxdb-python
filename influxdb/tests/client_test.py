@@ -109,6 +109,24 @@ class TestInfluxDBClient(unittest.TestCase):
         )
         self.assertEqual('https://host:8086', cli._baseurl)
 
+        cli = InfluxDBClient(
+            'host', 8086, 'username', 'password', 'database', ssl=True,
+            path="somepath"
+        )
+        self.assertEqual('https://host:8086/somepath', cli._baseurl)
+
+        cli = InfluxDBClient(
+            'host', 8086, 'username', 'password', 'database', ssl=True,
+            path=None
+        )
+        self.assertEqual('https://host:8086', cli._baseurl)
+
+        cli = InfluxDBClient(
+            'host', 8086, 'username', 'password', 'database', ssl=True,
+            path="/somepath"
+        )
+        self.assertEqual('https://host:8086/somepath', cli._baseurl)
+
     def test_dsn(self):
         """Set up the test datasource name for TestInfluxDBClient object."""
         cli = InfluxDBClient.from_dsn('influxdb://192.168.0.1:1886')
