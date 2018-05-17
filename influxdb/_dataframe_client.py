@@ -211,8 +211,8 @@ class DataFrameClient(InfluxDBClient):
 
         return result
 
-    @staticmethod
-    def _convert_dataframe_to_json(dataframe,
+    def _convert_dataframe_to_json(self,
+                                   dataframe,
                                    measurement,
                                    tags=None,
                                    tag_columns=None,
@@ -262,7 +262,7 @@ class DataFrameClient(InfluxDBClient):
              'time': np.int64(ts.value / precision_factor)}
             for ts, tag, rec in zip(dataframe.index,
                                     dataframe[tag_columns].to_dict('record'),
-                                    dataframe[field_columns].to_dict('record'))
+                                    self._to_dict_drop_na(dataframe[field_columns]))
         ]
 
         return points
@@ -381,6 +381,10 @@ class DataFrameClient(InfluxDBClient):
         measurement = _escape_tag(measurement)
         points = (measurement + tags + ' ' + fields + ' ' + time).tolist()
         return points
+
+    @staticmethod
+    def _to_dict_drop_na(dframe):
+        return [{k:v for k,v in m.items() if pd.notnull(v)} for m in dframe.to_dict(orient='rows')]
 
     @staticmethod
     def _stringify_dataframe(dframe, numeric_precision, datatype='field'):
