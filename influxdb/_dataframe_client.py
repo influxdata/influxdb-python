@@ -256,7 +256,7 @@ class DataFrameClient(InfluxDBClient):
         }.get(time_precision, 1)
 
         dataframe_zip = zip(dataframe.index,
-                            dataframe[tag_columns].to_dict('record'),
+                            self._todict_dropna(dataframe[tag_columns]),
                             self._todict_dropna(dataframe[field_columns]))
 
         points = [
