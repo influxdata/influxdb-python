@@ -255,14 +255,16 @@ class DataFrameClient(InfluxDBClient):
             "h": 1e9 * 3600,
         }.get(time_precision, 1)
 
+        dataframe_zip = zip(dataframe.index,
+                            dataframe[tag_columns].to_dict('record'),
+                            self._todict_dropna(dataframe[field_columns]))
+
         points = [
             {'measurement': measurement,
              'tags': dict(list(tag.items()) + list(tags.items())),
              'fields': rec,
              'time': np.int64(ts.value / precision_factor)}
-            for ts, tag, rec in zip(dataframe.index,
-                                    dataframe[tag_columns].to_dict('record'),
-                                    self._to_dict_drop_na(dataframe[field_columns]))
+            for ts, tag, rec in dataframe_zip
         ]
 
         return points
@@ -383,8 +385,10 @@ class DataFrameClient(InfluxDBClient):
         return points
 
     @staticmethod
-    def _to_dict_drop_na(dframe):
-        return [{k:v for k,v in m.items() if pd.notnull(v)} for m in dframe.to_dict(orient='rows')]
+    def _todict_dropna(dataframe):
+        return [{k: v for k, v in m.items()
+                if pd.notnull(v)}
+                for m in dataframe.to_dict(orient='rows')]
 
     @staticmethod
     def _stringify_dataframe(dframe, numeric_precision, datatype='field'):
