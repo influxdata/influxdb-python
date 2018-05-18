@@ -388,7 +388,7 @@ class DataFrameClient(InfluxDBClient):
     def _todict_dropna(dataframe):
         return [{k: v for k, v in m.items()
                 if pd.notnull(v)}
-                for m in dataframe.to_dict(orient='rows')]
+                for m in dataframe.to_dict('record')]
 
     @staticmethod
     def _stringify_dataframe(dframe, numeric_precision, datatype='field'):
