@@ -6,9 +6,6 @@ addons:
     - wget
 
 matrix:
-  allow_failures:
-    - python: 3.4
-      env: TOX_ENV=docs
   include:
     - python: 2.7
       env: TOX_ENV=py27
@@ -16,8 +13,6 @@ matrix:
       env: TOX_ENV=pep257
     - python: pypy-5.3.1
       env: TOX_ENV=pypy
-    - python: 3.4
-      env: TOX_ENV=py34
     - python: 3.5
       env: TOX_ENV=py35
     - python: 3.6
