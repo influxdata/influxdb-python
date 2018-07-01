@@ -367,16 +367,18 @@ class DataFrameClient(InfluxDBClient):
 
         # Make an array of formatted field keys and values
         field_df = dataframe[field_columns]
+        # Keep the positions where Null values are found
+        mask_null = field_df.isnull().values
 
         field_df = self._stringify_dataframe(field_df,
                                              numeric_precision,
                                              datatype='field')
 
-        def format_line(line):
-            line = line[~line.isnull()]  # drop None entries
-            return ",".join((line.index + '=' + line.values))
-
-        fields = field_df.apply(format_line, axis=1)
+        field_df = (field_df.columns.values + '=').tolist() + field_df
+        field_df[field_df.columns[1:]] = ',' + field_df[
+            field_df.columns[1:]]
+        field_df = field_df.where(~mask_null, '')  # drop Null entries
+        fields = field_df.sum(axis=1)
         del field_df
 
         # Generate line protocol string
@@ -395,9 +397,6 @@ class DataFrameClient(InfluxDBClient):
 
         # Prevent modification of input dataframe
         dframe = dframe.copy()
-
-        # Keep the positions where Null values are found
-        mask_null = dframe.isnull().values
 
         # Find int and string columns for field-type data
         int_columns = dframe.select_dtypes(include=['integer']).columns
@@ -443,7 +442,6 @@ class DataFrameClient(InfluxDBClient):
 
         dframe.columns = dframe.columns.astype(str)
 
-        dframe = dframe.where(~mask_null, None)
         return dframe
 
     def _datetime_to_epoch(self, datetime, time_precision='s'):
