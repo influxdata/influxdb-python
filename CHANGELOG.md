@@ -9,8 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Finally add a CHANGELOG.md to communicate breaking changes (#598)
 - Test multiple versions of InfluxDB in travis
 ### Changed
+- Update test suite to support InfluxDB v1.3.9, v1.4.2, and v1.5.4
 - Fix performance degradation when removing NaN values via line protocol (#592)
 ### Removed
+- Dropped support for Python3.4
 
 ## [v5.1.0] - 2018-06-26
 ### Added

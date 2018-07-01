@@ -8,9 +8,9 @@ python:
 
 env:
   - INFLUXDB_VER=1.2.4
-#  - INFLUXDB_VER=1.3.9
-#  - INFLUXDB_VER=1.4.2
-#  - INFLUXDB_VER=1.5.4
+  - INFLUXDB_VER=1.3.9
+  - INFLUXDB_VER=1.4.2
+  - INFLUXDB_VER=1.5.4
 
 addons:
   apt:
