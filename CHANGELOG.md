@@ -29,8 +29,28 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [v5.0.0] - 2017-11-20
 ### Added
+- Add pool size parameter to client constructor (#534 thx @vaniakov)
+- Add ping method to client for checking connectivity (#409 thx @pmenglund)
+- Add retry logic & exponential backoff when a connection fails (#508)
+- Declare which setuptools version is required in PyPy env
+- Functions for drop_measurement and get_list_measurements in InfluxDBClient (#402 thx @Vic020)
+- Allow single string as data argument in write (#492 thx @baftek)
+- Support chunked queries in DataFrameClient (#439 thx @gusutabopb)
+- Add close method to InfluxDBClient (#465 thx @Linux-oiD)
+- PEP257 linting & code compliance (#473)
 ### Changed
+- Fix broken tags filtering on a ResultSet (#511)
+- Improve retry codepath for connecting to InfluxDB (#536 thx @swails)
+- Clean up imports using six instead of sys.version (#536 thx @swails)
+- Replace references to dataframe.ix with dataframe.iloc (#528)
+- Improve performance of tag processing when converting DataFrameClient to line protocol (#503 thx @tzonghao)
+- Typo in Content-Type header (#513 thx @milancermak)
+- Clean up README.md formatting
+- Catch TypeError when casting to float to return False with objects (#475 thx @BenHewins)
+- Improve efficiency of tag appending in DataFrameClient when converting to line protocol (#486 thx @maxdolle)
 ### Removed
+- Drop requirement for all fields in SeriesHelper (#518 thx @spott)
+- use_udp and udp_port are now private properties in InfluxDBClient
 
 ## [v4.1.1] - 2017-06-06
 ### Added
