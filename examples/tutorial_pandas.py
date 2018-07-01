@@ -12,7 +12,6 @@ def main(host='localhost', port=8086):
     user = 'root'
     password = 'root'
     dbname = 'demo'
-    # Temporarily avoid line protocol time conversion issues #412, #426, #431.
     protocol = 'json'
 
     client = DataFrameClient(host, port, user, password, dbname)
@@ -20,7 +19,7 @@ def main(host='localhost', port=8086):
     print("Create pandas DataFrame")
     df = pd.DataFrame(data=list(range(30)),
                       index=pd.date_range(start='2014-11-16',
-                                          periods=30, freq='H'))
+                                          periods=30, freq='H'), columns=['0'])
 
     print("Create database: " + dbname)
     client.create_database(dbname)
