@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+- Finally add a CHANGELOG.md to communicate breaking changes (#598)
 ### Changed
 - Fix performance degradation when removing NaN values via line protocol (#592)
 ### Removed
