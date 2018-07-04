@@ -5,6 +5,7 @@ python:
   - "3.5"
   - "3.6"
   - "pypy-5.3.1"
+  - "pypy3"
 
 env:
   - INFLUXDB_VER=1.2.4
