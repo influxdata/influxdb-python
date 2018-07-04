@@ -526,13 +526,57 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
             rsp
         )
 
+        self.cli.drop_retention_policy('somename', 'db')
+        # recreate the RP
+        self.cli.create_retention_policy('somename', '1w', 1,
+                                         shard_duration='1h')
+
+        rsp = self.cli.get_list_retention_policies()
+        self.assertEqual(
+            [
+                {'duration': '0s',
+                 'default': True,
+                 'replicaN': 1,
+                 'shardGroupDuration': u'168h0m0s',
+                 'name': 'autogen'},
+                {'duration': '168h0m0s',
+                 'default': False,
+                 'replicaN': 1,
+                 'shardGroupDuration': u'1h0m0s',
+                 'name': 'somename'}
+            ],
+            rsp
+        )
+
+        self.cli.drop_retention_policy('somename', 'db')
+        # recreate the RP
+        self.cli.create_retention_policy('somename', '1w', 1)
+
+        rsp = self.cli.get_list_retention_policies()
+        self.assertEqual(
+            [
+                {'duration': '0s',
+                 'default': True,
+                 'replicaN': 1,
+                 'shardGroupDuration': u'168h0m0s',
+                 'name': 'autogen'},
+                {'duration': '168h0m0s',
+                 'default': False,
+                 'replicaN': 1,
+                 'shardGroupDuration': u'24h0m0s',
+                 'name': 'somename'}
+            ],
+            rsp
+        )
+
     def test_alter_retention_policy(self):
         """Test alter a retention policy, not default."""
         self.cli.create_retention_policy('somename', '1d', 1)
 
         # Test alter duration
         self.cli.alter_retention_policy('somename', 'db',
-                                        duration='4d')
+                                        duration='4d',
+                                        shard_duration='2h')
         # NB: altering retention policy doesn't change shard group duration
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
@@ -545,7 +589,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
                 {'duration': '96h0m0s',
                  'default': False,
                  'replicaN': 1,
-                 'shardGroupDuration': u'1h0m0s',
+                 'shardGroupDuration': u'2h0m0s',
                  'name': 'somename'}
             ],
             rsp
@@ -554,6 +598,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         # Test alter replication
         self.cli.alter_retention_policy('somename', 'db',
                                         replication=4)
+
         # NB: altering retention policy doesn't change shard group duration
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
@@ -566,7 +611,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
                 {'duration': '96h0m0s',
                  'default': False,
                  'replicaN': 4,
-                 'shardGroupDuration': u'1h0m0s',
+                 'shardGroupDuration': u'2h0m0s',
                  'name': 'somename'}
             ],
             rsp
@@ -587,7 +632,28 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
                 {'duration': '96h0m0s',
                  'default': True,
                  'replicaN': 4,
-                 'shardGroupDuration': u'1h0m0s',
+                 'shardGroupDuration': u'2h0m0s',
+                 'name': 'somename'}
+            ],
+            rsp
+        )
+
+        # Test alter shard_duration
+        self.cli.alter_retention_policy('somename', 'db',
+                                        shard_duration='4h')
+
+        rsp = self.cli.get_list_retention_policies()
+        self.assertEqual(
+            [
+                {'duration': '0s',
+                 'default': False,
+                 'replicaN': 1,
+                 'shardGroupDuration': u'168h0m0s',
+                 'name': 'autogen'},
+                {'duration': '96h0m0s',
+                 'default': True,
+                 'replicaN': 4,
+                 'shardGroupDuration': u'4h0m0s',
                  'name': 'somename'}
             ],
             rsp
@@ -598,6 +664,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         self.cli.create_retention_policy('somename', '1d', 1)
         with self.assertRaises(InfluxDBClientError) as ctx:
             self.cli.alter_retention_policy('somename', 'db')
+            print(self.cli.get_list_retention_policies())
         self.assertEqual(400, ctx.exception.code)
         self.assertIn('{"error":"error parsing query: ',
                       ctx.exception.content)
