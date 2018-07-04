@@ -664,7 +664,6 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         self.cli.create_retention_policy('somename', '1d', 1)
         with self.assertRaises(InfluxDBClientError) as ctx:
             self.cli.alter_retention_policy('somename', 'db')
-            print(self.cli.get_list_retention_policies())
         self.assertEqual(400, ctx.exception.code)
         self.assertIn('{"error":"error parsing query: ',
                       ctx.exception.content)
