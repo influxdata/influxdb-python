@@ -575,7 +575,8 @@ class InfluxDBClient(object):
         :param dbname: the name of the database to create
         :type dbname: str
         """
-        self.query("CREATE DATABASE {0}".format(quote_ident(dbname)), method="POST")
+        self.query("CREATE DATABASE {0}".format(quote_ident(dbname)),
+                   method="POST")
 
     def drop_database(self, dbname):
         """Drop a database from InfluxDB.
@@ -583,7 +584,8 @@ class InfluxDBClient(object):
         :param dbname: the name of the database to drop
         :type dbname: str
         """
-        self.query("DROP DATABASE {0}".format(quote_ident(dbname)), method="POST")
+        self.query("DROP DATABASE {0}".format(quote_ident(dbname)),
+                   method="POST")
 
     def get_list_measurements(self):
         """Get the list of measurements in InfluxDB.
@@ -609,7 +611,8 @@ class InfluxDBClient(object):
         :param measurement: the name of the measurement to drop
         :type measurement: str
         """
-        self.query("DROP MEASUREMENT {0}".format(quote_ident(measurement)), method="POST")
+        self.query("DROP MEASUREMENT {0}".format(quote_ident(measurement)),
+                   method="POST")
 
     def create_retention_policy(self, name, duration, replication,
                                 database=None, default=False):
