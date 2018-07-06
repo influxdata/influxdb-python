@@ -615,7 +615,8 @@ class InfluxDBClient(object):
                    method="POST")
 
     def create_retention_policy(self, name, duration, replication,
-                                database=None, default=False):
+                                database=None,
+                                default=False, shard_duration="0s"):
         """Create a retention policy for a database.
 
         :param name: the name of the new retention policy
@@ -634,12 +635,21 @@ class InfluxDBClient(object):
         :type database: str
         :param default: whether or not to set the policy as default
         :type default: bool
+        :param shard_duration: the shard duration of the retention policy.
+            Durations such as 1h, 90m, 12h, 7d, and 4w, are all supported and
+            mean 1 hour, 90 minutes, 12 hours, 7 day, and 4 weeks,
+            respectively. Infinite retention is not supported. As a workaround,
+            specify a "1000w" duration to achieve an extremely long shard group
+            duration. Defaults to "0s", which is interpreted by the database
+            to mean the default value given the duration.
+            The minimum shard group duration is 1 hour.
+        :type shard_duration: str
         """
         query_string = \
             "CREATE RETENTION POLICY {0} ON {1} " \
-            "DURATION {2} REPLICATION {3}".format(
+            "DURATION {2} REPLICATION {3} SHARD DURATION {4}".format(
                 quote_ident(name), quote_ident(database or self._database),
-                duration, replication)
+                duration, replication, shard_duration)
 
         if default is True:
             query_string += " DEFAULT"
@@ -647,7 +657,8 @@ class InfluxDBClient(object):
         self.query(query_string, method="POST")
 
     def alter_retention_policy(self, name, database=None,
-                               duration=None, replication=None, default=None):
+                               duration=None, replication=None,
+                               default=None, shard_duration=None):
         """Modify an existing retention policy for a database.
 
         :param name: the name of the retention policy to modify
@@ -667,15 +678,26 @@ class InfluxDBClient(object):
         :type replication: int
         :param default: whether or not to set the modified policy as default
         :type default: bool
+        :param shard_duration: the shard duration of the retention policy.
+            Durations such as 1h, 90m, 12h, 7d, and 4w, are all supported and
+            mean 1 hour, 90 minutes, 12 hours, 7 day, and 4 weeks,
+            respectively. Infinite retention is not supported. As a workaround,
+            specify a "1000w" duration to achieve an extremely long shard group
+            duration.
+            The minimum shard group duration is 1 hour.
+        :type shard_duration: str
 
         .. note:: at least one of duration, replication, or default flag
             should be set. Otherwise the operation will fail.
         """
         query_string = (
             "ALTER RETENTION POLICY {0} ON {1}"
-        ).format(quote_ident(name), quote_ident(database or self._database))
+        ).format(quote_ident(name),
+                 quote_ident(database or self._database), shard_duration)
         if duration:
             query_string += " DURATION {0}".format(duration)
+        if shard_duration:
+            query_string += " SHARD DURATION {0}".format(shard_duration)
         if replication:
             query_string += " REPLICATION {0}".format(replication)
         if default is True:

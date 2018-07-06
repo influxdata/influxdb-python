@@ -649,7 +649,7 @@ class TestInfluxDBClient(unittest.TestCase):
             self.assertEqual(
                 m.last_request.qs['q'][0],
                 'create retention policy "somename" on '
-                '"db" duration 1d replication 4 default'
+                '"db" duration 1d replication 4 shard duration 0s default'
             )
 
     def test_create_retention_policy(self):
@@ -669,7 +669,7 @@ class TestInfluxDBClient(unittest.TestCase):
             self.assertEqual(
                 m.last_request.qs['q'][0],
                 'create retention policy "somename" on '
-                '"db" duration 1d replication 4'
+                '"db" duration 1d replication 4 shard duration 0s'
             )
 
     def test_alter_retention_policy(self):
@@ -695,6 +695,14 @@ class TestInfluxDBClient(unittest.TestCase):
             self.assertEqual(
                 m.last_request.qs['q'][0],
                 'alter retention policy "somename" on "db" replication 4'
+            )
+
+            # Test alter shard duration
+            self.cli.alter_retention_policy('somename', 'db',
+                                            shard_duration='1h')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'alter retention policy "somename" on "db" shard duration 1h'
             )
 
             # Test alter default
