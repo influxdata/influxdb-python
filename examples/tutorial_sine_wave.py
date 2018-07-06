@@ -43,7 +43,7 @@ def main(host='localhost', port=8086):
     time.sleep(3)
 
     query = 'SELECT * FROM foobar'
-    print("Queying data: " + query)
+    print("Querying data: " + query)
     result = client.query(query, database=DBNAME)
     print("Result: {0}".format(result))
 
