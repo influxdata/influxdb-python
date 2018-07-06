@@ -1,27 +1,27 @@
 language: python
 
+python:
+  - "2.7"
+  - "3.5"
+  - "3.6"
+  - "pypy-5.3.1"
+  - "pypy3"
+
+env:
+  - INFLUXDB_VER=1.2.4
+  - INFLUXDB_VER=1.3.9
+  - INFLUXDB_VER=1.4.2
+  - INFLUXDB_VER=1.5.4
+
 addons:
   apt:
     packages:
     - wget
 
 matrix:
-  allow_failures:
-    - python: 3.4
-      env: TOX_ENV=docs
   include:
     - python: 2.7
-      env: TOX_ENV=py27
-    - python: 2.7
       env: TOX_ENV=pep257
-    - python: pypy-5.3.1
-      env: TOX_ENV=pypy
-    - python: 3.4
-      env: TOX_ENV=py34
-    - python: 3.5
-      env: TOX_ENV=py35
-    - python: 3.6
-      env: TOX_ENV=py36
     - python: 3.6
       env: TOX_ENV=docs
     - python: 3.6
@@ -30,17 +30,20 @@ matrix:
       env: TOX_ENV=coverage
 
 install:
-    - pip install tox
+    - pip install tox-travis
     - pip install setuptools==20.6.6
     - pip install coveralls
-    - mkdir influxdb_install
-    - wget https://dl.influxdata.com/influxdb/releases/influxdb_1.2.4_amd64.deb
-    - dpkg -x influxdb*.deb influxdb_install
+    - mkdir -p "influxdb_install/${INFLUXDB_VER}"
+    - if [ -n "${INFLUXDB_VER}" ] ; then wget "https://dl.influxdata.com/influxdb/releases/influxdb_${INFLUXDB_VER}_amd64.deb" ; fi
+    - if [ -n "${INFLUXDB_VER}" ] ; then dpkg -x influxdb*.deb "influxdb_install/${INFLUXDB_VER}" ; fi
+
 script:
-    - export INFLUXDB_PYTHON_INFLUXD_PATH=$(pwd)/influxdb_install/usr/bin/influxd
-    - tox -e $TOX_ENV
+    - export "INFLUXDB_PYTHON_INFLUXD_PATH=$(pwd)/influxdb_install/${INFLUXDB_VER}/usr/bin/influxd"
+    - if [ -n "${TOX_ENV}" ]; then tox -e "${TOX_ENV}"; else tox; fi
+
 after_success:
-    - if [ "$TOX_ENV" == "coverage" ] ; then coveralls; fi
+    - if [ "${TOX_ENV}" == "coverage" ] ; then coveralls; fi
+
 notifications:
     email: false
 
