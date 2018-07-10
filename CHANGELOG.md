@@ -6,6 +6,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 ### Added
+
+### Changed
+
+### Removed
+
+## [v5.2.0] - 2018-07-10
+### Added
 - Finally add a CHANGELOG.md to communicate breaking changes (#598)
 - Test multiple versions of InfluxDB in travis
 - Add SHARD DURATION parameter to retention policy create/alter
