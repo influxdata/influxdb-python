@@ -552,6 +552,248 @@ class TestDataFrameClient(unittest.TestCase):
             cli = DataFrameClient(database='db')
             cli.write_points(dataframe, "foo")
 
+    def test_create_database(self):
+        """Test create database for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text='{"results":[{}]}'
+            )
+            cli.create_database('new_db')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create database "new_db"'
+            )
+
+    def test_create_numeric_named_database(self):
+        """Test create db w/numeric name for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text='{"results":[{}]}'
+            )
+            cli.create_database('123')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create database "123"'
+            )
+
+    @raises(Exception)
+    def test_create_database_fails(self):
+        """Test create database fail for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        with _mocked_session(cli, 'post', 401):
+            cli.create_database('new_db')
+
+    def test_drop_database(self):
+        """Test drop database for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text='{"results":[{}]}'
+            )
+            cli.drop_database('new_db')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'drop database "new_db"'
+            )
+
+    def test_drop_measurement(self):
+        """Test drop measurement for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text='{"results":[{}]}'
+            )
+            cli.drop_measurement('new_measurement')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'drop measurement "new_measurement"'
+            )
+
+    def test_drop_numeric_named_database(self):
+        """Test drop numeric db for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text='{"results":[{}]}'
+            )
+            cli.drop_database('123')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'drop database "123"'
+            )
+
+    @raises(Exception)
+    def test_get_list_database_fails(self):
+        """Test get list of dbs fail for TestInfluxDBClient object."""
+        cli = DataFrameClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'get', 401):
+            cli.get_list_database()
+
+    def test_get_list_measurements(self):
+        """Test get list of measurements for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        data = {
+            "results": [{
+                "series": [
+                    {"name": "measurements",
+                     "columns": ["name"],
+                     "values": [["cpu"], ["disk"]
+                                ]}]}
+            ]
+        }
+
+        with _mocked_session(cli, 'get', 200, json.dumps(data)):
+            self.assertListEqual(
+                cli.get_list_measurements(),
+                [{'name': 'cpu'}, {'name': 'disk'}]
+            )
+
+    def test_create_retention_policy_default(self):
+        """Test create default ret policy for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            cli.create_retention_policy(
+                'somename', '1d', 4, default=True, database='db'
+            )
+
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create retention policy "somename" on '
+                '"db" duration 1d replication 4 shard duration 0s default'
+            )
+
+    def test_create_retention_policy(self):
+        """Test create retention policy for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            cli.create_retention_policy(
+                'somename', '1d', 4, database='db'
+            )
+
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create retention policy "somename" on '
+                '"db" duration 1d replication 4 shard duration 0s'
+            )
+
+    def test_alter_retention_policy(self):
+        """Test alter retention policy for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            # Test alter duration
+            cli.alter_retention_policy('somename', 'db',
+                                       duration='4d')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'alter retention policy "somename" on "db" duration 4d'
+            )
+            # Test alter replication
+            cli.alter_retention_policy('somename', 'db',
+                                       replication=4)
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'alter retention policy "somename" on "db" replication 4'
+            )
+
+            # Test alter shard duration
+            cli.alter_retention_policy('somename', 'db',
+                                       shard_duration='1h')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'alter retention policy "somename" on "db" shard duration 1h'
+            )
+
+            # Test alter default
+            cli.alter_retention_policy('somename', 'db',
+                                       default=True)
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'alter retention policy "somename" on "db" default'
+            )
+
+    @raises(Exception)
+    def test_alter_retention_policy_invalid(self):
+        """Test invalid alter ret policy for TestInfluxDBClient object."""
+        cli = DataFrameClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'get', 400):
+            cli.alter_retention_policy('somename', 'db')
+
+    def test_drop_retention_policy(self):
+        """Test drop retention policy for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            cli.drop_retention_policy('somename', 'db')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'drop retention policy "somename" on "db"'
+            )
+
+    @raises(Exception)
+    def test_drop_retention_policy_fails(self):
+        """Test failed drop ret policy for TestInfluxDBClient object."""
+        cli = DataFrameClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'delete', 401):
+            cli.drop_retention_policy('default', 'db')
+
+    def test_get_list_retention_policies(self):
+        """Test get retention policies for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        example_response = \
+            '{"results": [{"series": [{"values": [["fsfdsdf", "24h0m0s", 2]],'\
+            ' "columns": ["name", "duration", "replicaN"]}]}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.assertListEqual(
+                cli.get_list_retention_policies("db"),
+                [{'duration': '24h0m0s',
+                  'name': 'fsfdsdf', 'replicaN': 2}]
+            )
+
     def test_query_into_dataframe(self):
         """Test query into df for TestDataFrameClient object."""
         data = {
