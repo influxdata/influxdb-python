@@ -41,7 +41,7 @@ class TestDataFrameClient(unittest.TestCase):
                                  columns=["column_one", "column_two",
                                           "column_three"])
 
-        dataframe.replace(2, np.nan)
+        dataframe.replace('2', float("NaN"))
 
         expected = (
             b"foo column_one=\"1\",column_two=1i,column_three=1.0 0\n"
