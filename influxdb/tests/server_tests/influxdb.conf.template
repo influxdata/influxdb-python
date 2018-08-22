@@ -1,3 +1,5 @@
+bind-address = ":{global_port}"
+
 [meta]
   dir = "{meta_dir}"
   hostname = "localhost"
@@ -6,10 +8,7 @@
 [data]
   dir = "{data_dir}"
   wal-dir = "{wal_dir}"
-
-[admin]
-  enabled = true
-  bind-address = ":{admin_port}"
+  index-version = "tsi1"
 
 [http]
   enabled = true

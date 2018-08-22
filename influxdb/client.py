@@ -350,7 +350,8 @@ class InfluxDBClient(object):
               database=None,
               raise_errors=True,
               chunked=False,
-              chunk_size=0):
+              chunk_size=0,
+              method="GET"):
         """Send a query to InfluxDB.
 
         :param query: the actual query string
@@ -384,6 +385,9 @@ class InfluxDBClient(object):
         :param chunk_size: Size of each chunk to tell InfluxDB to use.
         :type chunk_size: int
 
+        :param method: the HTTP method for the request, defaults to GET
+        :type method: str
+
         :returns: the queried data
         :rtype: :class:`~.ResultSet`
         """
@@ -401,9 +405,12 @@ class InfluxDBClient(object):
             if chunk_size > 0:
                 params['chunk_size'] = chunk_size
 
+        if query.lower().startswith("select ") and " into " in query.lower():
+            method = "POST"
+
         response = self.request(
             url="query",
-            method='GET',
+            method=method,
             params=params,
             data=None,
             expected_response_code=expected_response_code
@@ -568,7 +575,8 @@ class InfluxDBClient(object):
         :param dbname: the name of the database to create
         :type dbname: str
         """
-        self.query("CREATE DATABASE {0}".format(quote_ident(dbname)))
+        self.query("CREATE DATABASE {0}".format(quote_ident(dbname)),
+                   method="POST")
 
     def drop_database(self, dbname):
         """Drop a database from InfluxDB.
@@ -576,7 +584,8 @@ class InfluxDBClient(object):
         :param dbname: the name of the database to drop
         :type dbname: str
         """
-        self.query("DROP DATABASE {0}".format(quote_ident(dbname)))
+        self.query("DROP DATABASE {0}".format(quote_ident(dbname)),
+                   method="POST")
 
     def get_list_measurements(self):
         """Get the list of measurements in InfluxDB.
@@ -602,10 +611,12 @@ class InfluxDBClient(object):
         :param measurement: the name of the measurement to drop
         :type measurement: str
         """
-        self.query("DROP MEASUREMENT {0}".format(quote_ident(measurement)))
+        self.query("DROP MEASUREMENT {0}".format(quote_ident(measurement)),
+                   method="POST")
 
     def create_retention_policy(self, name, duration, replication,
-                                database=None, default=False):
+                                database=None,
+                                default=False, shard_duration="0s"):
         """Create a retention policy for a database.
 
         :param name: the name of the new retention policy
@@ -624,21 +635,31 @@ class InfluxDBClient(object):
         :type database: str
         :param default: whether or not to set the policy as default
         :type default: bool
+        :param shard_duration: the shard duration of the retention policy.
+            Durations such as 1h, 90m, 12h, 7d, and 4w, are all supported and
+            mean 1 hour, 90 minutes, 12 hours, 7 day, and 4 weeks,
+            respectively. Infinite retention is not supported. As a workaround,
+            specify a "1000w" duration to achieve an extremely long shard group
+            duration. Defaults to "0s", which is interpreted by the database
+            to mean the default value given the duration.
+            The minimum shard group duration is 1 hour.
+        :type shard_duration: str
         """
         query_string = \
             "CREATE RETENTION POLICY {0} ON {1} " \
-            "DURATION {2} REPLICATION {3}".format(
+            "DURATION {2} REPLICATION {3} SHARD DURATION {4}".format(
                 quote_ident(name), quote_ident(database or self._database),
-                duration, replication)
+                duration, replication, shard_duration)
 
         if default is True:
             query_string += " DEFAULT"
 
-        self.query(query_string)
+        self.query(query_string, method="POST")
 
     def alter_retention_policy(self, name, database=None,
-                               duration=None, replication=None, default=None):
-        """Mofidy an existing retention policy for a database.
+                               duration=None, replication=None,
+                               default=None, shard_duration=None):
+        """Modify an existing retention policy for a database.
 
         :param name: the name of the retention policy to modify
         :type name: str
@@ -657,21 +678,32 @@ class InfluxDBClient(object):
         :type replication: int
         :param default: whether or not to set the modified policy as default
         :type default: bool
+        :param shard_duration: the shard duration of the retention policy.
+            Durations such as 1h, 90m, 12h, 7d, and 4w, are all supported and
+            mean 1 hour, 90 minutes, 12 hours, 7 day, and 4 weeks,
+            respectively. Infinite retention is not supported. As a workaround,
+            specify a "1000w" duration to achieve an extremely long shard group
+            duration.
+            The minimum shard group duration is 1 hour.
+        :type shard_duration: str
 
         .. note:: at least one of duration, replication, or default flag
             should be set. Otherwise the operation will fail.
         """
         query_string = (
             "ALTER RETENTION POLICY {0} ON {1}"
-        ).format(quote_ident(name), quote_ident(database or self._database))
+        ).format(quote_ident(name),
+                 quote_ident(database or self._database), shard_duration)
         if duration:
             query_string += " DURATION {0}".format(duration)
+        if shard_duration:
+            query_string += " SHARD DURATION {0}".format(shard_duration)
         if replication:
             query_string += " REPLICATION {0}".format(replication)
         if default is True:
             query_string += " DEFAULT"
 
-        self.query(query_string)
+        self.query(query_string, method="POST")
 
     def drop_retention_policy(self, name, database=None):
         """Drop an existing retention policy for a database.
@@ -685,7 +717,7 @@ class InfluxDBClient(object):
         query_string = (
             "DROP RETENTION POLICY {0} ON {1}"
         ).format(quote_ident(name), quote_ident(database or self._database))
-        self.query(query_string)
+        self.query(query_string, method="POST")
 
     def get_list_retention_policies(self, database=None):
         """Get the list of retention policies for a database.
@@ -751,7 +783,7 @@ class InfluxDBClient(object):
             quote_ident(username), quote_literal(password))
         if admin:
             text += ' WITH ALL PRIVILEGES'
-        self.query(text)
+        self.query(text, method="POST")
 
     def drop_user(self, username):
         """Drop a user from InfluxDB.
@@ -759,8 +791,8 @@ class InfluxDBClient(object):
         :param username: the username to drop
         :type username: str
         """
-        text = "DROP USER {0}".format(quote_ident(username))
-        self.query(text)
+        text = "DROP USER {0}".format(quote_ident(username), method="POST")
+        self.query(text, method="POST")
 
     def set_user_password(self, username, password):
         """Change the password of an existing user.
@@ -796,7 +828,7 @@ class InfluxDBClient(object):
             tag_eq_list = ["{0}={1}".format(quote_ident(k), quote_literal(v))
                            for k, v in tags.items()]
             query_str += ' WHERE ' + ' AND '.join(tag_eq_list)
-        self.query(query_str, database=database)
+        self.query(query_str, database=database, method="POST")
 
     def grant_admin_privileges(self, username):
         """Grant cluster administration privileges to a user.
@@ -808,7 +840,7 @@ class InfluxDBClient(object):
             and manage users.
         """
         text = "GRANT ALL PRIVILEGES TO {0}".format(quote_ident(username))
-        self.query(text)
+        self.query(text, method="POST")
 
     def revoke_admin_privileges(self, username):
         """Revoke cluster administration privileges from a user.
@@ -820,7 +852,7 @@ class InfluxDBClient(object):
             and manage users.
         """
         text = "REVOKE ALL PRIVILEGES FROM {0}".format(quote_ident(username))
-        self.query(text)
+        self.query(text, method="POST")
 
     def grant_privilege(self, privilege, database, username):
         """Grant a privilege on a database to a user.
@@ -836,7 +868,7 @@ class InfluxDBClient(object):
         text = "GRANT {0} ON {1} TO {2}".format(privilege,
                                                 quote_ident(database),
                                                 quote_ident(username))
-        self.query(text)
+        self.query(text, method="POST")
 
     def revoke_privilege(self, privilege, database, username):
         """Revoke a privilege on a database from a user.
@@ -852,7 +884,7 @@ class InfluxDBClient(object):
         text = "REVOKE {0} ON {1} FROM {2}".format(privilege,
                                                    quote_ident(database),
                                                    quote_ident(username))
-        self.query(text)
+        self.query(text, method="POST")
 
     def get_list_privileges(self, username):
         """Get the list of all privileges granted to given user.

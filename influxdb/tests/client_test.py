@@ -439,6 +439,29 @@ class TestInfluxDBClient(unittest.TestCase):
                 [{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]
             )
 
+    def test_select_into_post(self):
+        """Test SELECT.*INTO is POSTed."""
+        example_response = (
+            '{"results": [{"series": [{"measurement": "sdfsdfsdf", '
+            '"columns": ["time", "value"], "values": '
+            '[["2009-11-10T23:00:00Z", 0.64]]}]}, {"series": '
+            '[{"measurement": "cpu_load_short", "columns": ["time", "value"], '
+            '"values": [["2009-11-10T23:00:00Z", 0.64]]}]}]}'
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            rs = self.cli.query('select * INTO newmeas from foo')
+
+            self.assertListEqual(
+                list(rs[0].get_points()),
+                [{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]
+            )
+
     @unittest.skip('Not implemented for 0.9')
     def test_query_chunked(self):
         """Test chunked query for TestInfluxDBClient object."""
@@ -495,7 +518,7 @@ class TestInfluxDBClient(unittest.TestCase):
         """Test create database for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text='{"results":[{}]}'
             )
@@ -509,7 +532,7 @@ class TestInfluxDBClient(unittest.TestCase):
         """Test create db w/numeric name for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text='{"results":[{}]}'
             )
@@ -529,7 +552,7 @@ class TestInfluxDBClient(unittest.TestCase):
         """Test drop database for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text='{"results":[{}]}'
             )
@@ -543,7 +566,7 @@ class TestInfluxDBClient(unittest.TestCase):
         """Test drop measurement for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text='{"results":[{}]}'
             )
@@ -557,7 +580,7 @@ class TestInfluxDBClient(unittest.TestCase):
         """Test drop numeric db for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text='{"results":[{}]}'
             )
@@ -615,7 +638,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -626,7 +649,7 @@ class TestInfluxDBClient(unittest.TestCase):
             self.assertEqual(
                 m.last_request.qs['q'][0],
                 'create retention policy "somename" on '
-                '"db" duration 1d replication 4 default'
+                '"db" duration 1d replication 4 shard duration 0s default'
             )
 
     def test_create_retention_policy(self):
@@ -635,7 +658,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -646,7 +669,7 @@ class TestInfluxDBClient(unittest.TestCase):
             self.assertEqual(
                 m.last_request.qs['q'][0],
                 'create retention policy "somename" on '
-                '"db" duration 1d replication 4'
+                '"db" duration 1d replication 4 shard duration 0s'
             )
 
     def test_alter_retention_policy(self):
@@ -655,7 +678,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -672,6 +695,14 @@ class TestInfluxDBClient(unittest.TestCase):
             self.assertEqual(
                 m.last_request.qs['q'][0],
                 'alter retention policy "somename" on "db" replication 4'
+            )
+
+            # Test alter shard duration
+            self.cli.alter_retention_policy('somename', 'db',
+                                            shard_duration='1h')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'alter retention policy "somename" on "db" shard duration 1h'
             )
 
             # Test alter default
@@ -695,7 +726,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -879,7 +910,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -903,7 +934,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -927,7 +958,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -951,7 +982,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )

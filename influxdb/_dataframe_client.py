@@ -148,9 +148,10 @@ class DataFrameClient(InfluxDBClient):
               raise_errors=True,
               chunked=False,
               chunk_size=0,
+              method="GET",
               dropna=True):
         """
-        Quering data into a DataFrame.
+        Query data into a DataFrame.
 
         :param query: the actual query string
         :param params: additional parameters for the request, defaults to {}
@@ -176,6 +177,7 @@ class DataFrameClient(InfluxDBClient):
                           raise_errors=raise_errors,
                           chunked=chunked,
                           database=database,
+                          method=method,
                           chunk_size=chunk_size)
         results = super(DataFrameClient, self).query(query, **query_args)
         if query.strip().upper().startswith("SELECT"):
