@@ -12,7 +12,6 @@ import json
 import unittest
 import warnings
 import requests_mock
-import numpy as np
 
 from influxdb.tests import skipIfPYpy, using_pypy
 from nose.tools import raises
