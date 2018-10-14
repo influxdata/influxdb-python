@@ -25,14 +25,18 @@ def _convert_timestamp(timestamp, precision=None):
     if isinstance(_get_unicode(timestamp), text_type):
         timestamp = pd.Timestamp(timestamp)
 
-    if isinstance(timestamp, datetime):
+    if isinstance(timestamp, datetime): # change to pandas.Timestamp
         if not timestamp.tzinfo:
             timestamp = pd.Timestamp(timestamp, tz='UTC')
+        else:
+            timestamp = pd.Timestamp(timestamp)
 
     if isinstance(timestamp, pd._libs.tslib.Timestamp):
-        if not timestamp.tzinfo:
+        if not timestamp.tzinfo: # set to UTC for time since EPOCH
             timestamp = pd.Timestamp(timestamp, tz = 'UTC')
-     
+        else:
+            timestamp = timestamp.astimezone('UTC')
+
         ns = (timestamp - EPOCH).value
         if precision is None or precision == 'n':
             return ns
