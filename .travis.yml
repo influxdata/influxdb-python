@@ -31,7 +31,7 @@ matrix:
 
 install:
     - pip install tox-travis
-    - pip install setuptools==20.6.6
+    - pip install setuptools==30.0.0
     - pip install coveralls
     - mkdir -p "influxdb_install/${INFLUXDB_VER}"
     - if [ -n "${INFLUXDB_VER}" ] ; then wget "https://dl.influxdata.com/influxdb/releases/influxdb_${INFLUXDB_VER}_amd64.deb" ; fi
