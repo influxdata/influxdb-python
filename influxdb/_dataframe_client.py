@@ -261,7 +261,7 @@ class DataFrameClient(InfluxDBClient):
             {'measurement': measurement,
              'tags': dict(list(tag.items()) + list(tags.items())),
              'fields': rec,
-             'time': np.int64(ts.value / precision_factor)}
+             'time': np.int64(ts.value // precision_factor)}
             for ts, tag, rec in zip(dataframe.index,
                                     dataframe[tag_columns].to_dict('record'),
                                     dataframe[field_columns].to_dict('record'))
@@ -329,10 +329,10 @@ class DataFrameClient(InfluxDBClient):
 
         # Make array of timestamp ints
         if isinstance(dataframe.index, pd.PeriodIndex):
-            time = ((dataframe.index.to_timestamp().values.astype(np.int64) /
+            time = ((dataframe.index.to_timestamp().values.astype(np.int64) //
                      precision_factor).astype(np.int64).astype(str))
         else:
-            time = ((pd.to_datetime(dataframe.index).values.astype(np.int64) /
+            time = ((pd.to_datetime(dataframe.index).values.astype(np.int64) //
                      precision_factor).astype(np.int64).astype(str))
 
         # If tag columns exist, make an array of formatted tag keys and values
@@ -439,16 +439,16 @@ class DataFrameClient(InfluxDBClient):
         return dframe
 
     def _datetime_to_epoch(self, datetime, time_precision='s'):
-        seconds = (datetime - self.EPOCH).total_seconds()
+        nanoseconds = (datetime - self.EPOCH).value
         if time_precision == 'h':
-            return seconds / 3600
+            return np.int64(nanoseconds // 1e9 // 3600)
         elif time_precision == 'm':
-            return seconds / 60
+            return np.int64(nanoseconds // 1e9 // 60)
         elif time_precision == 's':
-            return seconds
+            return np.int64(nanoseconds // 1e9)
         elif time_precision == 'ms':
-            return seconds * 1e3
+            return np.int64(nanoseconds // 1e6)
         elif time_precision == 'u':
-            return seconds * 1e6
+            return np.int64(nanoseconds // 1e3)
         elif time_precision == 'n':
-            return seconds * 1e9
+            return nanoseconds

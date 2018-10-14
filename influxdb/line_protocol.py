@@ -13,7 +13,9 @@ from pytz import UTC
 from dateutil.parser import parse
 from six import iteritems, binary_type, text_type, integer_types, PY2
 
-EPOCH = UTC.localize(datetime.utcfromtimestamp(0))
+import pandas as pd # Provide for ns timestamps
+
+EPOCH = pd.Timestamp(0, tz='UTC')
 
 
 def _convert_timestamp(timestamp, precision=None):
@@ -21,25 +23,29 @@ def _convert_timestamp(timestamp, precision=None):
         return timestamp  # assume precision is correct if timestamp is int
 
     if isinstance(_get_unicode(timestamp), text_type):
-        timestamp = parse(timestamp)
+        timestamp = pd.Timestamp(timestamp)
 
     if isinstance(timestamp, datetime):
         if not timestamp.tzinfo:
-            timestamp = UTC.localize(timestamp)
+            timestamp = pd.Timestamp(timestamp, tz='UTC')
 
-        ns = (timestamp - EPOCH).total_seconds() * 1e9
+    if isinstance(timestamp, pd._libs.tslib.Timestamp):
+        if not timestamp.tzinfo:
+            timestamp = pd.Timestamp(timestamp, tz = 'UTC')
+     
+        ns = (timestamp - EPOCH).value
         if precision is None or precision == 'n':
             return ns
         elif precision == 'u':
-            return ns / 1e3
+            return ns // 1e3
         elif precision == 'ms':
-            return ns / 1e6
+            return ns // 1e6
         elif precision == 's':
-            return ns / 1e9
+            return ns // 1e9
         elif precision == 'm':
-            return ns / 1e9 / 60
+            return ns // 1e9 // 60
         elif precision == 'h':
-            return ns / 1e9 / 3600
+            return ns // 1e9 // 3600
 
     raise ValueError(timestamp)
 
