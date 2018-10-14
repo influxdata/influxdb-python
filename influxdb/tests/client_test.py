@@ -90,7 +90,7 @@ class TestInfluxDBClient(unittest.TestCase):
                     "host": "server01",
                     "region": "us-west"
                 },
-                "time": "2009-11-10T23:00:00.123456Z",
+                "time": "2009-11-10 23:10:55.123456789",
                 "fields": {
                     "value": 0.64
                 }
@@ -202,7 +202,7 @@ class TestInfluxDBClient(unittest.TestCase):
             )
             self.assertEqual(
                 'cpu_load_short,host=server01,region=us-west '
-                'value=0.64 1257894000123456000\n',
+                'value=0.64 1257894655123456789\n',
                 m.last_request.body.decode('utf-8'),
             )
 
@@ -224,7 +224,7 @@ class TestInfluxDBClient(unittest.TestCase):
             )
             self.assertEqual(
                 'cpu_load_short,host=server01,region=us-west,tag=hello '
-                'value=0.64 1257894000123456000\n',
+                'value=0.64 1257894655123456789\n',
                 m.last_request.body.decode('utf-8'),
             )
 
@@ -273,7 +273,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         self.assertEqual(
             'cpu_load_short,host=server01,region=us-west '
-            'value=0.64 1257894000123456000\n',
+            'value=0.64 1257894655123456789\n',
             received_data.decode()
         )
 
@@ -298,35 +298,35 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.write_points(self.dummy_points, time_precision='n')
             self.assertEqual(
                 b'cpu_load_short,host=server01,region=us-west '
-                b'value=0.64 1257894000123456000\n',
+                b'value=0.64 1257894655123456789\n',
                 m.last_request.body,
             )
 
             cli.write_points(self.dummy_points, time_precision='u')
             self.assertEqual(
                 b'cpu_load_short,host=server01,region=us-west '
-                b'value=0.64 1257894000123456\n',
+                b'value=0.64 1257894655123456\n',
                 m.last_request.body,
             )
 
             cli.write_points(self.dummy_points, time_precision='ms')
             self.assertEqual(
                 b'cpu_load_short,host=server01,region=us-west '
-                b'value=0.64 1257894000123\n',
+                b'value=0.64 1257894655123\n',
                 m.last_request.body,
             )
 
             cli.write_points(self.dummy_points, time_precision='s')
             self.assertEqual(
                 b"cpu_load_short,host=server01,region=us-west "
-                b"value=0.64 1257894000\n",
+                b"value=0.64 1257894655\n",
                 m.last_request.body,
             )
 
             cli.write_points(self.dummy_points, time_precision='m')
             self.assertEqual(
                 b'cpu_load_short,host=server01,region=us-west '
-                b'value=0.64 20964900\n',
+                b'value=0.64 20964910\n',
                 m.last_request.body,
             )
 
@@ -352,7 +352,7 @@ class TestInfluxDBClient(unittest.TestCase):
         received_data, addr = s.recvfrom(1024)
         self.assertEqual(
             b'cpu_load_short,host=server01,region=us-west '
-            b'value=0.64 1257894000123456000\n',
+            b'value=0.64 1257894655123456789\n',
             received_data,
         )
 
@@ -360,7 +360,7 @@ class TestInfluxDBClient(unittest.TestCase):
         received_data, addr = s.recvfrom(1024)
         self.assertEqual(
             b'cpu_load_short,host=server01,region=us-west '
-            b'value=0.64 1257894000123456\n',
+            b'value=0.64 1257894655123456\n',
             received_data,
         )
 
@@ -368,7 +368,7 @@ class TestInfluxDBClient(unittest.TestCase):
         received_data, addr = s.recvfrom(1024)
         self.assertEqual(
             b'cpu_load_short,host=server01,region=us-west '
-            b'value=0.64 1257894000123\n',
+            b'value=0.64 1257894655123\n',
             received_data,
         )
 
@@ -376,7 +376,7 @@ class TestInfluxDBClient(unittest.TestCase):
         received_data, addr = s.recvfrom(1024)
         self.assertEqual(
             b"cpu_load_short,host=server01,region=us-west "
-            b"value=0.64 1257894000\n",
+            b"value=0.64 1257894655\n",
             received_data,
         )
 
@@ -384,7 +384,7 @@ class TestInfluxDBClient(unittest.TestCase):
         received_data, addr = s.recvfrom(1024)
         self.assertEqual(
             b'cpu_load_short,host=server01,region=us-west '
-            b'value=0.64 20964900\n',
+            b'value=0.64 20964910\n',
             received_data,
         )
 

@@ -914,36 +914,36 @@ class TestDataFrameClient(unittest.TestCase):
 
     def test_datetime_to_epoch(self):
         """Test convert datetime to epoch in TestDataFrameClient object."""
-        timestamp = pd.Timestamp('2013-01-01 00:00:00.000+00:00')
+        timestamp = pd.Timestamp('2013-01-01 23:10:55.123456789+00:00')
         cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
 
         self.assertEqual(
             cli._datetime_to_epoch(timestamp),
-            1356998400.0
+            1357081855
         )
         self.assertEqual(
             cli._datetime_to_epoch(timestamp, time_precision='h'),
-            1356998400.0 / 3600
+            1357081855 // 3600
         )
         self.assertEqual(
             cli._datetime_to_epoch(timestamp, time_precision='m'),
-            1356998400.0 / 60
+            1357081855 // 60
         )
         self.assertEqual(
             cli._datetime_to_epoch(timestamp, time_precision='s'),
-            1356998400.0
+            1357081855
         )
         self.assertEqual(
             cli._datetime_to_epoch(timestamp, time_precision='ms'),
-            1356998400000.0
+            1357081855123
         )
         self.assertEqual(
             cli._datetime_to_epoch(timestamp, time_precision='u'),
-            1356998400000000.0
+            1357081855123456
         )
         self.assertEqual(
             cli._datetime_to_epoch(timestamp, time_precision='n'),
-            1356998400000000000.0
+            1357081855123456789
         )
 
     def test_dsn_constructor(self):
