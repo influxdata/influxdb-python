@@ -71,6 +71,7 @@ Main dependency is:
 Additional dependencies are:
 
 - pandas: for writing from and reading to DataFrames (http://pandas.pydata.org/)
+- pandas: for ns resolution of timepoints
 - Sphinx: Tool to create and manage the documentation (http://sphinx-doc.org/)
 - Nose: to auto-discover tests (http://nose.readthedocs.org/en/latest/)
 - Mock: to mock tests (https://pypi.python.org/pypi/mock)
