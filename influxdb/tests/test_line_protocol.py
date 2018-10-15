@@ -13,6 +13,7 @@ from pytz import UTC, timezone
 from influxdb import line_protocol
 import pandas as pd
 
+
 class TestLineProtocol(unittest.TestCase):
     """Define the LineProtocol test object."""
 
@@ -55,30 +56,31 @@ class TestLineProtocol(unittest.TestCase):
         eastern = berlin.astimezone(timezone('US/Eastern'))
         # pandas ns timestamp tests
         pddt = pd.Timestamp('2009-11-10 23:00:00.123456789')
-        pdutc = pd.Timestamp(pddt, tz = 'UTC')
+        pdutc = pd.Timestamp(pddt, tz='UTC')
         pdberlin = pdutc.astimezone('Europe/Berlin')
         pdeastern = pdberlin.astimezone('US/Eastern')
 
-        data = {  "points": [
-                {"measurement": "A", "fields": {"val": 1},
-                "time": 0},
-                #string representations
-                {"measurement": "A", "fields": {"val": 1},
-                "time": "2009-11-10T23:00:00.123456Z"},   # String version for datetime
-                {"measurement": "A", "fields": {"val": 1},
-                "time": "2009-11-10 23:00:00.123456789"},   # String version for pandas ns timestamp
-                # datetime 
-                {"measurement": "A", "fields": {"val": 1}, "time": dt},
-                {"measurement": "A", "fields": {"val": 1}, "time": utc},
-                {"measurement": "A", "fields": {"val": 1}, "time": berlin},
-                {"measurement": "A", "fields": {"val": 1}, "time": eastern},
-                # pandas timestamp
-                {"measurement": "A", "fields": {"val": 1}, "time": pddt},
-                {"measurement": "A", "fields": {"val": 1}, "time": pdutc},
-                {"measurement": "A", "fields": {"val": 1}, "time": pdberlin},
-                {"measurement": "A", "fields": {"val": 1}, "time": pdeastern},
-        ]}
-        
+        data = {"points": [
+            {"measurement": "A", "fields": {"val": 1}, "time": 0},
+            # string representations
+            # String version for datetime
+            {"measurement": "A", "fields": {"val": 1},
+             "time": "2009-11-10T23:00:00.123456Z"},
+            # String version for pandas ns timestamp
+            {"measurement": "A", "fields": {"val": 1},
+             "time": "2009-11-10 23:00:00.123456789"},
+            # datetime
+            {"measurement": "A", "fields": {"val": 1}, "time": dt},
+            {"measurement": "A", "fields": {"val": 1}, "time": utc},
+            {"measurement": "A", "fields": {"val": 1}, "time": berlin},
+            {"measurement": "A", "fields": {"val": 1}, "time": eastern},
+            # pandas timestamp
+            {"measurement": "A", "fields": {"val": 1}, "time": pddt},
+            {"measurement": "A", "fields": {"val": 1}, "time": pdutc},
+            {"measurement": "A", "fields": {"val": 1}, "time": pdberlin},
+            {"measurement": "A", "fields": {"val": 1}, "time": pdeastern},
+        ]
+        }
 
         self.assertEqual(
             line_protocol.make_lines(data),
@@ -86,12 +88,12 @@ class TestLineProtocol(unittest.TestCase):
                 'A val=1i 0',
                 'A val=1i 1257894000123456000',
                 'A val=1i 1257894000123456789',
-                #datetime results
+                # datetime results
                 'A val=1i 1257894000123456000',
                 'A val=1i 1257894000123456000',
                 'A val=1i 1257890400123456000',
                 'A val=1i 1257890400123456000',
-                #pandas ns timestamp results
+                # pandas ns timestamp results
                 'A val=1i 1257894000123456789',
                 'A val=1i 1257894000123456789',
                 'A val=1i 1257894000123456789',

@@ -9,11 +9,9 @@ from __future__ import unicode_literals
 from datetime import datetime
 from numbers import Integral
 
-from pytz import UTC
-from dateutil.parser import parse
 from six import iteritems, binary_type, text_type, integer_types, PY2
 
-import pandas as pd # Provide for ns timestamps
+import pandas as pd  # Provide for ns timestamps
 
 EPOCH = pd.Timestamp(0, tz='UTC')
 
@@ -25,15 +23,15 @@ def _convert_timestamp(timestamp, precision=None):
     if isinstance(_get_unicode(timestamp), text_type):
         timestamp = pd.Timestamp(timestamp)
 
-    if isinstance(timestamp, datetime): # change to pandas.Timestamp
+    if isinstance(timestamp, datetime):  # change to pandas.Timestamp
         if not timestamp.tzinfo:
             timestamp = pd.Timestamp(timestamp, tz='UTC')
         else:
             timestamp = pd.Timestamp(timestamp)
 
     if isinstance(timestamp, pd._libs.tslib.Timestamp):
-        if not timestamp.tzinfo: # set to UTC for time since EPOCH
-            timestamp = pd.Timestamp(timestamp, tz = 'UTC')
+        if not timestamp.tzinfo:  # set to UTC for time since EPOCH
+            timestamp = pd.Timestamp(timestamp, tz='UTC')
         else:
             timestamp = timestamp.astimezone('UTC')
 
