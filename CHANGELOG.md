@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
+- Add consistency param to InfluxDBClient.write_points (#643)
 
 ### Removed
 
