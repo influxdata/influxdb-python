@@ -61,6 +61,11 @@ class InfluxDBClient(object):
     :type proxies: dict
     :param path: path of InfluxDB on the server to connect, defaults to ''
     :type path: str
+    :param cert: Path to client certificate to use for mutual TLS
+        authentication, defaults to None
+    :type cert: str
+
+    :raises ValueError: if cert is provided but ssl is disabled (set to False)
     """
 
     def __init__(self,
@@ -78,6 +83,7 @@ class InfluxDBClient(object):
                  proxies=None,
                  pool_size=10,
                  path='',
+                 cert=None,
                  ):
         """Construct a new InfluxDBClient object."""
         self.__host = host
@@ -119,6 +125,14 @@ class InfluxDBClient(object):
             self._proxies = {}
         else:
             self._proxies = proxies
+
+        if cert:
+            if not ssl:
+                raise ValueError(
+                    "Client certificate provided but ssl is disabled."
+                )
+            else:
+                self._session.cert = cert
 
         self.__baseurl = "{0}://{1}:{2}{3}".format(
             self._scheme,
