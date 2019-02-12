@@ -818,13 +818,15 @@ class TestDataFrameClient(unittest.TestCase):
         pd1 = pd.DataFrame(
             [[23422]], columns=['value'],
             index=pd.to_datetime(["2009-11-10T23:00:00Z"]))
-        pd1.index = pd1.index.tz_localize('UTC')
+        if pd1.index.tzinfo is None:
+            pd1.index = pd1.index.tz_localize('UTC')
         pd2 = pd.DataFrame(
             [[23422], [23422], [23422]], columns=['value'],
             index=pd.to_datetime(["2009-11-10T23:00:00Z",
                                   "2009-11-10T23:00:00Z",
                                   "2009-11-10T23:00:00Z"]))
-        pd2.index = pd2.index.tz_localize('UTC')
+        if pd2.index.tzinfo is None:
+            pd2.index = pd2.index.tz_localize('UTC')
         expected = {
             ('network', (('direction', ''),)): pd1,
             ('network', (('direction', 'in'),)): pd2
@@ -871,11 +873,14 @@ class TestDataFrameClient(unittest.TestCase):
             index=pd.to_datetime([
                 "2015-01-29 21:55:43.702900257+0000",
                 "2015-01-29 21:55:43.702900257+0000",
-                "2015-06-11 20:46:02+0000"])).tz_localize('UTC')
+                "2015-06-11 20:46:02+0000"]))
+        if pd1.index.tzinfo is None:
+            pd1.index = pd1.index.tz_localize('UTC')
         pd2 = pd.DataFrame(
             [[3]], columns=['count'],
-            index=pd.to_datetime(["1970-01-01 00:00:00+00:00"]))\
-            .tz_localize('UTC')
+            index=pd.to_datetime(["1970-01-01 00:00:00+00:00"]))
+        if pd2.index.tzinfo is None:
+            pd2.index = pd2.index.tz_localize('UTC')
         expected = [{'cpu_load_short': pd1}, {'cpu_load_short': pd2}]
 
         cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
