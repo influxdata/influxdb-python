@@ -306,10 +306,10 @@ class InfluxDBClient(object):
         headers = self._headers
         headers['Content-Type'] = 'application/octet-stream'
 
-        if params:
-            precision = params.get('precision')
-        else:
-            precision = None
+        final_params = self._get_default_params()
+        final_params.update(params or {})
+
+        precision = final_params.get('precision')
 
         if protocol == 'json':
             data = make_lines(data, precision).encode('utf-8')
@@ -319,14 +319,19 @@ class InfluxDBClient(object):
             data = ('\n'.join(data) + '\n').encode('utf-8')
 
         self.request(
-            url="write",
+            url='write',
             method='POST',
-            params=params,
+            params=final_params,
             data=data,
             expected_response_code=expected_response_code,
             headers=headers
         )
         return True
+
+    def _get_default_params(self):
+        return {
+            'db': self._database,
+        }
 
     @staticmethod
     def _read_chunked_response(response, raise_errors=True):
@@ -391,25 +396,28 @@ class InfluxDBClient(object):
         :returns: the queried data
         :rtype: :class:`~.ResultSet`
         """
-        if params is None:
-            params = {}
+        final_params = self._get_default_params()
+        final_params.update(params or {})
 
-        params['q'] = query
-        params['db'] = database or self._database
+        final_params['q'] = query
+
+        if database is not None:
+            final_params['db'] = database
 
         if epoch is not None:
-            params['epoch'] = epoch
+            final_params['epoch'] = epoch
 
         if chunked:
-            params['chunked'] = 'true'
+            final_params['chunked'] = 'true'
             if chunk_size > 0:
-                params['chunk_size'] = chunk_size
+                final_params['chunk_size'] = chunk_size
 
         if query.lower().startswith("select ") and " into " in query.lower():
             method = "POST"
 
         response = self.request(
             url="query",
+
             method=method,
             params=params,
             data=None,
@@ -529,9 +537,10 @@ class InfluxDBClient(object):
         else:
             data = points
 
-        params = {
-            'db': database or self._database
-        }
+        params = self._get_default_params()
+
+        if database is not None:
+            params['db'] = database
 
         if time_precision is not None:
             params['precision'] = time_precision
