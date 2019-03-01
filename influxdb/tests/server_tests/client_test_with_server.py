@@ -721,6 +721,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         )
 
     def test_create_continuous_query(self):
+        """Test continuous query creation."""
         self.cli.create_retention_policy('some_rp', '1d', 1)
         query = 'select count("value") into "some_rp"."events" from ' \
                 '"events" group by time(10m)'
@@ -742,6 +743,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         self.assertEqual(cqs, expected_cqs)
 
     def test_drop_continuous_query(self):
+        """Test continuous query drop."""
         self.test_create_continuous_query()
         self.cli.drop_continuous_query('test_cq', 'db')
         cqs = self.cli.get_list_continuous_queries()
