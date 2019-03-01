@@ -1028,9 +1028,7 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.get_list_privileges('test')
 
     def test_get_list_continuous_queries(self):
-        """
-        Test getting a list of continuous queries by TestInfluxDBClient object.
-        """
+        """Test getting a list of continuous queries."""
         data = {
             "results": [
                 {
@@ -1079,17 +1077,12 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_get_list_continuous_queries_fails(self):
-        """
-        Test failing to get a list of continuous queries by TestInfluxDBClient
-        object.
-        """
+        """Test failing to get a list of continuous queries."""
         with _mocked_session(self.cli, 'get', 400):
             self.cli.get_list_continuous_queries()
 
     def test_create_continuous_query(self):
-        """
-        Test continuous query creation with TestInfluxDBClient object.
-        """
+        """Test continuous query creation."""
         data = {"results": [{}]}
         with requests_mock.Mocker() as m:
             m.register_uri(
@@ -1117,16 +1110,12 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_create_continuous_query_fails(self):
-        """
-        Test failing to create a continuous query by TestInfluxDBClient object.
-        """
+        """Test failing to create a continuous query."""
         with _mocked_session(self.cli, 'get', 400):
             self.cli.create_continuous_query('cq_name', 'select', 'db_name')
 
     def test_drop_continuous_query(self):
-        """
-        Test dropping a continuous query by TestInfluxDBClient object.
-        """
+        """Test dropping a continuous query."""
         data = {"results": [{}]}
         with requests_mock.Mocker() as m:
             m.register_uri(
@@ -1142,9 +1131,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_drop_continuous_query_fails(self):
-        """
-        Test failing to drop a continuous query by TestInfluxDBClient object.
-        """
+        """Test failing to drop a continuous query."""
         with _mocked_session(self.cli, 'get', 400):
             self.cli.drop_continuous_query('cq_name', 'db_name')
 
