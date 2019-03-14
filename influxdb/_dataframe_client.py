@@ -202,7 +202,8 @@ class DataFrameClient(InfluxDBClient):
             df = pd.DataFrame(data)
             df.time = pd.to_datetime(df.time)
             df.set_index('time', inplace=True)
-            df.index = df.index.tz_localize('UTC')
+            if df.index.tzinfo is None:
+                df.index = df.index.tz_localize('UTC')
             df.index.name = None
             result[key].append(df)
         for key, data in result.items():
