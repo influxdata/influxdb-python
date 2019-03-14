@@ -837,7 +837,7 @@ class TestDataFrameClient(unittest.TestCase):
                 assert_frame_equal(expected[k], result[k])
 
     def test_multiquery_into_dataframe(self):
-        """Test multiquyer into df for TestDataFrameClient object."""
+        """Test multiquery into df for TestDataFrameClient object."""
         data = {
             "results": [
                 {
