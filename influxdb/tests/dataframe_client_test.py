@@ -13,7 +13,7 @@ import unittest
 import warnings
 import requests_mock
 
-from influxdb.tests import skipIfPYpy, using_pypy
+from influxdb.tests import skip_if_pypy, using_pypy
 from nose.tools import raises
 
 from .client_test import _mocked_session
@@ -24,7 +24,7 @@ if not using_pypy:
     from influxdb import DataFrameClient
 
 
-@skipIfPYpy
+@skip_if_pypy
 class TestDataFrameClient(unittest.TestCase):
     """Set up a test DataFrameClient object."""
 
