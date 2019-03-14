@@ -23,7 +23,7 @@ import warnings
 from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError
 
-from influxdb.tests import skipIfPYpy, using_pypy, skipServerTests
+from influxdb.tests import skip_if_pypy, using_pypy, skip_server_tests
 from influxdb.tests.server_tests.base import ManyTestCasesWithServerMixin
 from influxdb.tests.server_tests.base import SingleTestCaseWithServerMixin
 
@@ -82,7 +82,7 @@ dummy_points = [  # some dummy points
 ]
 
 if not using_pypy:
-    dummy_pointDF = {
+    dummy_point_df = {
         "measurement": "cpu_load_short",
         "tags": {"host": "server01",
                  "region": "us-west"},
@@ -90,7 +90,7 @@ if not using_pypy:
             [[0.64]], columns=['value'],
             index=pd.to_datetime(["2009-11-10T23:00:00Z"]))
     }
-    dummy_pointsDF = [{
+    dummy_points_df = [{
         "measurement": "cpu_load_short",
         "tags": {"host": "server01", "region": "us-west"},
         "dataframe": pd.DataFrame(
@@ -120,7 +120,7 @@ dummy_point_without_timestamp = [
 ]
 
 
-@skipServerTests
+@skip_server_tests
 class SimpleTests(SingleTestCaseWithServerMixin, unittest.TestCase):
     """Define the class of simple tests."""
 
@@ -267,7 +267,7 @@ class SimpleTests(SingleTestCaseWithServerMixin, unittest.TestCase):
             InfluxDBClient('host', '80/redir', 'username', 'password')
 
 
-@skipServerTests
+@skip_server_tests
 class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
     """Define a class to handle common tests for the server."""
 
@@ -293,15 +293,15 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         """Test writing points to the server."""
         self.assertIs(True, self.cli.write_points(dummy_point))
 
-    @skipIfPYpy
+    @skip_if_pypy
     def test_write_points_DF(self):
         """Test writing points with dataframe."""
         self.assertIs(
             True,
             self.cliDF.write_points(
-                dummy_pointDF['dataframe'],
-                dummy_pointDF['measurement'],
-                dummy_pointDF['tags']
+                dummy_point_df['dataframe'],
+                dummy_point_df['measurement'],
+                dummy_point_df['tags']
             )
         )
 
@@ -342,7 +342,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         rsp = self.cliDF.query('SELECT * FROM cpu_load_short')
         assert_frame_equal(
             rsp['cpu_load_short'],
-            dummy_pointDF['dataframe']
+            dummy_point_df['dataframe']
         )
 
         # Query with Tags
@@ -351,7 +351,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         assert_frame_equal(
             rsp[('cpu_load_short',
                  (('host', 'server01'), ('region', 'us-west')))],
-            dummy_pointDF['dataframe']
+            dummy_point_df['dataframe']
         )
 
     def test_write_multiple_points_different_series(self):
@@ -407,21 +407,21 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         for i in range(2):
             self.assertIs(
                 True, self.cliDF.write_points(
-                    dummy_pointsDF[i]['dataframe'],
-                    dummy_pointsDF[i]['measurement'],
-                    dummy_pointsDF[i]['tags']))
+                    dummy_points_df[i]['dataframe'],
+                    dummy_points_df[i]['measurement'],
+                    dummy_points_df[i]['tags']))
         time.sleep(1)
         rsp = self.cliDF.query('SELECT * FROM cpu_load_short')
 
         assert_frame_equal(
             rsp['cpu_load_short'],
-            dummy_pointsDF[0]['dataframe']
+            dummy_points_df[0]['dataframe']
         )
 
         rsp = self.cliDF.query('SELECT * FROM memory')
         assert_frame_equal(
             rsp['memory'],
-            dummy_pointsDF[1]['dataframe']
+            dummy_points_df[1]['dataframe']
         )
 
     def test_write_points_batch(self):
@@ -786,7 +786,7 @@ GROUP BY tag_1').get_points())
         self.cli.write_points(pts)
 
 
-@skipServerTests
+@skip_server_tests
 class UdpTests(ManyTestCasesWithServerMixin, unittest.TestCase):
     """Define a class to test UDP series."""
 
