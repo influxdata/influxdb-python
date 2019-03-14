@@ -9,9 +9,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
-- Fix 'TypeError: Already tz-aware' introduced with recent versions of Panda (#671, #676, thx @f4bsch @clslgrnc)
 
 ### Removed
+
+## [v5.2.2] - 2019-03-14
+### Added
+
+### Changed
+- Fix 'TypeError: Already tz-aware' introduced with recent versions of Panda (#671, #676, thx @f4bsch @clslgrnc)
 
 ## [v5.2.1] - 2018-12-07
 ### Added
