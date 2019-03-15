@@ -23,7 +23,7 @@ addons:
 
 matrix:
   include:
-    - python: 2.7
+    - python: 3.6
       env: TOX_ENV=pep257
     - python: 3.6
       env: TOX_ENV=docs
