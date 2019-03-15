@@ -4,6 +4,9 @@ python:
   - "2.7"
   - "3.5"
   - "3.6"
+  - "3.7"
+    dist: xenial
+    sudo: true
   - "pypy"
   - "pypy3"
 
@@ -30,9 +33,6 @@ matrix:
       env: TOX_ENV=flake8
     - python: 3.6
       env: TOX_ENV=coverage
-    - python: 3.7
-      dist: xenial
-      sudo: true
 
 install:
     - pip install tox-travis
@@ -53,7 +53,6 @@ notifications:
     email: false
 
 sudo: false
-
 # Travis caching
 cache: false
 #  directories:
