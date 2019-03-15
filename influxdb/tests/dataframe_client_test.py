@@ -12,7 +12,6 @@ import json
 import unittest
 import warnings
 import requests_mock
-import numpy
 
 from influxdb.tests import skip_if_pypy, using_pypy
 from nose.tools import raises
@@ -23,6 +22,7 @@ if not using_pypy:
     import pandas as pd
     from pandas.util.testing import assert_frame_equal
     from influxdb import DataFrameClient
+    import numpy
 
 
 @skip_if_pypy
@@ -405,7 +405,7 @@ class TestDataFrameClient(unittest.TestCase):
         else:
             expected_default_precision = (
                 b'foo,hello=there 0=\"1\",1=1i,2=1.1111111111111 0\n'
-                b'foo,hello=there 0=\"2\",1=2i,2=2.2222222222222 3600000000000\n'
+                b'foo,hello=there 0=\"2\",1=2i,2=2.2222222222222 3600000000000\n'  # noqa E501 line too long
             )
 
         expected_specified_precision = (
