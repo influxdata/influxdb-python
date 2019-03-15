@@ -12,6 +12,7 @@ import json
 import unittest
 import warnings
 import requests_mock
+import numpy
 
 from influxdb.tests import skip_if_pypy, using_pypy
 from nose.tools import raises
@@ -396,10 +397,16 @@ class TestDataFrameClient(unittest.TestCase):
                                        ["2", 2, 2.2222222222222]],
                                  index=[now, now + timedelta(hours=1)])
 
-        expected_default_precision = (
-            b'foo,hello=there 0=\"1\",1=1i,2=1.11111111111 0\n'
-            b'foo,hello=there 0=\"2\",1=2i,2=2.22222222222 3600000000000\n'
-        )
+        if tuple(map(int, numpy.version.version.split('.'))) <= (1, 13, 3):
+            expected_default_precision = (
+                b'foo,hello=there 0=\"1\",1=1i,2=1.11111111111 0\n'
+                b'foo,hello=there 0=\"2\",1=2i,2=2.22222222222 3600000000000\n'
+            )
+        else:
+            expected_default_precision = (
+                b'foo,hello=there 0=\"1\",1=1i,2=1.1111111111111 0\n'
+                b'foo,hello=there 0=\"2\",1=2i,2=2.2222222222222 3600000000000\n'
+            )
 
         expected_specified_precision = (
             b'foo,hello=there 0=\"1\",1=1i,2=1.1111 0\n'
@@ -418,6 +425,9 @@ class TestDataFrameClient(unittest.TestCase):
 
             cli = DataFrameClient(database='db')
             cli.write_points(dataframe, "foo", {"hello": "there"})
+
+            print(expected_default_precision)
+            print(m.last_request.body)
 
             self.assertEqual(m.last_request.body, expected_default_precision)
 
