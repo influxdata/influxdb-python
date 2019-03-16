@@ -397,7 +397,7 @@ class TestDataFrameClient(unittest.TestCase):
                                        ["2", 2, 2.2222222222222]],
                                  index=[now, now + timedelta(hours=1)])
 
-        if tuple(map(int, numpy.version.version.split('.'))) <= (1, 13, 3):
+        if numpy.lib.NumpyVersion(numpy.__version__) <= '1.13.3':
             expected_default_precision = (
                 b'foo,hello=there 0=\"1\",1=1i,2=1.11111111111 0\n'
                 b'foo,hello=there 0=\"2\",1=2i,2=2.22222222222 3600000000000\n'
