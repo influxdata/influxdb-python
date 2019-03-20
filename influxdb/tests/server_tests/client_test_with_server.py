@@ -440,7 +440,9 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
                               batch_size=2)
         time.sleep(5)
         net_in = self.cli.query("SELECT value FROM network "
-                                "WHERE direction='in'").raw
+                                "WHERE direction=$dir",
+                                bind_params={'dir': 'in'}
+                                ).raw
         net_out = self.cli.query("SELECT value FROM network "
                                  "WHERE direction='out'").raw
         cpu = self.cli.query("SELECT value FROM cpu_usage").raw

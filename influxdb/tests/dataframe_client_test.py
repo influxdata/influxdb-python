@@ -923,10 +923,11 @@ class TestDataFrameClient(unittest.TestCase):
         expected = [{'cpu_load_short': pd1}, {'cpu_load_short': pd2}]
 
         cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
-        iql = "SELECT value FROM cpu_load_short WHERE region='us-west';"\
-            "SELECT count(value) FROM cpu_load_short WHERE region='us-west'"
+        iql = "SELECT value FROM cpu_load_short WHERE region=$region;"\
+            "SELECT count(value) FROM cpu_load_short WHERE region=$region"
+        bind_params = {'region': 'us-west'}
         with _mocked_session(cli, 'GET', 200, data):
-            result = cli.query(iql)
+            result = cli.query(iql, bind_params=bind_params)
             for r, e in zip(result, expected):
                 for k in e:
                     assert_frame_equal(e[k], r[k])

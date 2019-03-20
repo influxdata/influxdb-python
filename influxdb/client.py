@@ -345,6 +345,7 @@ class InfluxDBClient(object):
     def query(self,
               query,
               params=None,
+              bind_params=None,
               epoch=None,
               expected_response_code=200,
               database=None,
@@ -354,12 +355,24 @@ class InfluxDBClient(object):
               method="GET"):
         """Send a query to InfluxDB.
 
+        .. danger::
+            In order to avoid injection vulnerabilities (similar to `SQL
+            injection <https://www.owasp.org/index.php/SQL_Injection>`_
+            vulnerabilities), do not directly include untrusted data into the
+            ``query`` parameter, use ``bind_params`` instead.
+
         :param query: the actual query string
         :type query: str
 
         :param params: additional parameters for the request,
             defaults to {}
         :type params: dict
+
+        :param bind_params: bind parameters for the query:
+            any variable in the query written as ``'$var_name'`` will be
+            replaced with ``bind_params['var_name']``. Only works in the
+            ``WHERE`` clause and takes precedence over ``params['params']``
+        :type bind_params: dict
 
         :param epoch: response timestamps to be in epoch format either 'h',
             'm', 's', 'ms', 'u', or 'ns',defaults to `None` which is
@@ -393,6 +406,11 @@ class InfluxDBClient(object):
         """
         if params is None:
             params = {}
+
+        if bind_params is not None:
+            params_dict = json.loads(params.get('params', '{}'))
+            params_dict.update(bind_params)
+            params['params'] = json.dumps(params_dict)
 
         params['q'] = query
         params['db'] = database or self._database
