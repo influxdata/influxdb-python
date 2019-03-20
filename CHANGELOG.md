@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
+- query() now accepts a bind_params argument for parameter binding (#678 thx @clslgrnc)
 
 ### Changed
 - Update test suite to add support for Python 3.7 and InfluxDB v1.6.4 and 1.7.4 (#692 thx @clslgrnc)
