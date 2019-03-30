@@ -358,17 +358,11 @@ class DataFrameClient(InfluxDBClient):
                     tag_columns.append(tag)
 
             tag_df = dataframe[tag_columns]
-            tag_df = tag_df.fillna('')  # replace NA with empty string
-            tag_df = tag_df.sort_index(axis=1)
-            tag_df = self._stringify_dataframe(
-                tag_df, numeric_precision, datatype='tag')
-
-            # join prepended tags, leaving None values out
-            tags = tag_df.apply(
-                lambda s: [',' + s.name + '=' + v if v else '' for v in s])
-            tags = tags.sum(axis=1)
-
-            del tag_df
+            # Keep the positions where Null values are found
+            mask_null = tag_df.isnull().values
+            tag_df = self._stringify_dataframe(tag_df, numeric_precision, datatype='tag')
+            tags = self._lineify_string_df(tag_df,mask_null)
+            del tag_df, mask_null
         elif global_tags:
             tag_string = ''.join(
                 [",{}={}".format(k, _escape_tag(v)) if v else ''
@@ -382,22 +376,16 @@ class DataFrameClient(InfluxDBClient):
         field_df = dataframe[field_columns]
         # Keep the positions where Null values are found
         mask_null = field_df.isnull().values
-
         field_df = self._stringify_dataframe(field_df,
-                                             numeric_precision,
-                                             datatype='field')
-
-        field_df = (field_df.columns.values + '=').tolist() + field_df
-        field_df[field_df.columns[1:]] = ',' + field_df[
-            field_df.columns[1:]]
-        field_df = field_df.where(~mask_null, '')  # drop Null entries
-        fields = field_df.sum(axis=1)
-        # take out leading , where first column has a Null value
-        fields = fields.str.lstrip(",")
-        del field_df
+                                              numeric_precision,
+                                              datatype='field')
+        fields = self._lineify_string_df(field_df, mask_null)
+        del field_df, mask_null
 
         # Generate line protocol string
         measurement = _escape_tag(measurement)
+        # prepend comma to non-Null tag-rows
+        tags = ("," + tags).str.replace(r"^,$","")
         points = (measurement + tags + ' ' + fields + ' ' + time).tolist()
         return points
 
@@ -452,6 +440,22 @@ class DataFrameClient(InfluxDBClient):
         dframe.columns = dframe.columns.astype(str)
 
         return dframe
+
+
+    def _lineify_string_df(self,string_df,mask_null):
+        """accepts a dataframe of tag or field df
+           returns a Series of strings joined by
+                comma if non-Null values using
+                vector string operations"""
+        df = string_df.copy()
+        df = (df.columns.values + '=').tolist() + df
+        df[df.columns[1:]] = ',' + df[df.columns[1:]]
+        df = df.where(~mask_null, '')  # drop Null entries
+        lineified_string_series = df.sum(axis=1)
+        # take out leading comma where first column has a Null value
+        lineified_string_series = lineified_string_series.str.lstrip(",")
+        return lineified_string_series
+
 
     def _datetime_to_epoch(self, datetime, time_precision='s'):
         seconds = (datetime - self.EPOCH).total_seconds()
