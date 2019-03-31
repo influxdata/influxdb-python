@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Example for sending batch information to InfluxDB via UDP"""
+"""Example for sending batch information to InfluxDB via UDP."""
 
 """
 INFO: In order to use UDP, one should enable the UDP service from the
@@ -17,7 +17,6 @@ from influxdb import InfluxDBClient
 
 def main(host='localhost', port=8086):
     """Instantiate connection to the InfluxDB."""
-
     # NOTE: structure of the UDP packet is different than that of information
     #       sent via HTTP
     json_body = {
