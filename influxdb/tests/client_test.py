@@ -1027,6 +1027,114 @@ class TestInfluxDBClient(unittest.TestCase):
         with _mocked_session(cli, 'get', 401):
             cli.get_list_privileges('test')
 
+    def test_get_list_continuous_queries(self):
+        """Test getting a list of continuous queries."""
+        data = {
+            "results": [
+                {
+                    "statement_id": 0,
+                    "series": [
+                        {
+                            "name": "testdb01",
+                            "columns": ["name", "query"],
+                            "values": [["testname01", "testquery01"],
+                                       ["testname02", "testquery02"]]
+                        },
+                        {
+                            "name": "testdb02",
+                            "columns": ["name", "query"],
+                            "values": [["testname03", "testquery03"]]
+                        },
+                        {
+                            "name": "testdb03",
+                            "columns": ["name", "query"]
+                        }
+                    ]
+                }
+            ]
+        }
+
+        with _mocked_session(self.cli, 'get', 200, json.dumps(data)):
+            self.assertListEqual(
+                self.cli.get_list_continuous_queries(),
+                [
+                    {
+                        'testdb01': [
+                            {'name': 'testname01', 'query': 'testquery01'},
+                            {'name': 'testname02', 'query': 'testquery02'}
+                        ]
+                    },
+                    {
+                        'testdb02': [
+                            {'name': 'testname03', 'query': 'testquery03'}
+                        ]
+                    },
+                    {
+                        'testdb03': []
+                    }
+                ]
+            )
+
+    @raises(Exception)
+    def test_get_list_continuous_queries_fails(self):
+        """Test failing to get a list of continuous queries."""
+        with _mocked_session(self.cli, 'get', 400):
+            self.cli.get_list_continuous_queries()
+
+    def test_create_continuous_query(self):
+        """Test continuous query creation."""
+        data = {"results": [{}]}
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=json.dumps(data)
+            )
+            query = 'SELECT count("value") INTO "6_months"."events" FROM ' \
+                    '"events" GROUP BY time(10m)'
+            self.cli.create_continuous_query('cq_name', query, 'db_name')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create continuous query "cq_name" on "db_name" begin select '
+                'count("value") into "6_months"."events" from "events" group '
+                'by time(10m) end'
+            )
+            self.cli.create_continuous_query('cq_name', query, 'db_name',
+                                             'EVERY 10s FOR 2m')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create continuous query "cq_name" on "db_name" resample '
+                'every 10s for 2m begin select count("value") into '
+                '"6_months"."events" from "events" group by time(10m) end'
+            )
+
+    @raises(Exception)
+    def test_create_continuous_query_fails(self):
+        """Test failing to create a continuous query."""
+        with _mocked_session(self.cli, 'get', 400):
+            self.cli.create_continuous_query('cq_name', 'select', 'db_name')
+
+    def test_drop_continuous_query(self):
+        """Test dropping a continuous query."""
+        data = {"results": [{}]}
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=json.dumps(data)
+            )
+            self.cli.drop_continuous_query('cq_name', 'db_name')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'drop continuous query "cq_name" on "db_name"'
+            )
+
+    @raises(Exception)
+    def test_drop_continuous_query_fails(self):
+        """Test failing to drop a continuous query."""
+        with _mocked_session(self.cli, 'get', 400):
+            self.cli.drop_continuous_query('cq_name', 'db_name')
+
     def test_invalid_port_fails(self):
         """Test invalid port fail for TestInfluxDBClient object."""
         with self.assertRaises(ValueError):
