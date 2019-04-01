@@ -7,11 +7,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
+- Add `get_list_continuous_queries`, `drop_continuous_query`, and `create_continuous_query` management methods for
+  continuous queries (#681 thx @lukaszdudek-silvair)
+- query() now accepts a bind_params argument for parameter binding (#678 thx @clslgrnc)
 
 ### Changed
-- Add consistency param to InfluxDBClient.write_points (#643)
+- Add consistency param to InfluxDBClient.write_points (#643 thx @RonRothman)
+- Update test suite to add support for Python 3.7 and InfluxDB v1.6.4 and 1.7.4 (#692 thx @clslgrnc)
 
 ### Removed
+
+## [v5.2.2] - 2019-03-14
+### Added
+
+### Changed
+- Fix 'TypeError: Already tz-aware' introduced with recent versions of Panda (#671, #676, thx @f4bsch @clslgrnc)
 
 ## [v5.2.1] - 2018-12-07
 ### Added

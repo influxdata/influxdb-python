@@ -13,7 +13,9 @@ def main(host='localhost', port=8086):
     dbname = 'example'
     dbuser = 'smly'
     dbuser_password = 'my_secret_password'
-    query = 'select value from cpu_load_short;'
+    query = 'select Float_value from cpu_load_short;'
+    query_where = 'select Int_value from cpu_load_short where host=$host;'
+    bind_params = {'host': 'server01'}
     json_body = [
         {
             "measurement": "cpu_load_short",
@@ -47,6 +49,11 @@ def main(host='localhost', port=8086):
 
     print("Querying data: " + query)
     result = client.query(query)
+
+    print("Result: {0}".format(result))
+
+    print("Querying data: " + query_where)
+    result = client.query(query_where, bind_params=bind_params)
 
     print("Result: {0}".format(result))
 
