@@ -385,7 +385,7 @@ class DataFrameClient(InfluxDBClient):
         # Generate line protocol string
         measurement = _escape_tag(measurement)
         # prepend comma to non-Null tag-rows
-        tags = pd.Series("," + tags).str.replace(r"^,$","")
+        tags = ("," + tags).str.replace(r"^,$","")
         points = (measurement + tags + ' ' + fields + ' ' + time).tolist()
         return points
 
