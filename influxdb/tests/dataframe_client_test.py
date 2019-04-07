@@ -13,7 +13,7 @@ import unittest
 import warnings
 import requests_mock
 
-from influxdb.tests import skipIfPYpy, using_pypy
+from influxdb.tests import skip_if_pypy, using_pypy
 from nose.tools import raises
 
 from .client_test import _mocked_session
@@ -22,9 +22,10 @@ if not using_pypy:
     import pandas as pd
     from pandas.util.testing import assert_frame_equal
     from influxdb import DataFrameClient
+    import numpy
 
 
-@skipIfPYpy
+@skip_if_pypy
 class TestDataFrameClient(unittest.TestCase):
     """Set up a test DataFrameClient object."""
 
@@ -396,10 +397,16 @@ class TestDataFrameClient(unittest.TestCase):
                                        ["2", 2, 2.2222222222222]],
                                  index=[now, now + timedelta(hours=1)])
 
-        expected_default_precision = (
-            b'foo,hello=there 0=\"1\",1=1i,2=1.11111111111 0\n'
-            b'foo,hello=there 0=\"2\",1=2i,2=2.22222222222 3600000000000\n'
-        )
+        if numpy.lib.NumpyVersion(numpy.__version__) <= '1.13.3':
+            expected_default_precision = (
+                b'foo,hello=there 0=\"1\",1=1i,2=1.11111111111 0\n'
+                b'foo,hello=there 0=\"2\",1=2i,2=2.22222222222 3600000000000\n'
+            )
+        else:
+            expected_default_precision = (
+                b'foo,hello=there 0=\"1\",1=1i,2=1.1111111111111 0\n'
+                b'foo,hello=there 0=\"2\",1=2i,2=2.2222222222222 3600000000000\n'  # noqa E501 line too long
+            )
 
         expected_specified_precision = (
             b'foo,hello=there 0=\"1\",1=1i,2=1.1111 0\n'
@@ -418,6 +425,9 @@ class TestDataFrameClient(unittest.TestCase):
 
             cli = DataFrameClient(database='db')
             cli.write_points(dataframe, "foo", {"hello": "there"})
+
+            print(expected_default_precision)
+            print(m.last_request.body)
 
             self.assertEqual(m.last_request.body, expected_default_precision)
 
@@ -818,13 +828,15 @@ class TestDataFrameClient(unittest.TestCase):
         pd1 = pd.DataFrame(
             [[23422]], columns=['value'],
             index=pd.to_datetime(["2009-11-10T23:00:00Z"]))
-        pd1.index = pd1.index.tz_localize('UTC')
+        if pd1.index.tzinfo is None:
+            pd1.index = pd1.index.tz_localize('UTC')
         pd2 = pd.DataFrame(
             [[23422], [23422], [23422]], columns=['value'],
             index=pd.to_datetime(["2009-11-10T23:00:00Z",
                                   "2009-11-10T23:00:00Z",
                                   "2009-11-10T23:00:00Z"]))
-        pd2.index = pd2.index.tz_localize('UTC')
+        if pd2.index.tzinfo is None:
+            pd2.index = pd2.index.tz_localize('UTC')
         expected = {
             ('network', (('direction', ''),)): pd1,
             ('network', (('direction', 'in'),)): pd2
@@ -837,7 +849,7 @@ class TestDataFrameClient(unittest.TestCase):
                 assert_frame_equal(expected[k], result[k])
 
     def test_multiquery_into_dataframe(self):
-        """Test multiquyer into df for TestDataFrameClient object."""
+        """Test multiquery into df for TestDataFrameClient object."""
         data = {
             "results": [
                 {
@@ -871,18 +883,22 @@ class TestDataFrameClient(unittest.TestCase):
             index=pd.to_datetime([
                 "2015-01-29 21:55:43.702900257+0000",
                 "2015-01-29 21:55:43.702900257+0000",
-                "2015-06-11 20:46:02+0000"])).tz_localize('UTC')
+                "2015-06-11 20:46:02+0000"]))
+        if pd1.index.tzinfo is None:
+            pd1.index = pd1.index.tz_localize('UTC')
         pd2 = pd.DataFrame(
             [[3]], columns=['count'],
-            index=pd.to_datetime(["1970-01-01 00:00:00+00:00"]))\
-            .tz_localize('UTC')
+            index=pd.to_datetime(["1970-01-01 00:00:00+00:00"]))
+        if pd2.index.tzinfo is None:
+            pd2.index = pd2.index.tz_localize('UTC')
         expected = [{'cpu_load_short': pd1}, {'cpu_load_short': pd2}]
 
         cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
-        iql = "SELECT value FROM cpu_load_short WHERE region='us-west';"\
-            "SELECT count(value) FROM cpu_load_short WHERE region='us-west'"
+        iql = "SELECT value FROM cpu_load_short WHERE region=$region;"\
+            "SELECT count(value) FROM cpu_load_short WHERE region=$region"
+        bind_params = {'region': 'us-west'}
         with _mocked_session(cli, 'GET', 200, data):
-            result = cli.query(iql)
+            result = cli.query(iql, bind_params=bind_params)
             for r, e in zip(result, expected):
                 for k in e:
                     assert_frame_equal(e[k], r[k])

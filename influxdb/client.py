@@ -345,6 +345,7 @@ class InfluxDBClient(object):
     def query(self,
               query,
               params=None,
+              bind_params=None,
               epoch=None,
               expected_response_code=200,
               database=None,
@@ -354,12 +355,24 @@ class InfluxDBClient(object):
               method="GET"):
         """Send a query to InfluxDB.
 
+        .. danger::
+            In order to avoid injection vulnerabilities (similar to `SQL
+            injection <https://www.owasp.org/index.php/SQL_Injection>`_
+            vulnerabilities), do not directly include untrusted data into the
+            ``query`` parameter, use ``bind_params`` instead.
+
         :param query: the actual query string
         :type query: str
 
         :param params: additional parameters for the request,
             defaults to {}
         :type params: dict
+
+        :param bind_params: bind parameters for the query:
+            any variable in the query written as ``'$var_name'`` will be
+            replaced with ``bind_params['var_name']``. Only works in the
+            ``WHERE`` clause and takes precedence over ``params['params']``
+        :type bind_params: dict
 
         :param epoch: response timestamps to be in epoch format either 'h',
             'm', 's', 'ms', 'u', or 'ns',defaults to `None` which is
@@ -393,6 +406,11 @@ class InfluxDBClient(object):
         """
         if params is None:
             params = {}
+
+        if bind_params is not None:
+            params_dict = json.loads(params.get('params', '{}'))
+            params_dict.update(bind_params)
+            params['params'] = json.dumps(params_dict)
 
         params['q'] = query
         params['db'] = database or self._database
@@ -907,6 +925,98 @@ class InfluxDBClient(object):
         """
         text = "SHOW GRANTS FOR {0}".format(quote_ident(username))
         return list(self.query(text).get_points())
+
+    def get_list_continuous_queries(self):
+        """Get the list of continuous queries in InfluxDB.
+
+        :return: all CQs in InfluxDB
+        :rtype: list of dictionaries
+
+        :Example:
+
+        ::
+
+            >> cqs = client.get_list_cqs()
+            >> cqs
+            [
+                {
+                    u'db1': []
+                },
+                {
+                    u'db2': [
+                        {
+                            u'name': u'vampire',
+                            u'query': u'CREATE CONTINUOUS QUERY vampire ON '
+                                       'mydb BEGIN SELECT count(dracula) INTO '
+                                       'mydb.autogen.all_of_them FROM '
+                                       'mydb.autogen.one GROUP BY time(5m) END'
+                        }
+                    ]
+                }
+            ]
+        """
+        query_string = "SHOW CONTINUOUS QUERIES"
+        return [{sk[0]: list(p)} for sk, p in self.query(query_string).items()]
+
+    def create_continuous_query(self, name, select, database=None,
+                                resample_opts=None):
+        r"""Create a continuous query for a database.
+
+        :param name: the name of continuous query to create
+        :type name: str
+        :param select: select statement for the continuous query
+        :type select: str
+        :param database: the database for which the continuous query is
+            created. Defaults to current client's database
+        :type database: str
+        :param resample_opts: resample options
+        :type resample_opts: str
+
+        :Example:
+
+        ::
+
+            >> select_clause = 'SELECT mean("value") INTO "cpu_mean" ' \
+            ...                 'FROM "cpu" GROUP BY time(1m)'
+            >> client.create_continuous_query(
+            ...     'cpu_mean', select_clause, 'db_name', 'EVERY 10s FOR 2m'
+            ... )
+            >> client.get_list_continuous_queries()
+            [
+                {
+                    'db_name': [
+                        {
+                            'name': 'cpu_mean',
+                            'query': 'CREATE CONTINUOUS QUERY "cpu_mean" '
+                                    'ON "db_name" '
+                                    'RESAMPLE EVERY 10s FOR 2m '
+                                    'BEGIN SELECT mean("value") '
+                                    'INTO "cpu_mean" FROM "cpu" '
+                                    'GROUP BY time(1m) END'
+                        }
+                    ]
+                }
+            ]
+        """
+        query_string = (
+            "CREATE CONTINUOUS QUERY {0} ON {1}{2} BEGIN {3} END"
+        ).format(quote_ident(name), quote_ident(database or self._database),
+                 ' RESAMPLE ' + resample_opts if resample_opts else '', select)
+        self.query(query_string)
+
+    def drop_continuous_query(self, name, database=None):
+        """Drop an existing continuous query for a database.
+
+        :param name: the name of continuous query to drop
+        :type name: str
+        :param database: the database for which the continuous query is
+            dropped. Defaults to current client's database
+        :type database: str
+        """
+        query_string = (
+            "DROP CONTINUOUS QUERY {0} ON {1}"
+        ).format(quote_ident(name), quote_ident(database or self._database))
+        self.query(query_string)
 
     def send_packet(self, packet, protocol='json', time_precision=None):
         """Send an UDP packet.
