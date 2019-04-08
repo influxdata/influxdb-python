@@ -458,7 +458,8 @@ class InfluxDBClient(object):
                      retention_policy=None,
                      tags=None,
                      batch_size=None,
-                     protocol='json'
+                     protocol='json',
+                     consistency=None
                      ):
         """Write to multiple time series names.
 
@@ -486,6 +487,9 @@ class InfluxDBClient(object):
         :type batch_size: int
         :param protocol: Protocol for writing data. Either 'line' or 'json'.
         :type protocol: str
+        :param consistency: Consistency for the points.
+            One of {'any','one','quorum','all'}.
+        :type consistency: str
         :returns: True, if the operation is successful
         :rtype: bool
 
@@ -498,14 +502,16 @@ class InfluxDBClient(object):
                                    time_precision=time_precision,
                                    database=database,
                                    retention_policy=retention_policy,
-                                   tags=tags, protocol=protocol)
+                                   tags=tags, protocol=protocol,
+                                   consistency=consistency)
             return True
 
         return self._write_points(points=points,
                                   time_precision=time_precision,
                                   database=database,
                                   retention_policy=retention_policy,
-                                  tags=tags, protocol=protocol)
+                                  tags=tags, protocol=protocol,
+                                  consistency=consistency)
 
     def ping(self):
         """Check connectivity to InfluxDB.
@@ -531,11 +537,15 @@ class InfluxDBClient(object):
                       database,
                       retention_policy,
                       tags,
-                      protocol='json'):
+                      protocol='json',
+                      consistency=None):
         if time_precision not in ['n', 'u', 'ms', 's', 'm', 'h', None]:
             raise ValueError(
                 "Invalid time precision is given. "
                 "(use 'n', 'u', 'ms', 's', 'm' or 'h')")
+
+        if consistency not in ['any', 'one', 'quorum', 'all', None]:
+            raise ValueError('Invalid consistency: {}'.format(consistency))
 
         if protocol == 'json':
             data = {
@@ -550,6 +560,9 @@ class InfluxDBClient(object):
         params = {
             'db': database or self._database
         }
+
+        if consistency is not None:
+            params['consistency'] = consistency
 
         if time_precision is not None:
             params['precision'] = time_precision
