@@ -345,6 +345,23 @@ class TestInfluxDBClient(unittest.TestCase):
                 m.last_request.body,
             )
 
+    def test_write_points_with_consistency(self):
+        """Test write points with consistency for TestInfluxDBClient object."""
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                'http://localhost:8086/write',
+                status_code=204
+            )
+
+            cli = InfluxDBClient(database='db')
+
+            cli.write_points(self.dummy_points, consistency='any')
+            self.assertEqual(
+                m.last_request.qs,
+                {'db': ['db'], 'consistency': ['any']}
+            )
+
     def test_write_points_with_precision_udp(self):
         """Test write points with precision for TestInfluxDBClient object."""
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -415,6 +432,15 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.write_points(
                 self.dummy_points,
                 time_precision='g'
+            )
+
+    def test_write_points_bad_consistency(self):
+        """Test write points w/bad consistency value."""
+        cli = InfluxDBClient()
+        with self.assertRaises(ValueError):
+            cli.write_points(
+                self.dummy_points,
+                consistency='boo'
             )
 
     @raises(Exception)
