@@ -841,7 +841,9 @@ class InfluxDBClient(object):
     def delete_series(self, database=None, measurement=None, tags=None):
         """Delete series from a database.
 
-        Series can be filtered by measurement and tags.
+        Series must be filtered by either measurement and tags.
+        This method cannot be used to delete all series, use
+        `drop_database` instead.
 
         :param database: the database from which the series should be
             deleted, defaults to client's current database
