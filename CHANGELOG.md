@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - Update test suite to add support for Python 3.7 and InfluxDB v1.6.4 and 1.7.4 (#692 thx @clslgrnc)
+- Update classifiers tuple to list in setup.py (#697 thx @Hanaasagi)
 - Update documentation for empty `delete_series` confusion
 
 ### Removed
