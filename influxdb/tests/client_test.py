@@ -338,7 +338,7 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
     def test_write_points_with_consistency(self):
-        '''Test write points with consistency for TestInfluxDBClient object.'''
+        """Test write points with consistency for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.POST,
