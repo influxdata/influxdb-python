@@ -487,7 +487,8 @@ class InfluxDBClient(object):
         :type batch_size: int
         :param protocol: Protocol for writing data. Either 'line' or 'json'.
         :type protocol: str
-        :param consistency: Consistency for the points. One of {'any','one','quorum','all'}.
+        :param consistency: Consistency for the points.
+            One of {'any','one','quorum','all'}.
         :type consistency: str
         :returns: True, if the operation is successful
         :rtype: bool
@@ -501,14 +502,16 @@ class InfluxDBClient(object):
                                    time_precision=time_precision,
                                    database=database,
                                    retention_policy=retention_policy,
-                                   tags=tags, protocol=protocol, consistency=consistency)
+                                   tags=tags, protocol=protocol,
+                                   consistency=consistency)
             return True
 
         return self._write_points(points=points,
                                   time_precision=time_precision,
                                   database=database,
                                   retention_policy=retention_policy,
-                                  tags=tags, protocol=protocol, consistency=consistency)
+                                  tags=tags, protocol=protocol,
+                                  consistency=consistency)
 
     def ping(self):
         """Check connectivity to InfluxDB.
