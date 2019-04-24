@@ -90,7 +90,7 @@ class TestInfluxDBClient(unittest.TestCase):
                     "host": "server01",
                     "region": "us-west"
                 },
-                "time": "2009-11-10 23:10:55.123456789",
+                "time": "2009-11-10 23:10:55.123456987",
                 "fields": {
                     "value": 0.64
                 }
@@ -202,7 +202,7 @@ class TestInfluxDBClient(unittest.TestCase):
             )
             self.assertEqual(
                 'cpu_load_short,host=server01,region=us-west '
-                'value=0.64 1257894655123456789\n',
+                'value=0.64 1257894655123456987\n',
                 m.last_request.body.decode('utf-8'),
             )
 
@@ -224,7 +224,7 @@ class TestInfluxDBClient(unittest.TestCase):
             )
             self.assertEqual(
                 'cpu_load_short,host=server01,region=us-west,tag=hello '
-                'value=0.64 1257894655123456789\n',
+                'value=0.64 1257894655123456987\n',
                 m.last_request.body.decode('utf-8'),
             )
 
@@ -273,7 +273,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         self.assertEqual(
             'cpu_load_short,host=server01,region=us-west '
-            'value=0.64 1257894655123456789\n',
+            'value=0.64 1257894655123456987\n',
             received_data.decode()
         )
 
@@ -298,7 +298,7 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.write_points(self.dummy_points, time_precision='n')
             self.assertEqual(
                 b'cpu_load_short,host=server01,region=us-west '
-                b'value=0.64 1257894655123456789\n',
+                b'value=0.64 1257894655123456987\n',
                 m.last_request.body,
             )
 
@@ -352,7 +352,7 @@ class TestInfluxDBClient(unittest.TestCase):
         received_data, addr = s.recvfrom(1024)
         self.assertEqual(
             b'cpu_load_short,host=server01,region=us-west '
-            b'value=0.64 1257894655123456789\n',
+            b'value=0.64 1257894655123456987\n',
             received_data,
         )
 
