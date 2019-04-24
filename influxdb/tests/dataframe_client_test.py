@@ -930,7 +930,7 @@ class TestDataFrameClient(unittest.TestCase):
 
     def test_datetime_to_epoch(self):
         """Test convert datetime to epoch in TestDataFrameClient object."""
-        timestamp = pd.Timestamp('2013-01-01 23:10:55.123456789+00:00')
+        timestamp = pd.Timestamp('2013-01-01 23:10:55.123456987+00:00')
         cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
 
         self.assertEqual(
@@ -959,7 +959,7 @@ class TestDataFrameClient(unittest.TestCase):
         )
         self.assertEqual(
             cli._datetime_to_epoch(timestamp, time_precision='n'),
-            1357081855123456789
+            1357081855123456987
         )
 
     def test_dsn_constructor(self):
