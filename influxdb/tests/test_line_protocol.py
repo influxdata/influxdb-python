@@ -68,7 +68,7 @@ class TestLineProtocol(unittest.TestCase):
              "time": "2009-11-10T23:00:00.123456Z"},
             # String version for pandas ns timestamp
             {"measurement": "A", "fields": {"val": 1},
-             "time": "2009-11-10 23:00:00.123456789"},
+             "time": "2009-11-10 23:00:00.123456987"},
             # datetime
             {"measurement": "A", "fields": {"val": 1}, "time": dt},
             {"measurement": "A", "fields": {"val": 1}, "time": utc},
@@ -87,17 +87,17 @@ class TestLineProtocol(unittest.TestCase):
             '\n'.join([
                 'A val=1i 0',
                 'A val=1i 1257894000123456000',
-                'A val=1i 1257894000123456789',
+                'A val=1i 1257894000123456987',
                 # datetime results
                 'A val=1i 1257894000123456000',
                 'A val=1i 1257894000123456000',
                 'A val=1i 1257890400123456000',
                 'A val=1i 1257890400123456000',
                 # pandas ns timestamp results
-                'A val=1i 1257894000123456789',
-                'A val=1i 1257894000123456789',
-                'A val=1i 1257894000123456789',
-                'A val=1i 1257894000123456789',
+                'A val=1i 1257894000123456987',
+                'A val=1i 1257894000123456987',
+                'A val=1i 1257894000123456987',
+                'A val=1i 1257894000123456987',
             ]) + '\n'
         )
 
