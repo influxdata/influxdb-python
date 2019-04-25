@@ -660,7 +660,7 @@ class InfluxDBClient(object):
             The minimum retention period is 1 hour.
         :type duration: str
         :param replication: the replication of the retention policy
-        :type replication: str
+        :type replication: int
         :param database: the database for which the retention policy is
             created. Defaults to current client's database
         :type database: str
