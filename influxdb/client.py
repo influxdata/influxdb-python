@@ -84,8 +84,10 @@ class InfluxDBClient(object):
     :param session: allow for the new client request to use an existing
         requests Session, defaults to None
     :type session: requests.Session
+    :param headers: headers to add to Requests, will add 'Content-Type'
+        and 'Accept' unless these are already present, defaults to {}
+    :type headers: dict
     :raises ValueError: if cert is provided but ssl is disabled (set to False)
-
     """
 
     def __init__(self,
@@ -106,6 +108,7 @@ class InfluxDBClient(object):
                  cert=None,
                  gzip=False,
                  session=None,
+                 headers=None,
                  ):
         """Construct a new InfluxDBClient object."""
         self.__host = host
@@ -166,10 +169,11 @@ class InfluxDBClient(object):
             self._port,
             self._path)
 
-        self._headers = {
-            'Content-Type': 'application/json',
-            'Accept': 'application/x-msgpack'
-        }
+        if headers is None:
+            headers = {}
+        headers.setdefault('Content-Type', 'application/json')
+        headers.setdefault('Accept', 'application/x-msgpack')
+        self._headers = headers
 
         self._gzip = gzip
 
@@ -390,7 +394,7 @@ class InfluxDBClient(object):
         :returns: True, if the write operation is successful
         :rtype: bool
         """
-        headers = self._headers
+        headers = self._headers.copy()
         headers['Content-Type'] = 'application/octet-stream'
 
         if params:
