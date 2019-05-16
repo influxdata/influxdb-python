@@ -61,8 +61,10 @@ class InfluxDBClient(object):
     :type proxies: dict
     :param path: path of InfluxDB on the server to connect, defaults to ''
     :type path: str
-    :param cert: Path to client certificate to use for mutual TLS
-        authentication, defaults to None
+    :param cert: Path to client certificate information to use for mutual TLS
+        authentication. You can specify a local cert to use
+        as a single file containing the private key and the certificate, or as
+        a tuple of both files’ paths, defaults to None
     :type cert: str
 
     :raises ValueError: if cert is provided but ssl is disabled (set to False)
