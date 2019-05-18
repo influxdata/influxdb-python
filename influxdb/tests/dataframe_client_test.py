@@ -438,7 +438,7 @@ class TestDataFrameClient(unittest.TestCase):
                 "second",
                 "third"
             ]
-            cli.write_points(dataframe[colnames], 'foo',
+            cli.write_points(dataframe.loc[:, colnames], 'foo',
                              tag_columns=[
                                  "first_tag",
                                  "second_tag",
