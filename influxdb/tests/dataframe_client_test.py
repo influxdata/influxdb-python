@@ -415,11 +415,11 @@ class TestDataFrameClient(unittest.TestCase):
             )
         )
         expected = (
-            b'foo,first_tag=one,second_tag=two,third_tag=three first=1.0,second=2.0,third=3.0,comment="All columns filled" 1514764800000000000\n'
-            b'foo,third_tag=four third=4.1,comment="First two of three empty" 1514851200000000000\n'
+            b'foo,first_tag=one,second_tag=two,third_tag=three comment="All columns filled",first=1.0,second=2.0,third=3.0 1514764800000000000\n'
+            b'foo,third_tag=four comment="First two of three empty",third=4.1 1514851200000000000\n'
             b'foo comment="All empty" 1514937600000000000\n'
-            b'foo,first_tag=eight first=8.0,comment="Last two of three empty"  1515024000000000000\n'
-            b'foo first=9.0,second=10.0,third=11.0,comment="Empty tags with values" 1515110400000000000\n'
+            b'foo,first_tag=eight comment="Last two of three empty",first=8.0 1515024000000000000\n'
+            b'foo comment="Empty tags with values",first=9.0,second=10.0,third=11.0 1515110400000000000\n'
         )
 
         with requests_mock.Mocker() as m:
