@@ -429,7 +429,16 @@ class TestDataFrameClient(unittest.TestCase):
 
             cli = DataFrameClient(database='db')
 
-            cli.write_points(dataframe, 'foo',
+            colnames = [
+                "first_tag",
+                "second_tag",
+                "third_tag",
+                "comment",
+                "first",
+                "second",
+                "third"
+            ]
+            cli.write_points(dataframe[colnames], 'foo',
                              tag_columns=[
                                  "first_tag",
                                  "second_tag",
