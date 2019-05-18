@@ -389,6 +389,56 @@ class TestDataFrameClient(unittest.TestCase):
 
             self.assertEqual(m.last_request.body, expected)
 
+    def test_write_points_from_dataframe_with_leading_none_column(self):
+        """Test write points from df in TestDataFrameClient object 
+        to check if leading None column results in invalid line protocol."""
+        dataframe = pd.DataFrame(
+            dict(
+                first=[1, None, None, 8, 9],
+                second=[2, None, None, None, 10],
+                third=[3, 4.1, None, None, 11],
+                first_tag=["one", None, None, "eight", None],
+                second_tag=["two", None, None, None, None],
+                third_tag=["three", "four", None, None, None],
+                comment=[
+                    "All columns filled",
+                    "First two of three empty",
+                    "All empty",
+                    "Last two of three empty",
+                    "Empty tags with values",
+                ]
+            ),
+            index=pd.date_range(
+                start=pd.to_datetime('2018-01-01'),
+                end=pd.to_datetime('2018-10-01'),
+                periods=5,
+            )
+        )
+        expected = (
+            b'foo,first_tag=one,second_tag=two,third_tag=three first=1.0,second=2.0,third=3.0,comment="All columns filled" 1514764800000000000\n'
+            b'foo,third_tag=four third=4.1,comment="First two of three empty" 1520661600000000000\n'
+            b'foo comment="All empty" 1526558400000000000\n'
+            b'foo,first_tag=eight first=8.0,comment="Last two of three empty" 1532455200000000000\n'
+            b'foo first=9.0,second=10.0,third=11.0,comment="Empty tags with values" 1538352000000000000\n'
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo',
+                             tag_columns=[
+                                 "first_tag",
+                                 "second_tag",
+                                 "third_tag"])
+            with open('/tmp/mylog.txt', 'w') as of:
+                print(m.last_request.body, expected, file=of)
+
+            self.assertEqual(m.last_request.body, expected)
+
     def test_write_points_from_dataframe_with_numeric_precision(self):
         """Test write points from df with numeric precision."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
