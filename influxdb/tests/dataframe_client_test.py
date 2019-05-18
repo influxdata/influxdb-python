@@ -434,9 +434,7 @@ class TestDataFrameClient(unittest.TestCase):
                                  "first_tag",
                                  "second_tag",
                                  "third_tag"])
-            with open('/tmp/mylog.txt', 'w') as of:
-                print(m.last_request.body, expected, file=of)
-
+            
             self.assertEqual(m.last_request.body, expected)
 
     def test_write_points_from_dataframe_with_numeric_precision(self):
