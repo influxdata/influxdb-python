@@ -411,6 +411,7 @@ class TestDataFrameClient(unittest.TestCase):
             index=pd.date_range(
                 start=pd.to_datetime('2018-01-01'),
                 end=pd.to_datetime('2018-10-01'),
+                freq=None,
                 periods=5,
             )
         )
