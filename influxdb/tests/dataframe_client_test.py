@@ -410,17 +410,16 @@ class TestDataFrameClient(unittest.TestCase):
             ),
             index=pd.date_range(
                 start=pd.to_datetime('2018-01-01'),
-                end=pd.to_datetime('2018-10-01'),
-                freq=None,
+                freq='1D',
                 periods=5,
             )
         )
         expected = (
             b'foo,first_tag=one,second_tag=two,third_tag=three first=1.0,second=2.0,third=3.0,comment="All columns filled" 1514764800000000000\n'
-            b'foo,third_tag=four third=4.1,comment="First two of three empty" 1520661600000000000\n'
-            b'foo comment="All empty" 1526558400000000000\n'
-            b'foo,first_tag=eight first=8.0,comment="Last two of three empty" 1532455200000000000\n'
-            b'foo first=9.0,second=10.0,third=11.0,comment="Empty tags with values" 1538352000000000000\n'
+            b'foo,third_tag=four third=4.1,comment="First two of three empty" 1514851200000000000\n'
+            b'foo comment="All empty" 1514937600000000000\n'
+            b'foo,first_tag=eight first=8.0,comment="Last two of three empty"  1515024000000000000\n'
+            b'foo first=9.0,second=10.0,third=11.0,comment="Empty tags with values" 1515110400000000000\n'
         )
 
         with requests_mock.Mocker() as m:
