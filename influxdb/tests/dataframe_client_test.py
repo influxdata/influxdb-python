@@ -390,8 +390,7 @@ class TestDataFrameClient(unittest.TestCase):
             self.assertEqual(m.last_request.body, expected)
 
     def test_write_points_from_dataframe_with_leading_none_column(self):
-        """Test write points from df in TestDataFrameClient object 
-        to check if leading None column results in invalid line protocol."""
+        """write_points detect erroneous leading comma for null first field."""
         dataframe = pd.DataFrame(
             dict(
                 first=[1, None, None, 8, 9],
@@ -415,11 +414,20 @@ class TestDataFrameClient(unittest.TestCase):
             )
         )
         expected = (
-            b'foo,first_tag=one,second_tag=two,third_tag=three comment="All columns filled",first=1.0,second=2.0,third=3.0 1514764800000000000\n'
-            b'foo,third_tag=four comment="First two of three empty",third=4.1 1514851200000000000\n'
+            b'foo,first_tag=one,second_tag=two,third_tag=three'
+            b' comment="All columns filled",first=1.0,second=2.0,third=3.0'
+            b' 1514764800000000000\n'
+            b'foo,third_tag=four'
+            b' comment="First two of three empty",third=4.1'
+            b' 1514851200000000000\n'
             b'foo comment="All empty" 1514937600000000000\n'
-            b'foo,first_tag=eight comment="Last two of three empty",first=8.0 1515024000000000000\n'
-            b'foo comment="Empty tags with values",first=9.0,second=10.0,third=11.0 1515110400000000000\n'
+            b'foo,first_tag=eight'
+            b' comment="Last two of three empty",first=8.0'
+            b' 1515024000000000000\n'
+            b'foo'
+            b' comment="Empty tags with values",first=9.0,second=10.0'
+            b',third=11.0'
+            b' 1515110400000000000\n'
         )
 
         with requests_mock.Mocker() as m:
@@ -443,7 +451,7 @@ class TestDataFrameClient(unittest.TestCase):
                                  "first_tag",
                                  "second_tag",
                                  "third_tag"])
-            
+
             self.assertEqual(m.last_request.body, expected)
 
     def test_write_points_from_dataframe_with_numeric_precision(self):
