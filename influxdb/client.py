@@ -29,6 +29,9 @@ class InfluxDBClient(object):
     connect to InfluxDB. Requests can be made to InfluxDB directly through
     the client.
 
+    The client supports the use as a `context manager
+    <https://docs.python.org/3/reference/datamodel.html#context-managers>`_.
+
     :param host: hostname to connect to InfluxDB, defaults to 'localhost'
     :type host: str
     :param port: port to connect to InfluxDB, defaults to 8086
@@ -61,6 +64,7 @@ class InfluxDBClient(object):
     :type proxies: dict
     :param path: path of InfluxDB on the server to connect, defaults to ''
     :type path: str
+
     """
 
     def __init__(self,
@@ -1054,6 +1058,14 @@ class InfluxDBClient(object):
         """Close http session."""
         if isinstance(self._session, requests.Session):
             self._session.close()
+
+    def __enter__(self):
+        """For use as context manager"""
+        pass
+
+    def __exit__(self, _exc_type, _exc_value, _traceback):
+        """For use as context manager"""
+        self.close()
 
 
 def _parse_dsn(dsn):
