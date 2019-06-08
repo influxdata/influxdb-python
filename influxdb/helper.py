@@ -41,6 +41,8 @@ class SeriesHelper(object):
                 # Only applicable if autocommit is True.
                 autocommit = True
                 # If True and no bulk_size, then will set bulk_size to 1.
+                # Specify the retention policy for the data points
+                retention_policy = 'your_retention_policy'
 
     """
 
