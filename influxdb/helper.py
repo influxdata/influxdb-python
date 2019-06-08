@@ -72,6 +72,8 @@ class SeriesHelper(object):
 
             cls._autocommit = getattr(_meta, 'autocommit', False)
 
+            cls._retention_policy = getattr(_meta, 'retention_policy', None)
+
             cls._client = getattr(_meta, 'client', None)
             if cls._autocommit and not cls._client:
                 raise AttributeError(
@@ -143,7 +145,7 @@ class SeriesHelper(object):
         """
         if not client:
             client = cls._client
-        rtn = client.write_points(cls._json_body_())
+        rtn = client.write_points(cls._json_body_(), retention_policy=cls._retention_policy)
         cls._reset_()
         return rtn
 
