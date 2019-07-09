@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 import time
 import random
 
+import gzip
 import json
 import socket
 import requests
@@ -61,6 +62,8 @@ class InfluxDBClient(object):
     :type proxies: dict
     :param path: path of InfluxDB on the server to connect, defaults to ''
     :type path: str
+    :parm gzip: use gzip content encoding to compress requests
+    :type gzip: bool
     """
 
     def __init__(self,
@@ -78,6 +81,7 @@ class InfluxDBClient(object):
                  proxies=None,
                  pool_size=10,
                  path='',
+                 gzip=False,
                  ):
         """Construct a new InfluxDBClient object."""
         self.__host = host
@@ -130,6 +134,8 @@ class InfluxDBClient(object):
             'Content-Type': 'application/json',
             'Accept': 'text/plain'
         }
+
+        self._gzip = gzip
 
     @property
     def _baseurl(self):
@@ -249,6 +255,13 @@ class InfluxDBClient(object):
 
         if isinstance(data, (dict, list)):
             data = json.dumps(data)
+
+        if self._gzip and (data is not None):
+            # NOTE: zlib only supports method=DEFLATED, we need GZIP
+            headers.update({
+                'Content-Encoding': 'gzip',
+                })
+            data = gzip.compress(data)
 
         # Try to send the request more than once by default (see #103)
         retry = True

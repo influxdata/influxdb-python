@@ -206,6 +206,50 @@ class TestInfluxDBClient(unittest.TestCase):
                 m.last_request.body.decode('utf-8'),
             )
 
+    def test_write_gzip(self):
+        """Test write in TestInfluxDBClient object."""
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/write",
+                status_code=204
+            )
+            cli = InfluxDBClient(database='db', gzip=True)
+            cli.write(
+                {"database": "mydb",
+                 "retentionPolicy": "mypolicy",
+                 "points": [{"measurement": "cpu_load_short",
+                             "tags": {"host": "server01",
+                                      "region": "us-west"},
+                             "time": "2009-11-10T23:00:00Z",
+                             "fields": {"value": 0.64}}]}
+            )
+
+            self.assertEqual(
+                m.last_request.body,
+                b"cpu_load_short,host=server01,region=us-west "
+                b"value=0.64 1257894000000000000\n",
+            )
+
+    def test_write_points_gzip(self):
+        """Test write points for TestInfluxDBClient object."""
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/write",
+                status_code=204
+            )
+
+            cli = InfluxDBClient(database='db', gzip=True)
+            cli.write_points(
+                self.dummy_points,
+            )
+            self.assertEqual(
+                'cpu_load_short,host=server01,region=us-west '
+                'value=0.64 1257894000123456000\n',
+                m.last_request.body.decode('utf-8'),
+            )
+
     def test_write_points_toplevel_attributes(self):
         """Test write points attrs for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
