@@ -256,12 +256,15 @@ class InfluxDBClient(object):
         if isinstance(data, (dict, list)):
             data = json.dumps(data)
 
-        if self._gzip and (data is not None):
-            # NOTE: zlib only supports method=DEFLATED, we need GZIP
+        if self._gzip:
+            # Allow us to receive gzip'd data (requests will decompress)
             headers.update({
+                'Accept-Encoding': 'gzip',
                 'Content-Encoding': 'gzip',
-                })
-            data = gzip.compress(data)
+            })
+            if data is not None:
+                # NOTE: zlib only supports method=DEFLATED, we need method=GZIP
+                data = gzip.compress(data)
 
         # Try to send the request more than once by default (see #103)
         retry = True
