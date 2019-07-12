@@ -281,12 +281,14 @@ class InfluxDBClient(object):
                 if not retry:
                     raise
 
-        content_type = response.headers and response.headers.get("Content-Type")
-        if content_type == "application/x-msgpack" and response.content:
+        type_header = response.headers and response.headers.get("Content-Type")
+        if type_header == "application/x-msgpack" and response.content:
             response._msgpack = msgpack.unpackb(
                 packed=response.content,
                 ext_hook=_msgpack_parse_hook,
                 raw=False)
+        else:
+            response._msgpack = None
 
         def reformat_error(response):
             if response._msgpack:
@@ -452,7 +454,7 @@ class InfluxDBClient(object):
             expected_response_code=expected_response_code
         )
 
-        data = getattr(response, '_msgpack', None)
+        data = response._msgpack
         if not data:
             if chunked:
                 return self._read_chunked_response(response)
