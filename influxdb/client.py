@@ -6,13 +6,13 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import time
-import random
-
-import json
-import struct
 import datetime
+import json
+import random
 import socket
+import struct
+import time
+
 import msgpack
 import requests
 import requests.exceptions
@@ -281,10 +281,16 @@ class InfluxDBClient(object):
                 if not retry:
                     raise
 
+        content_type = response.headers and response.headers.get("Content-Type")
+        if content_type == "application/x-msgpack" and response.content:
+            response._msgpack = msgpack.unpackb(
+                packed=response.content,
+                ext_hook=_msgpack_parse_hook,
+                raw=False)
+
         def reformat_error(response):
-            err = self._parse_msgpack(response)
-            if err:
-                return json.dumps(err, separators=(',', ':'))
+            if response._msgpack:
+                return json.dumps(response._msgpack, separators=(',', ':'))
             else:
                 return response.content
 
@@ -353,21 +359,6 @@ class InfluxDBClient(object):
                         result_set.setdefault(
                             _key, []).extend(result[_key])
         return ResultSet(result_set, raise_errors=raise_errors)
-
-    @staticmethod
-    def _parse_msgpack(response):
-        """Return the decoded response if it is encoded as msgpack."""
-        def hook(code, data):
-            if code == 5:
-                (epoch_s, epoch_ns) = struct.unpack(">QI", data)
-                time = datetime.datetime.utcfromtimestamp(epoch_s)
-                time += datetime.timedelta(microseconds=(epoch_ns / 1000))
-                return time.isoformat() + 'Z'
-            return msgpack.ExtType(code, data)
-
-        headers = response.headers
-        if headers and headers["Content-Type"] == "application/x-msgpack":
-            return msgpack.unpackb(response.content, ext_hook=hook, raw=False)
 
     def query(self,
               query,
@@ -461,7 +452,7 @@ class InfluxDBClient(object):
             expected_response_code=expected_response_code
         )
 
-        data = self._parse_msgpack(response)
+        data = getattr(response, '_msgpack', None)
         if not data:
             if chunked:
                 return self._read_chunked_response(response)
@@ -1131,3 +1122,12 @@ def _parse_netloc(netloc):
             'password': info.password or None,
             'host': info.hostname or 'localhost',
             'port': info.port or 8086}
+
+
+def _msgpack_parse_hook(code, data):
+    if code == 5:
+        (epoch_s, epoch_ns) = struct.unpack(">QI", data)
+        timestamp = datetime.datetime.utcfromtimestamp(epoch_s)
+        timestamp += datetime.timedelta(microseconds=(epoch_ns / 1000))
+        return timestamp.isoformat() + 'Z'
+    return msgpack.ExtType(code, data)
