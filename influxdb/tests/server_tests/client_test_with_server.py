@@ -26,6 +26,8 @@ from influxdb.exceptions import InfluxDBClientError
 from influxdb.tests import skip_if_pypy, using_pypy, skip_server_tests
 from influxdb.tests.server_tests.base import ManyTestCasesWithServerMixin
 from influxdb.tests.server_tests.base import SingleTestCaseWithServerMixin
+from influxdb.tests.server_tests.base import ManyTestCasesWithServerGzipMixin
+from influxdb.tests.server_tests.base import SingleTestCaseWithServerGzipMixin
 
 # By default, raise exceptions on warnings
 warnings.simplefilter('error', FutureWarning)
@@ -855,3 +857,23 @@ class UdpTests(ManyTestCasesWithServerMixin, unittest.TestCase):
             ],
             list(rsp['cpu_load_short'])
         )
+
+
+# Run the tests again, but with gzip enabled this time
+@skip_server_tests
+class GzipSimpleTests(SimpleTests, SingleTestCaseWithServerGzipMixin):
+    """Repeat the simple tests with InfluxDBClient where gzip=True."""
+    pass
+
+
+@skip_server_tests
+class GzipCommonTests(CommonTests, ManyTestCasesWithServerGzipMixin):
+    """Repeat the common tests with InfluxDBClient where gzip=True."""
+    pass
+
+
+@skip_server_tests
+class GzipUdpTests(UdpTests, ManyTestCasesWithServerGzipMixin):
+    """Repeat the UDP tests with InfluxDBClient where gzip=True."""
+    """Define a class to test UDP series."""
+    pass

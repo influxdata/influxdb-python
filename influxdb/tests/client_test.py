@@ -24,6 +24,7 @@ import socket
 import unittest
 import warnings
 
+import gzip
 import json
 import mock
 import requests
@@ -227,8 +228,10 @@ class TestInfluxDBClient(unittest.TestCase):
 
             self.assertEqual(
                 m.last_request.body,
-                b"cpu_load_short,host=server01,region=us-west "
-                b"value=0.64 1257894000000000000\n",
+                gzip.compress(
+                    b"cpu_load_short,host=server01,region=us-west "
+                    b"value=0.64 1257894000000000000\n"
+                ),
             )
 
     def test_write_points_gzip(self):
@@ -245,9 +248,11 @@ class TestInfluxDBClient(unittest.TestCase):
                 self.dummy_points,
             )
             self.assertEqual(
-                'cpu_load_short,host=server01,region=us-west '
-                'value=0.64 1257894000123456000\n',
-                m.last_request.body.decode('utf-8'),
+                m.last_request.body,
+                gzip.compress(
+                    b'cpu_load_short,host=server01,region=us-west '
+                    b'value=0.64 1257894000123456000\n'
+                ),
             )
 
     def test_write_points_toplevel_attributes(self):
