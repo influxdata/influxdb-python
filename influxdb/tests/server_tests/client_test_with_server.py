@@ -863,12 +863,14 @@ class UdpTests(ManyTestCasesWithServerMixin, unittest.TestCase):
 @skip_server_tests
 class GzipSimpleTests(SimpleTests, SingleTestCaseWithServerGzipMixin):
     """Repeat the simple tests with InfluxDBClient where gzip=True."""
+
     pass
 
 
 @skip_server_tests
 class GzipCommonTests(CommonTests, ManyTestCasesWithServerGzipMixin):
     """Repeat the common tests with InfluxDBClient where gzip=True."""
+
     pass
 
 
@@ -876,4 +878,5 @@ class GzipCommonTests(CommonTests, ManyTestCasesWithServerGzipMixin):
 class GzipUdpTests(UdpTests, ManyTestCasesWithServerGzipMixin):
     """Repeat the UDP tests with InfluxDBClient where gzip=True."""
     """Define a class to test UDP series."""
+    
     pass

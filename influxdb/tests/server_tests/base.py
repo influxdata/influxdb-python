@@ -99,6 +99,7 @@ class SingleTestCaseWithServerGzipMixin(object):
     Same as the SingleTestCaseWithServerGzipMixin but the InfluxDBClient has
     gzip=True
     """
+
     tearDown = _teardown_influxdb_server
 
     @classmethod

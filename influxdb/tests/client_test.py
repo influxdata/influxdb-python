@@ -24,7 +24,7 @@ import socket
 import unittest
 import warnings
 
-import gzip
+import zlib
 import json
 import mock
 import requests
@@ -215,6 +215,7 @@ class TestInfluxDBClient(unittest.TestCase):
                 "http://localhost:8086/write",
                 status_code=204
             )
+
             cli = InfluxDBClient(database='db', gzip=True)
             cli.write(
                 {"database": "mydb",
@@ -226,9 +227,10 @@ class TestInfluxDBClient(unittest.TestCase):
                              "fields": {"value": 0.64}}]}
             )
 
+            gzip_compressor = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS | 16)
             self.assertEqual(
                 m.last_request.body,
-                gzip.compress(
+                gzip_compressor.compress(
                     b"cpu_load_short,host=server01,region=us-west "
                     b"value=0.64 1257894000000000000\n"
                 ),
@@ -247,9 +249,11 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.write_points(
                 self.dummy_points,
             )
+
+            gzip_compressor = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS | 16)
             self.assertEqual(
                 m.last_request.body,
-                gzip.compress(
+                gzip_compressor.compress(
                     b'cpu_load_short,host=server01,region=us-west '
                     b'value=0.64 1257894000123456000\n'
                 ),

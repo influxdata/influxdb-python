@@ -9,7 +9,7 @@ from __future__ import unicode_literals
 import time
 import random
 
-import gzip
+import zlib
 import json
 import socket
 import requests
@@ -136,6 +136,10 @@ class InfluxDBClient(object):
         }
 
         self._gzip = gzip
+        if self._gzip:
+            # Create the zlib compression object to do the compression later.
+            # We need the gzip headers which is done with "zlib.MAX_WBITS | 16"
+            self._gzip_compressor = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS | 16)
 
     @property
     def _baseurl(self):
@@ -263,8 +267,7 @@ class InfluxDBClient(object):
                 'Content-Encoding': 'gzip',
             })
             if data is not None:
-                # NOTE: zlib only supports method=DEFLATED, we need method=GZIP
-                data = gzip.compress(data)
+                data = self._gzip_compressor.compress(data)
 
         # Try to send the request more than once by default (see #103)
         retry = True
