@@ -877,6 +877,5 @@ class GzipCommonTests(CommonTests, ManyTestCasesWithServerGzipMixin):
 @skip_server_tests
 class GzipUdpTests(UdpTests, ManyTestCasesWithServerGzipMixin):
     """Repeat the UDP tests with InfluxDBClient where gzip=True."""
-    """Define a class to test UDP series."""
-    
+
     pass

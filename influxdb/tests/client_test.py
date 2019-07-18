@@ -227,7 +227,11 @@ class TestInfluxDBClient(unittest.TestCase):
                              "fields": {"value": 0.64}}]}
             )
 
-            gzip_compressor = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS | 16)
+            gzip_compressor = zlib.compressobj(
+                9,
+                zlib.DEFLATED,
+                zlib.MAX_WBITS | 16
+            )
             self.assertEqual(
                 m.last_request.body,
                 gzip_compressor.compress(
@@ -250,7 +254,11 @@ class TestInfluxDBClient(unittest.TestCase):
                 self.dummy_points,
             )
 
-            gzip_compressor = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS | 16)
+            gzip_compressor = zlib.compressobj(
+                9,
+                zlib.DEFLATED,
+                zlib.MAX_WBITS | 16
+            )
             self.assertEqual(
                 m.last_request.body,
                 gzip_compressor.compress(

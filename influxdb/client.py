@@ -139,7 +139,11 @@ class InfluxDBClient(object):
         if self._gzip:
             # Create the zlib compression object to do the compression later.
             # We need the gzip headers which is done with "zlib.MAX_WBITS | 16"
-            self._gzip_compressor = zlib.compressobj(9, zlib.DEFLATED, zlib.MAX_WBITS | 16)
+            self._gzip_compressor = zlib.compressobj(
+                9,
+                zlib.DEFLATED,
+                zlib.MAX_WBITS | 16
+            )
 
     @property
     def _baseurl(self):
