@@ -54,6 +54,8 @@ def _escape_tag(tag):
         ",", "\\,"
     ).replace(
         "=", "\\="
+    ).replace(
+        "\n", "\\n"
     )
 
 

@@ -115,6 +115,27 @@ class TestLineProtocol(unittest.TestCase):
             'test,unicode_tag=\'Привет!\' unicode_val="Привет!"\n'
         )
 
+    def test_tag_value_newline(self):
+        """Test make lines with tag value contains newline."""
+        data = {
+            "tags": {
+                "t1": "line1\nline2"
+            },
+            "points": [
+                {
+                    "measurement": "test",
+                    "fields": {
+                        "val": "hello"
+                    }
+                }
+            ]
+        }
+
+        self.assertEqual(
+            line_protocol.make_lines(data),
+            'test,t1=line1\\nline2 val="hello"\n'
+        )
+
     def test_quote_ident(self):
         """Test quote indentation in TestLineProtocol object."""
         self.assertEqual(

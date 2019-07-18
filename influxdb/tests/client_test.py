@@ -150,6 +150,14 @@ class TestInfluxDBClient(unittest.TestCase):
                                       **{'ssl': False})
         self.assertEqual('http://my.host.fr:1886', cli._baseurl)
 
+    def test_cert(self):
+        """Test mutual TLS authentication for TestInfluxDBClient object."""
+        cli = InfluxDBClient(ssl=True, cert='/etc/pki/tls/private/dummy.crt')
+        self.assertEqual(cli._session.cert, '/etc/pki/tls/private/dummy.crt')
+
+        with self.assertRaises(ValueError):
+            cli = InfluxDBClient(cert='/etc/pki/tls/private/dummy.crt')
+
     def test_switch_database(self):
         """Test switch database in TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')

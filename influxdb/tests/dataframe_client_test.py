@@ -389,6 +389,71 @@ class TestDataFrameClient(unittest.TestCase):
 
             self.assertEqual(m.last_request.body, expected)
 
+    def test_write_points_from_dataframe_with_leading_none_column(self):
+        """write_points detect erroneous leading comma for null first field."""
+        dataframe = pd.DataFrame(
+            dict(
+                first=[1, None, None, 8, 9],
+                second=[2, None, None, None, 10],
+                third=[3, 4.1, None, None, 11],
+                first_tag=["one", None, None, "eight", None],
+                second_tag=["two", None, None, None, None],
+                third_tag=["three", "four", None, None, None],
+                comment=[
+                    "All columns filled",
+                    "First two of three empty",
+                    "All empty",
+                    "Last two of three empty",
+                    "Empty tags with values",
+                ]
+            ),
+            index=pd.date_range(
+                start=pd.to_datetime('2018-01-01'),
+                freq='1D',
+                periods=5,
+            )
+        )
+        expected = (
+            b'foo,first_tag=one,second_tag=two,third_tag=three'
+            b' comment="All columns filled",first=1.0,second=2.0,third=3.0'
+            b' 1514764800000000000\n'
+            b'foo,third_tag=four'
+            b' comment="First two of three empty",third=4.1'
+            b' 1514851200000000000\n'
+            b'foo comment="All empty" 1514937600000000000\n'
+            b'foo,first_tag=eight'
+            b' comment="Last two of three empty",first=8.0'
+            b' 1515024000000000000\n'
+            b'foo'
+            b' comment="Empty tags with values",first=9.0,second=10.0'
+            b',third=11.0'
+            b' 1515110400000000000\n'
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            colnames = [
+                "first_tag",
+                "second_tag",
+                "third_tag",
+                "comment",
+                "first",
+                "second",
+                "third"
+            ]
+            cli.write_points(dataframe.loc[:, colnames], 'foo',
+                             tag_columns=[
+                                 "first_tag",
+                                 "second_tag",
+                                 "third_tag"])
+
+            self.assertEqual(m.last_request.body, expected)
+
     def test_write_points_from_dataframe_with_numeric_precision(self):
         """Test write points from df with numeric precision."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
