@@ -266,8 +266,7 @@ class TestInfluxDBClient(unittest.TestCase):
                          m.last_request.body.decode('utf-8'))
 
     def test_write_points_batch_generator(self):
-        """Test write points batch from a generator for TestInfluxDBClient object.
-        """
+        """Test write points batch from a generator for TestInfluxDBClient."""
         dummy_points = [
             {"measurement": "cpu_usage", "tags": {"unit": "percent"},
              "time": "2009-11-10T23:00:00Z", "fields": {"value": 12.34}},
