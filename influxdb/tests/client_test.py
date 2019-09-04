@@ -749,7 +749,6 @@ class TestInfluxDBClient(unittest.TestCase):
                 'default'
             )
 
-
     def test_alter_retention_policy(self):
         """Test alter retention policy for TestInfluxDBClient object."""
         example_response = '{"results":[{}]}'
