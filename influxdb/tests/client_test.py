@@ -712,7 +712,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -733,7 +733,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
