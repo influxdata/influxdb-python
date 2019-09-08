@@ -1220,16 +1220,11 @@ class TestInfluxDBClient(unittest.TestCase):
     def test_chunked_response(self):
         """Test chunked reponse for TestInfluxDBClient object."""
         example_response = \
-            u'{"results":[{"statement_id":0,"series":' \
-            '[{"name":"cpu","columns":["fieldKey","fieldType"],"values":' \
-            '[["value","integer"]]}],"partial":true}]}\n{"results":' \
-            '[{"statement_id":0,"series":[{"name":"iops","columns":' \
-            '["fieldKey","fieldType"],"values":[["value","integer"]]}],' \
-            '"partial":true}]}\n{"results":[{"statement_id":0,"series":' \
-            '[{"name":"load","columns":["fieldKey","fieldType"],"values":' \
-            '[["value","integer"]]}],"partial":true}]}\n{"results":' \
-            '[{"statement_id":0,"series":[{"name":"memory","columns":' \
-            '["fieldKey","fieldType"],"values":[["value","integer"]]}]}]}\n'
+            u'{"results":[{"statement_id":0,"series":[{"columns":["key"],' \
+            '"values":[["cpu"],["memory"],["iops"],["network"]],"partial":' \
+            'true}],"partial":true}]}\n{"results":[{"statement_id":0,' \
+            '"series":[{"columns":["key"],"values":[["qps"],["uptime"],' \
+            '["df"],["mount"]]}]}]}\n'
 
         with requests_mock.Mocker() as m:
             m.register_uri(
@@ -1237,23 +1232,20 @@ class TestInfluxDBClient(unittest.TestCase):
                 "http://localhost:8086/query",
                 text=example_response
             )
-            response = self.cli.query('show series limit 4 offset 0',
+            response = self.cli.query('show series',
                                       chunked=True, chunk_size=4)
-            self.assertTrue(len(response) == 4)
-            self.assertEqual(response.__repr__(), ResultSet(
-                {'series': [{'values': [['value', 'integer']],
-                             'name': 'cpu',
-                             'columns': ['fieldKey', 'fieldType']},
-                            {'values': [['value', 'integer']],
-                             'name': 'iops',
-                             'columns': ['fieldKey', 'fieldType']},
-                            {'values': [['value', 'integer']],
-                             'name': 'load',
-                             'columns': ['fieldKey', 'fieldType']},
-                            {'values': [['value', 'integer']],
-                             'name': 'memory',
-                             'columns': ['fieldKey', 'fieldType']}]}
-            ).__repr__())
+            res = list(response)
+            self.assertTrue(len(res) == 2)
+            self.assertEqual(res[0].__repr__(), ResultSet(
+                {'series': [{
+                    'columns': ['key'],
+                    'values': [['cpu'], ['memory'], ['iops'], ['network']]
+                }]}).__repr__())
+            self.assertEqual(res[1].__repr__(), ResultSet(
+                {'series': [{
+                    'columns': ['key'],
+                    'values': [['qps'], ['uptime'], ['df'], ['mount']]
+                }]}).__repr__())
 
 
 class FakeClient(InfluxDBClient):
