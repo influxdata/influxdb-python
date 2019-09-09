@@ -25,4 +25,4 @@ except ImportError as err:
             raise ImportError("DataFrameClient requires Pandas "
                               "which couldn't be imported: %s" % self.err)
 else:
-    from ._dataframe_client import DataFrameClient
+    from ._dataframe_client import DataFrameClient  # type: ignore
