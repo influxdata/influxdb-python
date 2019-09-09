@@ -30,7 +30,7 @@ These clients are initiated in the same way as the
     client = DataFrameClient(host='127.0.0.1', port=8086, username='root', password='root', database='dbname')
 
 
-.. note:: Only when using UDP (use_udp=True) the connections is established.
+.. note:: Only when using UDP (use_udp=True) the connection is established.
 
 
 .. _InfluxDBClient-api:
