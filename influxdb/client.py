@@ -6,9 +6,9 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import itertools
 import time
 import random
+from itertools import chain, islice
 
 import json
 import socket
@@ -553,8 +553,8 @@ class InfluxDBClient(object):
             except StopIteration:
                 return  # ...so that we can stop if there isn't one
             # Otherwise, lazily slice the rest of the batch
-            rest = itertools.islice(iterator, size - 1)
-            yield itertools.chain(head, rest)
+            rest = islice(iterator, size - 1)
+            yield chain(head, rest)
 
     def _write_points(self,
                       points,
