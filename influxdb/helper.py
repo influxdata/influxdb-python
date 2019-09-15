@@ -147,7 +147,8 @@ class SeriesHelper(object):
         """
         if not client:
             client = cls._client
-        rtn = client.write_points(cls._json_body_(), retention_policy=cls._retention_policy)
+        rtn = client.write_points(cls._json_body_(), \
+                                  retention_policy=cls._retention_policy)
         cls._reset_()
         return rtn
 
