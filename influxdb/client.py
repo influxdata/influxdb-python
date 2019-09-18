@@ -67,9 +67,9 @@ class InfluxDBClient(object):
         as a single file containing the private key and the certificate, or as
         a tuple of both files’ paths, defaults to None
     :type cert: str
-    :raises ValueError: if cert is provided but ssl is disabled (set to False)
-    :parm gzip: use gzip content encoding to compress requests
+    :param gzip: use gzip content encoding to compress requests
     :type gzip: bool
+    :raises ValueError: if cert is provided but ssl is disabled (set to False)
     """
 
     def __init__(self,
