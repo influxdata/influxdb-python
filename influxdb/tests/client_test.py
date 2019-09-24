@@ -237,7 +237,11 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
             compressed = io.BytesIO()
-            with gzip.GzipFile(compresslevel=9, fileobj=compressed, mode='w') as f:
+            with gzip.GzipFile(
+                compresslevel=9,
+                fileobj=compressed,
+                mode='w'
+            ) as f:
                 f.write(
                     b"cpu_load_short,host=server01,region=us-west "
                     b"value=0.64 1257894000000000000\n"
@@ -263,7 +267,11 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
             compressed = io.BytesIO()
-            with gzip.GzipFile(compresslevel=9, fileobj=compressed, mode='w') as f:
+            with gzip.GzipFile(
+                compresslevel=9,
+                fileobj=compressed,
+                mode='w'
+            ) as f:
                 f.write(
                     b'cpu_load_short,host=server01,region=us-west '
                     b'value=0.64 1257894000123456000\n'

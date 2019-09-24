@@ -279,14 +279,14 @@ class InfluxDBClient(object):
                 'Accept-Encoding': 'gzip',
                 'Content-Encoding': 'gzip',
             })
-            # Note you may get better performance with zlib (speed, ratio)
-            #   but the headers are such that Influx rejects them.
             if data is not None:
-                # Python 3+
-                # data = gzip.compress(data, compresslevel=9)
-                # But for Py 2.7 compatability;
+                # For Py 2.7 compatability use Gzipfile
                 compressed = io.BytesIO()
-                with gzip.GzipFile(compresslevel=9, fileobj=compressed, mode='w') as f:
+                with gzip.GzipFile(
+                    compresslevel=9,
+                    fileobj=compressed,
+                    mode='w'
+                ) as f:
                     f.write(data)
                 data = compressed.getvalue()
 
