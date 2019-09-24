@@ -9,6 +9,7 @@ from __future__ import unicode_literals
 import time
 import random
 
+import io
 import gzip
 import json
 import socket
@@ -281,7 +282,13 @@ class InfluxDBClient(object):
             # Note you may get better performance with zlib (speed, ratio)
             #   but the headers are such that Influx rejects them.
             if data is not None:
-                data = gzip.compress(data, compresslevel=9)
+                # Python 3+
+                # data = gzip.compress(data, compresslevel=9)
+                # But for Py 2.7 compatability;
+                compressed = io.BytesIO()
+                with gzip.GzipFile(compresslevel=9, fileobj=compressed, mode='w') as f:
+                    f.write(data)
+                data = compressed.getvalue()
 
         # Try to send the request more than once by default (see #103)
         retry = True

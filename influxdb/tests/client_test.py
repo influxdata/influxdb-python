@@ -24,6 +24,7 @@ import socket
 import unittest
 import warnings
 
+import io
 import gzip
 import json
 import mock
@@ -235,12 +236,16 @@ class TestInfluxDBClient(unittest.TestCase):
                              "fields": {"value": 0.64}}]}
             )
 
-            self.assertEqual(
-                m.last_request.body,
-                gzip.compress(
+            compressed = io.BytesIO()
+            with gzip.GzipFile(compresslevel=9, fileobj=compressed, mode='w') as f:
+                f.write(
                     b"cpu_load_short,host=server01,region=us-west "
                     b"value=0.64 1257894000000000000\n"
-                ),
+                )
+
+            self.assertEqual(
+                m.last_request.body,
+                compressed.getvalue(),
             )
 
     def test_write_points_gzip(self):
@@ -257,12 +262,15 @@ class TestInfluxDBClient(unittest.TestCase):
                 self.dummy_points,
             )
 
-            self.assertEqual(
-                m.last_request.body,
-                gzip.compress(
+            compressed = io.BytesIO()
+            with gzip.GzipFile(compresslevel=9, fileobj=compressed, mode='w') as f:
+                f.write(
                     b'cpu_load_short,host=server01,region=us-west '
                     b'value=0.64 1257894000123456000\n'
-                ),
+                )
+            self.assertEqual(
+                m.last_request.body,
+                compressed.getvalue(),
             )
 
     def test_write_points_toplevel_attributes(self):
