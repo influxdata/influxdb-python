@@ -107,13 +107,16 @@ class SingleTestCaseWithServerGzipMixin(object):
     gzip=True
     """
 
-    tearDown = _teardown_influxdb_server
-
     @classmethod
     def setUp(cls):
         """Set up an instance of the SingleTestCaseWithServerGzipMixin."""
         _setup_influxdb_server(cls)
         _setup_gzip_client(cls)
+
+    @classmethod
+    def tearDown(cls):
+        """Tear down an instance of the SingleTestCaseWithServerMixin."""
+        _teardown_influxdb_server(cls)
 
 
 class ManyTestCasesWithServerGzipMixin(object):
@@ -128,3 +131,8 @@ class ManyTestCasesWithServerGzipMixin(object):
         """Set up an instance of the ManyTestCasesWithServerGzipMixin."""
         _setup_influxdb_server(cls)
         _setup_gzip_client(cls)
+
+    @classmethod
+    def tearDown(cls):
+        """Tear down an instance of the SingleTestCaseWithServerMixin."""
+        _teardown_influxdb_server(cls)

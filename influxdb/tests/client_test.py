@@ -24,7 +24,7 @@ import socket
 import unittest
 import warnings
 
-import zlib
+import gzip
 import json
 import mock
 import requests
@@ -235,14 +235,9 @@ class TestInfluxDBClient(unittest.TestCase):
                              "fields": {"value": 0.64}}]}
             )
 
-            gzip_compressor = zlib.compressobj(
-                9,
-                zlib.DEFLATED,
-                zlib.MAX_WBITS | 16
-            )
             self.assertEqual(
                 m.last_request.body,
-                gzip_compressor.compress(
+                gzip.compress(
                     b"cpu_load_short,host=server01,region=us-west "
                     b"value=0.64 1257894000000000000\n"
                 ),
@@ -262,14 +257,9 @@ class TestInfluxDBClient(unittest.TestCase):
                 self.dummy_points,
             )
 
-            gzip_compressor = zlib.compressobj(
-                9,
-                zlib.DEFLATED,
-                zlib.MAX_WBITS | 16
-            )
             self.assertEqual(
                 m.last_request.body,
-                gzip_compressor.compress(
+                gzip.compress(
                     b'cpu_load_short,host=server01,region=us-west '
                     b'value=0.64 1257894000123456000\n'
                 ),
