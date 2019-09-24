@@ -7,15 +7,33 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
-- Add `get_list_continuous_queries`, `drop_continuous_query`, and `create_continuous_query` management methods for
-  continuous queries (#681 thx @lukaszdudek-silvair)
-- query() now accepts a bind_params argument for parameter binding (#678 thx @clslgrnc)
+- Add mypy testing framework (#756)
 
 ### Changed
+- Clean up stale CI config (#755)
+- Add legacy client test (#752 & #318 thx @oldmantaiter & @sebito91)
+
+### Removed
+
+## [v5.2.3] - 2019-08-19
+
+### Added
 - Add consistency param to InfluxDBClient.write_points (#643 thx @RonRothman)
+- Add UDP example (#648 thx @shantanoo-desai)
+- Add consistency paramter to `write_points` (#664 tx @RonRothman)
+- The query() function now accepts a bind_params argument for parameter binding (#678 thx @clslgrnc)
+- Add `get_list_continuous_queries`, `drop_continuous_query`, and `create_continuous_query` management methods for
+  continuous queries (#681 thx @lukaszdudek-silvair)
+- Mutual TLS authentication (#702 thx @LloydW93)
+
+### Changed
 - Update test suite to add support for Python 3.7 and InfluxDB v1.6.4 and 1.7.4 (#692 thx @clslgrnc)
+- Update supported versions of influxdb + python (#693 thx @clslgrnc)
+- Fix for the line protocol issue with leading comma (#694 thx @d3banjan)
 - Update classifiers tuple to list in setup.py (#697 thx @Hanaasagi)
-- Update documentation for empty `delete_series` confusion
+- Update documentation for empty `delete_series` confusion (#699 thx @xginn8)
+- Fix newline character issue in tag value (#716 thx @syhan)
+- Update tests/tutorials_pandas.py to reference `line` protocol, bug in `json` (#737 thx @Aeium)
 
 ### Removed
 

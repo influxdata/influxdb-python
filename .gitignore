@@ -7,6 +7,7 @@ build/
 mock*/
 nose*/
 .pybuild/
+.mypy_cache/
 debian/files
 debian/python-influxdb.debhelper.log
 debian/python-influxdb.postinst.debhelper
