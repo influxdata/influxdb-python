@@ -273,8 +273,7 @@ class InfluxDBClient(object):
             data = json.dumps(data)
 
         if self._gzip:
-            # Allow us to receive gzip'd data (requests will decompress)
-            # as well as write it out
+            # Receive and send compressed data
             headers.update({
                 'Accept-Encoding': 'gzip',
                 'Content-Encoding': 'gzip',
