@@ -368,7 +368,6 @@ class TestSeriesHelper(unittest.TestCase):
 
     def testSeriesWithRetentionPolicy(self):
         """Test that the data is saved with the specified retention policy."""
-
         my_policy = 'my_policy'
 
         class RetentionPolicySeriesHelper(SeriesHelper):
@@ -396,7 +395,6 @@ class TestSeriesHelper(unittest.TestCase):
 
     def testSeriesWithoutRetentionPolicy(self):
         """Test that the data is saved without any retention policy."""
-
         class NoRetentionPolicySeriesHelper(SeriesHelper):
 
             class Meta:
