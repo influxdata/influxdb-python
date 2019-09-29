@@ -365,3 +365,31 @@ class TestSeriesHelper(unittest.TestCase):
                              .format(WarnBulkSizeNoEffect))
             self.assertIn('has no affect', str(w[-1].message),
                           'Warning message did not contain "has not affect".')
+
+    def testSeriesWithRetentionPolicy(self):
+        """Test that the data is saved with the specified retention policy."""
+
+        my_policy = 'my_policy'
+
+        class RetentionPolicySeriesHelper(SeriesHelper):
+
+            class Meta:
+                client = InfluxDBClient()
+                series_name = 'events.stats.{server_name}'
+                fields = ['some_stat', 'time']
+                tags = ['server_name', 'other_tag']
+                bulk_size = 2
+                autocommit = True
+                retention_policy = my_policy
+
+        fake_write_points = mock.MagicMock()
+        RetentionPolicySeriesHelper(
+            server_name='us.east-1', some_stat=159, other_tag='gg')
+        RetentionPolicySeriesHelper._client.write_points = fake_write_points
+        RetentionPolicySeriesHelper(
+            server_name='us.east-1', some_stat=158, other_tag='aa')
+
+        kall = fake_write_points.call_args
+        args, kwargs = kall
+        self.assertTrue('retention_policy' in kwargs)
+        self.assertEqual(kwargs['retention_policy'], my_policy)
