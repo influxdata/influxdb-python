@@ -15,6 +15,25 @@ import numpy as np
 from .client import InfluxDBClient
 from .line_protocol import _escape_tag
 
+# Precisions factors must be int for correct calculation to ints. if float the result of a floor calc is an approximation
+# Example : the issue is only observable with nanosecond resolution values are greater than 895ns
+# ts = pd.Timestamp('2013-01-01 23:10:55.123456987+00:00')
+# ts_ns = np.int64(ts.value)
+# # For conversion to microsecond
+# precision_factor=1e3
+# expected_ts_us = 1357081855123456
+# np.int64(ts_ns // precision_factor) # results in INCORRECT 1357081855123457
+# np.int64(ts_ns // np.int64(precision_factor) # results in CORRECT 1357081855123456
+
+_time_precision_factors = {
+            "n": 1,
+            "u": np.int64(1e3),
+            "ms": np.int64(1e6),
+            "s": np.int64(1e9),
+            "m": np.int64(1e9 * 60),
+            "h": np.int64( 1e9 * 3600),
+        }
+
 
 def _pandas_time_unit(time_precision):
     unit = time_precision
@@ -261,14 +280,7 @@ class DataFrameClient(InfluxDBClient):
         # Convert dtype for json serialization
         dataframe = dataframe.astype('object')
 
-        precision_factor = {
-            "n": 1,
-            "u": 1e3,
-            "ms": 1e6,
-            "s": 1e9,
-            "m": 1e9 * 60,
-            "h": 1e9 * 3600,
-        }.get(time_precision, 1)
+        precision_factor =_time_precision_factors.get(time_precision, 1)
 
         points = [
             {'measurement': measurement,
@@ -331,18 +343,11 @@ class DataFrameClient(InfluxDBClient):
             field_columns = list(column_series[~column_series.isin(
                 tag_columns)])
 
-        precision_factor = {
-            "n": 1,
-            "u": 1e3,
-            "ms": 1e6,
-            "s": 1e9,
-            "m": 1e9 * 60,
-            "h": 1e9 * 3600,
-        }.get(time_precision, 1)
+        precision_factor =_time_precision_factors.get(time_precision, 1)
 
         # Make array of timestamp ints
         if isinstance(dataframe.index, pd.PeriodIndex):
-            time = ((dataframe.index.to_timestamp().values.astype(np.int64) //
+            time = ((dataframe.index.to_timestamp().values.astype(np.int64) // 
                      precision_factor).astype(np.int64).astype(str))
         else:
             time = ((pd.to_datetime(dataframe.index).values.astype(np.int64) //
@@ -453,15 +458,5 @@ class DataFrameClient(InfluxDBClient):
 
     def _datetime_to_epoch(self, datetime, time_precision='s'):
         nanoseconds = (datetime - self.EPOCH).value
-        if time_precision == 'h':
-            return np.int64(nanoseconds // 1e9 // 3600)
-        elif time_precision == 'm':
-            return np.int64(nanoseconds // 1e9 // 60)
-        elif time_precision == 's':
-            return np.int64(nanoseconds // 1e9)
-        elif time_precision == 'ms':
-            return np.int64(nanoseconds // 1e6)
-        elif time_precision == 'u':
-            return np.int64(nanoseconds // 1e3)
-        elif time_precision == 'n':
-            return nanoseconds
+        precision_factor =_time_precision_factors.get(time_precision, 1)
+        return np.int64(nanoseconds // np.int64(precision_factor))
