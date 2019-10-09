@@ -106,7 +106,7 @@ class TestLineProtocol(unittest.TestCase):
         berlin = timezone('Europe/Berlin').localize(dt)
         eastern = berlin.astimezone(timezone('US/Eastern'))
         # pandas ns timestamp tests
-        pddt = pd.Timestamp('2009-11-10 23:00:00.123456789')
+        pddt = pd.Timestamp('2009-11-10 23:00:00.123456987')
         pdutc = pd.Timestamp(pddt, tz='UTC')
         pdberlin = pdutc.astimezone('Europe/Berlin')
         pdeastern = pdberlin.astimezone('US/Eastern')
