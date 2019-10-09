@@ -929,7 +929,19 @@ class TestDataFrameClient(unittest.TestCase):
             )
 
     def test_datetime_to_epoch(self):
-        """Test convert datetime to epoch in TestDataFrameClient object."""
+        """Test convert datetime to epoch in TestDataFrameClient object.
+        Precisions factors must be int for correct calculation to ints. if float the result of a floor calc is an approximation
+        Choosing the test value is important that nanosecond resolution values are greater than 895ns
+        Example : the issue is only observable ns > 895ns
+        # ts = pd.Timestamp('2013-01-01 23:10:55.123456987+00:00')
+        # ts_ns = np.int64(ts.value)
+        # # For conversion to microsecond
+        # precision_factor=1e3
+        # expected_ts_us = 1357081855123456
+        # np.int64(ts_ns // precision_factor) # results in INCORRECT 1357081855123457
+        # np.int64(ts_ns // np.int64(precision_factor) # results in CORRECT 1357081855123456
+
+        """
         timestamp = pd.Timestamp('2013-01-01 23:10:55.123456987+00:00')
         cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
 

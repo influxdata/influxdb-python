@@ -47,6 +47,57 @@ class TestLineProtocol(unittest.TestCase):
             'bool_val=True,float_val=1.1,int_val=1i,string_val="hello!"\n'
         )
 
+    def test_convert_timestamp(self):
+        """Test line_protocol _convert_timestamp
+        Precisions factors must be int for correct calculation to ints. if float the result of a floor calc is an approximation
+        Choosing the test value is important that nanosecond resolution values are greater than 895ns
+        Example : the issue is only observable ns > 895ns
+        # ts = pd.Timestamp('2013-01-01 23:10:55.123456987+00:00')
+        # ts_ns = np.int64(ts.value)
+        # # For conversion to microsecond
+        # precision_factor=1e3
+        # expected_ts_us = 1357081855123456
+        # np.int64(ts_ns // precision_factor) # results in INCORRECT 1357081855123457
+        # np.int64(ts_ns // np.int64(precision_factor) # results in CORRECT 1357081855123456
+
+        """
+
+        #TODO: add test for timestamp isinstance(timestamp, Integral)
+        #TODO: add test for timestamp isinstance(_get_unicode(timestamp), text_type)
+        #TODO: add test for timestamp isinstance(timestamp, datetime) also include test tzinfo present or not
+
+
+
+        timestamp = pd.Timestamp('2013-01-01 23:10:55.123456987+00:00')
+        self.assertEqual(
+            line_protocol._convert_timestamp(timestamp),
+            1357081855123456987
+        )
+        self.assertEqual(
+            line_protocol._convert_timestamp(timestamp, time_precision='h'),
+            1357081855 // 3600
+        )
+        self.assertEqual(
+            line_protocol._convert_timestamp(timestamp, time_precision='m'),
+            1357081855 // 60
+        )
+        self.assertEqual(
+            line_protocol._convert_timestamp(timestamp, time_precision='s'),
+            1357081855
+        )
+        self.assertEqual(
+            line_protocol._convert_timestamp(timestamp, time_precision='ms'),
+            1357081855123
+        )
+        self.assertEqual(
+            line_protocol._convert_timestamp(timestamp, time_precision='u'),
+            1357081855123456
+        )
+        self.assertEqual(
+            line_protocol._convert_timestamp(timestamp, time_precision='n'),
+            1357081855123456987
+        )
+
     def test_timezone(self):
         """Test timezone in TestLineProtocol object."""
         # datetime tests
