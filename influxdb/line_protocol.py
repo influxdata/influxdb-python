@@ -12,28 +12,28 @@ from numbers import Integral
 from six import iteritems, binary_type, text_type, integer_types, PY2
 
 import pandas as pd  # Provide for ns timestamps
-import numpy as np # Provided for accurate precision_factor conversion
+import numpy as np  # Provided for accurate precision_factor conversion
 
 EPOCH = pd.Timestamp(0, tz='UTC')
 
-# Precisions factors must be int for correct calculation to ints. if float the result of a floor calc is an approximation
-# Example : the issue is only observable with nanosecond resolution values are greater than 895ns
+# Precisions factors must be int for correct calculation to ints.
+# if precision is float the result of a floor calc is an approximation
+# Example : the issue is only observable with nanosecond resolution
+#           values are greater than 895ns
 # ts = pd.Timestamp('2013-01-01 23:10:55.123456987+00:00')
 # ts_ns = np.int64(ts.value)
 # # For conversion to microsecond
 # precision_factor=1e3
 # expected_ts_us = 1357081855123456
-# np.int64(ts_ns // precision_factor) # results in INCORRECT 1357081855123457
-# np.int64(ts_ns // np.int64(precision_factor) # results in CORRECT 1357081855123456
+# np.int64(ts_ns // precision_factor) #  is INCORRECT 1357081855123457
+# np.int64(ts_ns // np.int64(precision_factor) #  is CORRECT 1357081855123456
 
-_time_precision_factors = {
-            "n": 1,
-            "u": np.int64(1e3),
-            "ms": np.int64(1e6),
-            "s": np.int64(1e9),
-            "m": np.int64(1e9 * 60),
-            "h": np.int64( 1e9 * 3600),
-        }
+_time_precision_factors = {"n": 1,
+                           "u": np.int64(1e3),
+                           "ms": np.int64(1e6),
+                           "s": np.int64(1e9),
+                           "m": np.int64(1e9 * 60),
+                           "h": np.int64(1e9 * 3600), }
 
 
 def _convert_timestamp(timestamp, time_precision=None):
@@ -56,7 +56,7 @@ def _convert_timestamp(timestamp, time_precision=None):
             timestamp = timestamp.astimezone('UTC')
 
         nanoseconds = (timestamp - EPOCH).value
-        precision_factor =_time_precision_factors.get(time_precision, 1)
+        precision_factor = _time_precision_factors.get(time_precision, 1)
         return np.int64(nanoseconds // np.int64(precision_factor))
     raise ValueError(timestamp)
 

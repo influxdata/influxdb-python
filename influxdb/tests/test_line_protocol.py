@@ -49,24 +49,30 @@ class TestLineProtocol(unittest.TestCase):
 
     def test_convert_timestamp(self):
         """Test line_protocol _convert_timestamp
-        Precisions factors must be int for correct calculation to ints. if float the result of a floor calc is an approximation
-        Choosing the test value is important that nanosecond resolution values are greater than 895ns
+
+        Precisions factors must be int for correct calculation to ints. if
+        precision is float the result of a floor calc is an approximation
+        Choosing the test value is important that nanosecond resolution values
+        are greater than 895ns
+
         Example : the issue is only observable ns > 895ns
         # ts = pd.Timestamp('2013-01-01 23:10:55.123456987+00:00')
         # ts_ns = np.int64(ts.value)
         # # For conversion to microsecond
         # precision_factor=1e3
         # expected_ts_us = 1357081855123456
-        # np.int64(ts_ns // precision_factor) # results in INCORRECT 1357081855123457
-        # np.int64(ts_ns // np.int64(precision_factor) # results in CORRECT 1357081855123456
+        # # following is INCORRECT 1357081855123457
+        # np.int64(ts_ns // precision_factor)
+        # # following is CORRECT 1357081855123456
+        # np.int64(ts_ns // np.int64(precision_factor)
 
         """
 
-        #TODO: add test for timestamp isinstance(timestamp, Integral)
-        #TODO: add test for timestamp isinstance(_get_unicode(timestamp), text_type)
-        #TODO: add test for timestamp isinstance(timestamp, datetime) also include test tzinfo present or not
-
-
+        # TODO: add tests for timestamp instances
+        # 1)  isinstance(timestamp, Integral)
+        # 2)  isinstance(_get_unicode(timestamp), text_type)
+        # 3)  isinstance(timestamp, datetime) with tzinfo
+        # 4)  isinstance(timestamp, datetime) without tzinfo
 
         timestamp = pd.Timestamp('2013-01-01 23:10:55.123456987+00:00')
         self.assertEqual(
