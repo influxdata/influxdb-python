@@ -116,7 +116,7 @@ class TestLineProtocol(unittest.TestCase):
         )
 
     def test_make_lines_empty_field_string(self):
-        """Test make lines with an empty string field in TestLineProtocol object."""
+        """Test make lines with an empty string field."""
         data = {
             "points": [
                 {
