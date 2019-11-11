@@ -91,9 +91,11 @@ def _is_float(value):
 
 
 def _escape_value(value):
-    value = _get_unicode(value)
+    if value is None:
+        return ''
 
-    if isinstance(value, text_type) and value != '':
+    value = _get_unicode(value)
+    if isinstance(value, text_type):
         return quote_ident(value)
     elif isinstance(value, integer_types) and not isinstance(value, bool):
         return str(value) + 'i'
