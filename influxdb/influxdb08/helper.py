@@ -73,7 +73,7 @@ class SeriesHelper(object):
             if cls._autocommit and not cls._client:
                 raise AttributeError(
                     'In {0}, autocommit is set to True, but no client is set.'
-                    .format(cls.__name__))
+                        .format(cls.__name__))
 
             try:
                 cls._bulk_size = getattr(_meta, 'bulk_size')
@@ -128,6 +128,10 @@ class SeriesHelper(object):
         """
         if not client:
             client = cls._client
+
+        if not cls._datapoints:
+            cls._datapoints = defaultdict(list)
+
         rtn = client.write_points(cls._json_body_())
         cls._reset_()
         return rtn
