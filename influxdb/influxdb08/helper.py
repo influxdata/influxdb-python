@@ -139,6 +139,8 @@ class SeriesHelper(object):
         :return: JSON body of the datapoints.
         """
         json = []
+        if not cls.__initialized__:
+            cls._reset_()
         for series_name, data in six.iteritems(cls._datapoints):
             json.append({'name': series_name,
                          'columns': cls._fields,
