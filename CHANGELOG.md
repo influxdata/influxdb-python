@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - Add mypy testing framework (#756)
+- Add support for messagepack (#734 thx @lovasoa)
 
 ### Changed
 - Clean up stale CI config (#755)
