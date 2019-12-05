@@ -6,11 +6,14 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-import time
-import random
-
+import datetime
 import json
+import random
 import socket
+import struct
+import time
+
+import msgpack
 import requests
 import requests.exceptions
 from six.moves import xrange
@@ -144,7 +147,7 @@ class InfluxDBClient(object):
 
         self._headers = {
             'Content-Type': 'application/json',
-            'Accept': 'text/plain'
+            'Accept': 'application/x-msgpack'
         }
 
     @property
@@ -293,13 +296,30 @@ class InfluxDBClient(object):
                     time.sleep((2 ** _try) * random.random() / 100.0)
                 if not retry:
                     raise
+
+        type_header = response.headers and response.headers.get("Content-Type")
+        if type_header == "application/x-msgpack" and response.content:
+            response._msgpack = msgpack.unpackb(
+                packed=response.content,
+                ext_hook=_msgpack_parse_hook,
+                raw=False)
+        else:
+            response._msgpack = None
+
+        def reformat_error(response):
+            if response._msgpack:
+                return json.dumps(response._msgpack, separators=(',', ':'))
+            else:
+                return response.content
+
         # if there's not an error, there must have been a successful response
         if 500 <= response.status_code < 600:
-            raise InfluxDBServerError(response.content)
+            raise InfluxDBServerError(reformat_error(response))
         elif response.status_code == expected_response_code:
             return response
         else:
-            raise InfluxDBClientError(response.content, response.status_code)
+            err_msg = reformat_error(response)
+            raise InfluxDBClientError(err_msg, response.status_code)
 
     def write(self, data, params=None, expected_response_code=204,
               protocol='json'):
@@ -450,10 +470,11 @@ class InfluxDBClient(object):
             expected_response_code=expected_response_code
         )
 
-        if chunked:
-            return self._read_chunked_response(response)
-
-        data = response.json()
+        data = response._msgpack
+        if not data:
+            if chunked:
+                return self._read_chunked_response(response)
+            data = response.json()
 
         results = [
             ResultSet(result, raise_errors=raise_errors)
@@ -1119,3 +1140,12 @@ def _parse_netloc(netloc):
             'password': info.password or None,
             'host': info.hostname or 'localhost',
             'port': info.port or 8086}
+
+
+def _msgpack_parse_hook(code, data):
+    if code == 5:
+        (epoch_s, epoch_ns) = struct.unpack(">QI", data)
+        timestamp = datetime.datetime.utcfromtimestamp(epoch_s)
+        timestamp += datetime.timedelta(microseconds=(epoch_ns / 1000))
+        return timestamp.isoformat() + 'Z'
+    return msgpack.ExtType(code, data)
