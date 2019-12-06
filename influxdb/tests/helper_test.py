@@ -48,10 +48,7 @@ class TestSeriesHelper(unittest.TestCase):
         TestSeriesHelper.MySeriesHelper = MySeriesHelper
 
     def setUp(self):
-        """
-        Check not initialized datapoints's not raising exception
-        and resetting helper.
-        """
+        """Check that MySeriesHelper has empty datapoints"""
         super(TestSeriesHelper, self).setUp()
         self.assertEqual(
             TestSeriesHelper.MySeriesHelper._json_body_(),
