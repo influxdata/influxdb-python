@@ -7,8 +7,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
+- Add mypy testing framework (#756)
+- Add support for messagepack (#734 thx @lovasoa)
 
 ### Changed
+- Clean up stale CI config (#755)
+- Add legacy client test (#752 & #318 thx @oldmantaiter & @sebito91)
 
 ### Removed
 

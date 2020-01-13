@@ -31,6 +31,8 @@ matrix:
       env: TOX_ENV=flake8
     - python: 3.7
       env: TOX_ENV=coverage
+    - python: 3.7
+      env: TOX_ENV=mypy
 
 install:
     - pip install tox-travis
