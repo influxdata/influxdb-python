@@ -203,7 +203,8 @@ class DataFrameClient(InfluxDBClient):
     def _to_dataframe(self, rs, dropna=True):
         result = defaultdict(list)
         if isinstance(rs, list):
-            return map(self._to_dataframe, rs)
+            return map(self._to_dataframe, rs,
+                       [dropna for _ in range(len(rs))])
 
         for key, data in rs.items():
             name, tags = key
