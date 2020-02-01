@@ -685,9 +685,7 @@ class InfluxDBClient(object):
 
             >> dbs = client.get_list_tags()
             >> dbs
-            [{u'name': u'measurements1'},
-             {u'name': u'measurements2'},
-             {u'name': u'measurements3'}]
+            [{u'tagKey': u'tag1'}, {u'tagKey': u'tag2'}, {u'tagKey': u'tag3'}]
         """
         return list(self.query("SHOW TAG KEYS").get_points())
   
@@ -703,9 +701,8 @@ class InfluxDBClient(object):
 
             >> dbs = client.get_list_fields()
             >> dbs
-            [{u'name': u'measurements1'},
-             {u'name': u'measurements2'},
-             {u'name': u'measurements3'}]
+            [{u'fieldKey': u'field1', u'fieldType': u'type1'}, {u'fieldKey': u'field2', u'fieldType': u'type2'},
+             {u'fieldKey': u'field3', u'fieldType': u'type3'}]
         """
         return list(self.query("SHOW FIELD KEYS").get_points())
     
