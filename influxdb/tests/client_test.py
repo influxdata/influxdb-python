@@ -26,6 +26,7 @@ import warnings
 
 import json
 import mock
+import msgpack
 import requests
 import requests.exceptions
 import requests_mock
@@ -33,6 +34,7 @@ import requests_mock
 from nose.tools import raises
 
 from influxdb import InfluxDBClient
+from influxdb.exceptions import InfluxDBClientError
 from influxdb.resultset import ResultSet
 
 
@@ -77,12 +79,17 @@ def _mocked_session(cli, method="GET", status_code=200, content=""):
 class TestInfluxDBClient(unittest.TestCase):
     """Set up the TestInfluxDBClient object."""
 
+    @staticmethod
+    def _create_new_client(use_msgpack=False):
+        return InfluxDBClient('localhost', 8086, 'username', 'password',
+                              use_msgpack=use_msgpack)
+
     def setUp(self):
         """Initialize an instance of TestInfluxDBClient object."""
         # By default, raise exceptions on warnings
         warnings.simplefilter('error', FutureWarning)
 
-        self.cli = InfluxDBClient('localhost', 8086, 'username', 'password')
+        self.cli = self._create_new_client()
         self.dummy_points = [
             {
                 "measurement": "cpu_load_short",
@@ -494,6 +501,78 @@ class TestInfluxDBClient(unittest.TestCase):
             self.assertListEqual(
                 list(rs.get_points()),
                 [{'v': 1.0, 'time': '2019-07-10T16:51:22.026253Z'}]
+            )
+
+    def test_query_msgpack_extended(self):
+        """Test query method with a msgpack response."""
+
+        example_response_obj = {
+              "results": [
+                {
+                  "series": [
+                    {
+                      "measurement": "sdfsdfsdf",
+                      "columns": [
+                        "time",
+                        "value_float",
+                        "value_int",
+                        "value_string"
+                      ],
+                      "values": [
+                        [
+                          "2009-11-10T23:00:00Z",
+                          0.64,
+                          2,
+                          "some value"
+                        ]
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "series": [
+                    {
+                      "measurement": "cpu_load_short",
+                      "columns": [
+                        "time",
+                        "value"
+                      ],
+                      "values": [
+                        [
+                          "2020-01-10T23:00:00Z",
+                          -0.645468546312
+                        ]
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+
+        example_response_packed = msgpack.packb(example_response_obj)
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                request_headers={"Accept": "application/x-msgpack"},
+                headers={"Content-Type": "application/x-msgpack"},
+                content=example_response_packed
+            )
+
+            rs = self.cli.query('select * from a')
+
+            self.assertListEqual(
+                list(rs[0].get_points()),
+                [{'value_float': 0.64,
+                  'value_int': 2,
+                  'value_string': "some value",
+                  'time': '2009-11-10T23:00:00Z'}]
+            )
+
+            self.assertListEqual(
+                list(rs[1].get_points()),
+                [{'value': -0.645468546312, 'time': '2020-01-10T23:00:00Z'}]
             )
 
     def test_select_into_post(self):
@@ -1277,6 +1356,20 @@ class TestInfluxDBClient(unittest.TestCase):
                              'name': 'memory',
                              'columns': ['fieldKey', 'fieldType']}]}
             ).__repr__())
+
+    def test_wrong_protocol(self):
+        """ Test invalid protocol for sending packet """
+        client = InfluxDBClient('localhost', 8086, 'username', 'password',
+                                use_udp=True)
+        with self.assertRaises(InfluxDBClientError):
+            client.send_packet(packet="", protocol="Json")
+
+    def test_udp_flag(self):
+        """ Test invalid protocol for sending packet """
+        client = InfluxDBClient('localhost', 8086, 'username', 'password',
+                                use_udp=False)
+        with self.assertRaises(RuntimeError):
+            client.send_packet(packet="", protocol="json")
 
 
 class FakeClient(InfluxDBClient):

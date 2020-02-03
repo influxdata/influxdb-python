@@ -17,23 +17,35 @@ if not using_pypy:
     from influxdb.dataframe_client import DataFrameClient
 
 
+def _create_new_client(host, port, username, password, database,
+                       use_msgpack=False):
+    return InfluxDBClient(host, port, username, password, database=database,
+                          use_msgpack=use_msgpack)
+
+
+def _create_new_dataframe_client(host, port, username, password, database,
+                                 use_msgpack=False):
+    return DataFrameClient(host, port, username, password, database=database,
+                           use_msgpack=use_msgpack)
+
+
 def _setup_influxdb_server(inst):
     inst.influxd_inst = InfluxDbInstance(
         inst.influxdb_template_conf,
         udp_enabled=getattr(inst, 'influxdb_udp_enabled', False),
     )
 
-    inst.cli = InfluxDBClient('localhost',
-                              inst.influxd_inst.http_port,
-                              'root',
-                              '',
-                              database='db')
+    inst.cli = _create_new_client('localhost',
+                                  inst.influxd_inst.http_port,
+                                  'root',
+                                  '',
+                                  database='db')
     if not using_pypy:
-        inst.cliDF = DataFrameClient('localhost',
-                                     inst.influxd_inst.http_port,
-                                     'root',
-                                     '',
-                                     database='db')
+        inst.cliDF = _create_new_dataframe_client('localhost',
+                                                  inst.influxd_inst.http_port,
+                                                  'root',
+                                                  '',
+                                                  database='db')
 
 
 def _teardown_influxdb_server(inst):
