@@ -22,7 +22,6 @@ from six.moves.urllib.parse import urlparse
 from influxdb.line_protocol import make_lines, quote_ident, quote_literal
 from influxdb.resultset import ResultSet
 from .exceptions import InfluxDBClientError
-from .exceptions import InfluxDBServerError
 
 
 class InfluxDBClient(object):
@@ -716,7 +715,7 @@ class InfluxDBClient(object):
             The minimum retention period is 1 hour.
         :type duration: str
         :param replication: the replication of the retention policy
-        :type replication: str
+        :type replication: int
         :param database: the database for which the retention policy is
             created. Defaults to current client's database
         :type database: str
@@ -736,7 +735,7 @@ class InfluxDBClient(object):
             "CREATE RETENTION POLICY {0} ON {1} " \
             "DURATION {2} REPLICATION {3} SHARD DURATION {4}".format(
                 quote_ident(name), quote_ident(database or self._database),
-                duration, replication, shard_duration)
+                duration, int(replication), shard_duration)
 
         if default is True:
             query_string += " DEFAULT"
@@ -1100,7 +1099,6 @@ class InfluxDBClient(object):
         :param time_precision: Either 's', 'm', 'ms' or 'u', defaults to None
         :type time_precision: str
         """
-
         if not self._use_udp:
             raise RuntimeError("Unable to send packet : use_udp set to False")
 

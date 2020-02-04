@@ -343,7 +343,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
                              list(rsp.get_points()))
 
     def test_write_points(self):
-        """ Test writing points to the server."""
+        """Test writing points to the server."""
         self.assertIs(True, self.cli.write_points(dummy_point))
 
     @skip_if_pypy
@@ -359,8 +359,11 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         )
 
     def test_write_points_mixed_type(self):
-        self.assertIs(True, self.cli.write_points(mixed_series_dummy_points_part_1))
-        self.assertIs(True, self.cli.write_points(mixed_series_dummy_points_part_2))
+        """Test writing points with mixed type and reading them in again."""
+        self.assertIs(True,
+                      self.cli.write_points(mixed_series_dummy_points_part_1))
+        self.assertIs(True,
+                      self.cli.write_points(mixed_series_dummy_points_part_2))
 
         client_1 = InfluxDBClient('localhost', self.influxd_inst.http_port,
                                   'root', '', database='db', use_msgpack=False)
