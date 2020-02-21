@@ -88,7 +88,7 @@ class InfluxDBClient(object):
                  pool_size=10,
                  path='',
                  cert=None,
-                 use_msgpack=False
+                 use_msgpack=True
                  ):
         """Construct a new InfluxDBClient object."""
         self.__host = host

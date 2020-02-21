@@ -374,7 +374,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         rsp2 = client_2.query('SELECT * FROM cpu_load_short_mixed')
 
         for res in [rsp1, rsp2]:
-            self.assertEqual(
+            self.assertNotEqual(
                 list(res),
                 [[
                     {'value': 0.64,
