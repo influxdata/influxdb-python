@@ -129,9 +129,9 @@ class ResultSet(object):
             yield list(self.__getitem__(key))
 
     @staticmethod
-    def _tag_matches(tags, filter):
+    def _tag_matches(tags, _filter):
         """Check if all key/values in filter match in tags."""
-        for tag_name, tag_value in filter.items():
+        for tag_name, tag_value in _filter.items():
             # using _sentinel as I'm not sure that "None"
             # could be used, because it could be a valid
             # series_tags value : when a series has no such tag

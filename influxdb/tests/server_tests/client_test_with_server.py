@@ -34,7 +34,6 @@ if not using_pypy:
     import pandas as pd
     from pandas.util.testing import assert_frame_equal
 
-
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
@@ -61,7 +60,8 @@ dummy_point = [  # some dummy points
         },
         "time": "2009-11-10T23:00:00Z",
         "fields": {
-            "value": 0.64
+            "value": 0.64,
+            "another_value": 2
         }
     }
 ]
@@ -76,7 +76,58 @@ dummy_points = [  # some dummy points
         },
         "time": "2009-11-10T23:01:35Z",
         "fields": {
-            "value": 33.0
+            "value": 33.0,
+            "another_value": 7
+        }
+    }
+]
+
+mixed_series_dummy_points_part_1 = [
+    {
+        "measurement": "cpu_load_short_mixed",
+        "tags": {
+            "host": "server01",
+            "region": "us-west"
+        },
+        "time": "2009-11-10T23:00:00Z",
+        "fields": {
+            "value": 0.64
+        }
+    },
+    {
+        "measurement": "cpu_load_short_mixed",
+        "tags": {
+            "host": "server01",
+            "region": "us-west"
+        },
+        "time": "2009-11-10T23:01:00Z",
+        "fields": {
+            "value": 0.65
+        }
+    },
+    {
+        "measurement": "cpu_load_short_mixed",
+        "tags": {
+            "host": "server01",
+            "region": "us-west"
+        },
+        "time": "2009-11-10T23:02:00Z",
+        "fields": {
+            "value": 0.35
+        }
+    }
+]
+
+mixed_series_dummy_points_part_2 = [
+    {
+        "measurement": "cpu_load_short_mixed",
+        "tags": {
+            "host": "server01",
+            "region": "us-west"
+        },
+        "time": "2009-11-10T23:03:00Z",
+        "fields": {
+            "value": 1.0
         }
     }
 ]
@@ -87,24 +138,23 @@ if not using_pypy:
         "tags": {"host": "server01",
                  "region": "us-west"},
         "dataframe": pd.DataFrame(
-            [[0.64]], columns=['value'],
+            [[0.64, 2]], columns=['value', 'another_value'],
             index=pd.to_datetime(["2009-11-10T23:00:00Z"]))
     }
     dummy_points_df = [{
         "measurement": "cpu_load_short",
         "tags": {"host": "server01", "region": "us-west"},
         "dataframe": pd.DataFrame(
-            [[0.64]], columns=['value'],
+            [[0.64, 2]], columns=['value', 'another_value'],
             index=pd.to_datetime(["2009-11-10T23:00:00Z"])),
     }, {
         "measurement": "memory",
         "tags": {"host": "server01", "region": "us-west"},
         "dataframe": pd.DataFrame(
-            [[33]], columns=['value'],
+            [[33, 7]], columns=['value', 'another_value'],
             index=pd.to_datetime(["2009-11-10T23:01:35Z"])
         )
     }]
-
 
 dummy_point_without_timestamp = [
     {
@@ -114,7 +164,8 @@ dummy_point_without_timestamp = [
             "region": "us-west"
         },
         "fields": {
-            "value": 0.64
+            "value": 0.64,
+            "another_value": 2
         }
     }
 ]
@@ -285,7 +336,9 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         self.test_write()
         time.sleep(1)
         rsp = self.cli.query('SELECT * FROM cpu_load_short', database='db')
-        self.assertListEqual([{'value': 0.64, 'time': '2009-11-10T23:00:00Z',
+        self.assertListEqual([{'value': 0.64,
+                               'another_value': 2,
+                               'time': '2009-11-10T23:00:00Z',
                                "host": "server01", "region": "us-west"}],
                              list(rsp.get_points()))
 
@@ -305,6 +358,40 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
             )
         )
 
+    def test_write_points_mixed_type(self):
+        """Test writing points with mixed type and reading them in again."""
+        self.assertIs(True,
+                      self.cli.write_points(mixed_series_dummy_points_part_1))
+        self.assertIs(True,
+                      self.cli.write_points(mixed_series_dummy_points_part_2))
+
+        client_2 = InfluxDBClient('localhost', self.influxd_inst.http_port,
+                                  'root', '', database='db')
+
+        rsp2 = client_2.query('SELECT * FROM cpu_load_short_mixed')
+
+        self.assertEqual(
+            list(rsp2),
+            [[
+                {'value': 0.64,
+                 'time': '2009-11-10T23:00:00Z',
+                 "host": "server01",
+                 "region": "us-west"},
+                {'value': 0.65,
+                 'time': '2009-11-10T23:01:00Z',
+                 "host": "server01",
+                 "region": "us-west"},
+                {'value': 0.35,
+                 'time': '2009-11-10T23:02:00Z',
+                 "host": "server01",
+                 "region": "us-west"},
+                {'value': 1.0,
+                 'time': '2009-11-10T23:03:00Z',
+                 "host": "server01",
+                 "region": "us-west"}
+            ]]
+        )
+
     def test_write_points_check_read(self):
         """Test writing points and check read back."""
         self.test_write_points()
@@ -315,6 +402,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
             list(rsp),
             [[
                 {'value': 0.64,
+                 'another_value': 2,
                  'time': '2009-11-10T23:00:00Z',
                  "host": "server01",
                  "region": "us-west"}
@@ -329,6 +417,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
             pt,
             {'time': '2009-11-10T23:00:00Z',
              'value': 0.64,
+             'another_value': 2,
              "host": "server01",
              "region": "us-west"}
         )
@@ -364,6 +453,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         self.assertEqual(
             [[
                 {'value': 0.64,
+                 'another_value': 2,
                  'time': '2009-11-10T23:00:00Z',
                  "host": "server01",
                  "region": "us-west"}
@@ -377,6 +467,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
             rsp,
             [[
                 {'value': 33,
+                 'another_value': 7,
                  'time': '2009-11-10T23:01:35Z',
                  "host": "server01",
                  "region": "us-west"}
@@ -387,7 +478,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         """Test SELECT INTO is POSTed."""
         self.assertIs(True, self.cli.write_points(dummy_points))
         time.sleep(1)
-        rsp = self.cli.query('SELECT * INTO "newmeas" FROM "memory"')
+        _ = self.cli.query('SELECT * INTO "newmeas" FROM "memory"')
         rsp = self.cli.query('SELECT * FROM "newmeas"')
         lrsp = list(rsp)
 
@@ -395,6 +486,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
             lrsp,
             [[
                 {'value': 33,
+                 'another_value': 7,
                  'time': '2009-11-10T23:01:35Z',
                  "host": "server01",
                  "region": "us-west"}
@@ -849,6 +941,7 @@ class UdpTests(ManyTestCasesWithServerMixin, unittest.TestCase):
             # this is dummy_points :
             [
                 {'value': 0.64,
+                 'another_value': 2,
                  'time': '2009-11-10T23:00:00Z',
                  "host": "server01",
                  "region": "us-west"}
