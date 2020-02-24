@@ -68,6 +68,10 @@ class InfluxDBClient(object):
         as a single file containing the private key and the certificate, or as
         a tuple of both files’ paths, defaults to None
     :type cert: str
+    :param use_msgpack: A bool indicating to use msgpack to retrieve query
+        results from InfluxDB.  If False, the fallback will be JSON.  This flag
+        sets the Accept header of the request.  Defaults to True
+    :type use_msgpack: bool
 
     :raises ValueError: if cert is provided but ssl is disabled (set to False)
     """
