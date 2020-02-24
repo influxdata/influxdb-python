@@ -373,30 +373,49 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         rsp1 = client_1.query('SELECT * FROM cpu_load_short_mixed')
         rsp2 = client_2.query('SELECT * FROM cpu_load_short_mixed')
 
-        for res in [rsp1, rsp2]:
-            self.assertNotEqual(
-                list(res),
-                [[
-                    {'value': 0.64,
-                     'time': '2009-11-10T23:00:00Z',
-                     "host": "server01",
-                     "region": "us-west"},
-                    {'value': 0.65,
-                     'time': '2009-11-10T23:01:00Z',
-                     "host": "server01",
-                     "region": "us-west"},
-                    {'value': 0.35,
-                     'time': '2009-11-10T23:02:00Z',
-                     "host": "server01",
-                     "region": "us-west"},
-                    {'value': 1.0,
-                     'time': '2009-11-10T23:03:00Z',
-                     "host": "server01",
-                     "region": "us-west"}
-                ]]
-            )
+        self.assertEqual(
+            list(rsp1),
+            [[
+                {'value': 0.64,
+                 'time': '2009-11-10T23:00:00Z',
+                 "host": "server01",
+                 "region": "us-west"},
+                {'value': 0.65,
+                 'time': '2009-11-10T23:01:00Z',
+                 "host": "server01",
+                 "region": "us-west"},
+                {'value': 0.35,
+                 'time': '2009-11-10T23:02:00Z',
+                 "host": "server01",
+                 "region": "us-west"},
+                {'value': 1,
+                 'time': '2009-11-10T23:03:00Z',
+                 "host": "server01",
+                 "region": "us-west"}
+            ]]
+        )
 
-        self.assertEqual(rsp1, rsp2)
+        self.assertEqual(
+            list(rsp2),
+            [[
+                {'value': 0.64,
+                 'time': '2009-11-10T23:00:00Z',
+                 "host": "server01",
+                 "region": "us-west"},
+                {'value': 0.65,
+                 'time': '2009-11-10T23:01:00Z',
+                 "host": "server01",
+                 "region": "us-west"},
+                {'value': 0.35,
+                 'time': '2009-11-10T23:02:00Z',
+                 "host": "server01",
+                 "region": "us-west"},
+                {'value': 1.0,
+                 'time': '2009-11-10T23:03:00Z',
+                 "host": "server01",
+                 "region": "us-west"}
+            ]]
+        )
 
     def test_write_points_check_read(self):
         """Test writing points and check read back."""
