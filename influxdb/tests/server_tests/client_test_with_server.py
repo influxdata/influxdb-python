@@ -365,35 +365,10 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         self.assertIs(True,
                       self.cli.write_points(mixed_series_dummy_points_part_2))
 
-        client_1 = InfluxDBClient('localhost', self.influxd_inst.http_port,
-                                  'root', '', database='db', use_msgpack=False)
         client_2 = InfluxDBClient('localhost', self.influxd_inst.http_port,
-                                  'root', '', database='db', use_msgpack=True)
+                                  'root', '', database='db')
 
-        rsp1 = client_1.query('SELECT * FROM cpu_load_short_mixed')
         rsp2 = client_2.query('SELECT * FROM cpu_load_short_mixed')
-
-        self.assertEqual(
-            list(rsp1),
-            [[
-                {'value': 0.64,
-                 'time': '2009-11-10T23:00:00Z',
-                 "host": "server01",
-                 "region": "us-west"},
-                {'value': 0.65,
-                 'time': '2009-11-10T23:01:00Z',
-                 "host": "server01",
-                 "region": "us-west"},
-                {'value': 0.35,
-                 'time': '2009-11-10T23:02:00Z',
-                 "host": "server01",
-                 "region": "us-west"},
-                {'value': 1,
-                 'time': '2009-11-10T23:03:00Z',
-                 "host": "server01",
-                 "region": "us-west"}
-            ]]
-        )
 
         self.assertEqual(
             list(rsp2),
