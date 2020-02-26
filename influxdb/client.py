@@ -53,8 +53,11 @@ class InfluxDBClient(object):
     :param timeout: number of seconds Requests will wait for your client to
         establish a connection, defaults to None
     :type timeout: int
-    :param retries: number of retries your client will try before aborting,
+    :param retries: how many times your client will try before aborting,
         defaults to 3. 0 indicates try until success
+        For example:
+        1 - try only once (without retry),
+        2 - maximum two tries (including one retry)
     :type retries: int
     :param use_udp: use UDP to connect to InfluxDB, defaults to False
     :type use_udp: bool
