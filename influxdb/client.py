@@ -292,7 +292,7 @@ class InfluxDBClient(object):
                 _try += 1
                 if self._retries != 0:
                     retry = _try < self._retries
-                if method == "POST":
+                if retry and method == "POST":
                     time.sleep((2 ** _try) * random.random() / 100.0)
                 if not retry:
                     raise
