@@ -18,6 +18,7 @@ import requests
 import requests.exceptions
 from six.moves import xrange
 from six.moves.urllib.parse import urlparse
+import gzip
 
 from influxdb.line_protocol import make_lines, quote_ident, quote_literal
 from influxdb.resultset import ResultSet
@@ -89,6 +90,7 @@ class InfluxDBClient(object):
                  pool_size=10,
                  path='',
                  cert=None,
+                 compression=False
                  ):
         """Construct a new InfluxDBClient object."""
         self.__host = host
@@ -98,6 +100,10 @@ class InfluxDBClient(object):
         self._database = database
         self._timeout = timeout
         self._retries = retries
+        if compression == True:
+            self._compression = 9
+        else:
+            self._compression = compression
 
         self._verify_ssl = verify_ssl
 
@@ -353,6 +359,10 @@ class InfluxDBClient(object):
             if isinstance(data, str):
                 data = [data]
             data = ('\n'.join(data) + '\n').encode('utf-8')
+
+        if self._compression != False:
+            data = gzip.compress(data, self._compression)
+            headers['Content-Encoding'] = 'gzip'
 
         self.request(
             url="write",
