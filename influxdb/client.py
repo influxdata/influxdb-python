@@ -105,6 +105,8 @@ class InfluxDBClient(object):
         else:
             self._compression = compression
 
+        assert self._compression == False or (self._compression >= 0 and self._compression <= 9)
+
         self._verify_ssl = verify_ssl
 
         self.__use_udp = use_udp
