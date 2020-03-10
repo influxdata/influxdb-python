@@ -100,12 +100,13 @@ class InfluxDBClient(object):
         self._database = database
         self._timeout = timeout
         self._retries = retries
-        if compression == True:
+        if compression is True:
             self._compression = 9
         else:
             self._compression = compression
 
-        assert self._compression == False or (self._compression >= 0 and self._compression <= 9)
+        assert self._compression is False or \
+                (self._compression >= 0 and self._compression <= 9)
 
         self._verify_ssl = verify_ssl
 
@@ -362,7 +363,7 @@ class InfluxDBClient(object):
                 data = [data]
             data = ('\n'.join(data) + '\n').encode('utf-8')
 
-        if self._compression != False:
+        if self._compression is not False:
             data = gzip.compress(data, self._compression)
             headers['Content-Encoding'] = 'gzip'
 
