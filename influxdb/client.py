@@ -70,6 +70,9 @@ class InfluxDBClient(object):
         as a single file containing the private key and the certificate, or as
         a tuple of both files’ paths, defaults to None
     :type cert: str
+    :param session: allow for the new client request to use an existing
+        requests Session, defaults to None
+    :type session: requests.Session
 
     :raises ValueError: if cert is provided but ssl is disabled (set to False)
     """
@@ -90,6 +93,7 @@ class InfluxDBClient(object):
                  pool_size=10,
                  path='',
                  cert=None,
+                 session=None,
                  ):
         """Construct a new InfluxDBClient object."""
         self.__host = host
@@ -104,7 +108,11 @@ class InfluxDBClient(object):
 
         self.__use_udp = use_udp
         self.__udp_port = udp_port
-        self._session = requests.Session()
+
+        if not session:
+            session = requests.Session()
+
+        self._session = session
         adapter = requests.adapters.HTTPAdapter(
             pool_connections=int(pool_size),
             pool_maxsize=int(pool_size)
