@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add mypy testing framework (#756)
 - Add support for messagepack (#734 thx @lovasoa)
 - Add support for 'show series' (#357 thx @gaker)
+- Add support for custom request session in InfluxDBClient (#360 thx @dschien)
 
 ### Changed
 - Clean up stale CI config (#755)
