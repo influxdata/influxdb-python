@@ -7,8 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+## [v5.2.4] - 2020-04-10
+
+### Added
 - Add mypy testing framework (#756)
 - Add support for messagepack (#734 thx @lovasoa)
+- Add support for 'show series' (#357 thx @gaker)
 
 ### Changed
 - Clean up stale CI config (#755)

@@ -7,6 +7,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
+import itertools
 import json
 import random
 import socket
@@ -636,6 +637,31 @@ class InfluxDBClient(object):
             [{u'name': u'db1'}, {u'name': u'db2'}, {u'name': u'db3'}]
         """
         return list(self.query("SHOW DATABASES").get_points())
+
+    def get_list_series(self, database=None, measurement=None, tags=None):
+        """
+        The SHOW SERIES query returns the distinct series in your database.
+        FROM and WHERE clauses are optional.
+
+        :param measurement: Show all series from a measurement
+        :type id: string
+        :param tags: Show all series that match given tags
+        :type id: dict
+        :param database: the database from which the series should be
+            shows, defaults to client's current database
+        :type database: str
+        """
+        database = database or self._database
+        query_str = 'SHOW SERIES'
+
+        if measurement:
+            query_str += ' FROM "{0}"'.format(measurement)
+
+        if tags:
+            query_str += ' WHERE ' + ' and '.join(["{0}='{1}'".format(k, v)
+                                                   for k, v in tags.items()])
+
+        return list(itertools.chain.from_iterable([x.values() for x in (self.query(query_str, database=database).get_points())]))
 
     def create_database(self, dbname):
         """Create a new database in InfluxDB.

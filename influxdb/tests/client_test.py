@@ -689,6 +689,64 @@ class TestInfluxDBClient(unittest.TestCase):
                 [{'name': 'cpu'}, {'name': 'disk'}]
             )
 
+    def test_get_list_series(self):
+
+        data = {'results': [
+            {'series': [
+                {
+                    'values': [
+                        ['cpu_load_short,host=server01,region=us-west'],
+                        ['memory_usage,host=server02,region=us-east']],
+                    'columns': ['key']
+                }
+            ]}
+        ]}
+
+        with _mocked_session(self.cli, 'get', 200, json.dumps(data)):
+            self.assertListEqual(
+                self.cli.get_list_series(),
+                [{'key': 'cpu_load_short,host=server01,region=us-west'},
+                 {'key': 'memory_usage,host=server02,region=us-east'}])
+
+    def test_get_list_series_with_measurement(self):
+
+        data = {'results': [
+            {'series': [
+                {
+                    'values': [
+                        ['cpu_load_short,host=server01,region=us-west']],
+                    'columns': ['key']
+                }
+            ]}
+        ]}
+
+        with _mocked_session(self.cli, 'get', 200, json.dumps(data)):
+            self.assertListEqual(
+                self.cli.get_list_series(measurement='cpu_load_short'),
+                ['cpu_load_short,host=server01,region=us-west'])
+
+    def test_get_list_series_with_tags(self):
+        data = {'results': [
+            {'series': [
+                {
+                    'values': [
+                        ['cpu_load_short,host=server01,region=us-west']],
+                    'columns': ['key']
+                }
+            ]}
+        ]}
+
+        with _mocked_session(self.cli, 'get', 200, json.dumps(data)):
+            self.assertListEqual(
+                self.cli.get_list_series(tags={'region': 'us-west'}),
+                ['cpu_load_short,host=server01,region=us-west'])
+
+    @raises(Exception)
+    def test_get_list_series_fails(self):
+        cli = InfluxDBClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'get', 401):
+            cli.get_list_series()
+
     def test_create_retention_policy_default(self):
         """Test create default ret policy for TestInfluxDBClient object."""
         example_response = '{"results":[{}]}'
