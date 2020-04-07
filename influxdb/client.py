@@ -640,7 +640,8 @@ class InfluxDBClient(object):
 
     def get_list_series(self, database=None, measurement=None, tags=None):
         """
-        The SHOW SERIES query returns the distinct series in your database.
+        Query SHOW SERIES returns the distinct series in your database.
+
         FROM and WHERE clauses are optional.
 
         :param measurement: Show all series from a measurement
@@ -661,7 +662,15 @@ class InfluxDBClient(object):
             query_str += ' WHERE ' + ' and '.join(["{0}='{1}'".format(k, v)
                                                    for k, v in tags.items()])
 
-        return list(itertools.chain.from_iterable([x.values() for x in (self.query(query_str, database=database).get_points())]))
+        return list(
+            itertools.chain.from_iterable(
+                [
+                    x.values()
+                    for x in (self.query(query_str, database=database)
+                              .get_points())
+                ]
+            )
+        )
 
     def create_database(self, dbname):
         """Create a new database in InfluxDB.

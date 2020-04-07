@@ -690,7 +690,7 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
     def test_get_list_series(self):
-
+        """Test get a list of series from the database."""
         data = {'results': [
             {'series': [
                 {
@@ -709,7 +709,7 @@ class TestInfluxDBClient(unittest.TestCase):
                  'memory_usage,host=server02,region=us-east'])
 
     def test_get_list_series_with_measurement(self):
-
+        """Test get a list of series from the database by filter."""
         data = {'results': [
             {'series': [
                 {
@@ -726,6 +726,7 @@ class TestInfluxDBClient(unittest.TestCase):
                 ['cpu_load_short,host=server01,region=us-west'])
 
     def test_get_list_series_with_tags(self):
+        """Test get a list of series from the database by tags."""
         data = {'results': [
             {'series': [
                 {
@@ -743,6 +744,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
     @raises(Exception)
     def test_get_list_series_fails(self):
+        """Test get a list of series from the database but fail."""
         cli = InfluxDBClient('host', 8086, 'username', 'password')
         with _mocked_session(cli, 'get', 401):
             cli.get_list_series()

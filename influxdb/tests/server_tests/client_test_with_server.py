@@ -818,7 +818,7 @@ GROUP BY tag_1').get_points())
         self.cli.write_points(pts)
 
     def test_get_list_series(self):
-
+        """Test get a list of series from the database."""
         dummy_points = [
             {
                 "measurement": "cpu_load_short",
