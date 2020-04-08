@@ -1,0 +1,4 @@
+- **InfluxDB version:** e.g. 1.7.7 (output of the `influx version` command)
+- **InfluxDB-python version:** e.g. 5.2.2 (output of the `python -c "from __future__ import print_function; import influxdb; print(influxdb.__version__)"` command)
+- **Python version:** e.g. 3.7.4 (output of the `python --version` command)
+- **Operating system version:** e.g. Windows 10, Ubuntu 18.04, macOS 10.14.5

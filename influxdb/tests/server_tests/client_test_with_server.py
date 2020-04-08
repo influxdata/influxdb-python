@@ -23,7 +23,7 @@ import warnings
 from influxdb import InfluxDBClient
 from influxdb.exceptions import InfluxDBClientError
 
-from influxdb.tests import skipIfPYpy, using_pypy, skipServerTests
+from influxdb.tests import skip_if_pypy, using_pypy, skip_server_tests
 from influxdb.tests.server_tests.base import ManyTestCasesWithServerMixin
 from influxdb.tests.server_tests.base import SingleTestCaseWithServerMixin
 
@@ -38,9 +38,9 @@ if not using_pypy:
 THIS_DIR = os.path.abspath(os.path.dirname(__file__))
 
 
-def point(serie_name, timestamp=None, tags=None, **fields):
+def point(series_name, timestamp=None, tags=None, **fields):
     """Define what a point looks like."""
-    res = {'measurement': serie_name}
+    res = {'measurement': series_name}
 
     if timestamp:
         res['time'] = timestamp
@@ -82,7 +82,7 @@ dummy_points = [  # some dummy points
 ]
 
 if not using_pypy:
-    dummy_pointDF = {
+    dummy_point_df = {
         "measurement": "cpu_load_short",
         "tags": {"host": "server01",
                  "region": "us-west"},
@@ -90,7 +90,7 @@ if not using_pypy:
             [[0.64]], columns=['value'],
             index=pd.to_datetime(["2009-11-10T23:00:00Z"]))
     }
-    dummy_pointsDF = [{
+    dummy_points_df = [{
         "measurement": "cpu_load_short",
         "tags": {"host": "server01", "region": "us-west"},
         "dataframe": pd.DataFrame(
@@ -120,7 +120,7 @@ dummy_point_without_timestamp = [
 ]
 
 
-@skipServerTests
+@skip_server_tests
 class SimpleTests(SingleTestCaseWithServerMixin, unittest.TestCase):
     """Define the class of simple tests."""
 
@@ -211,7 +211,7 @@ class SimpleTests(SingleTestCaseWithServerMixin, unittest.TestCase):
         self.assertEqual(users, [])
 
     def test_drop_user_nonexisting(self):
-        """Test dropping a nonexistant user."""
+        """Test dropping a nonexistent user."""
         with self.assertRaises(InfluxDBClientError) as ctx:
             self.cli.drop_user('test')
         self.assertIn('user not found',
@@ -267,7 +267,7 @@ class SimpleTests(SingleTestCaseWithServerMixin, unittest.TestCase):
             InfluxDBClient('host', '80/redir', 'username', 'password')
 
 
-@skipServerTests
+@skip_server_tests
 class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
     """Define a class to handle common tests for the server."""
 
@@ -293,15 +293,15 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         """Test writing points to the server."""
         self.assertIs(True, self.cli.write_points(dummy_point))
 
-    @skipIfPYpy
+    @skip_if_pypy
     def test_write_points_DF(self):
         """Test writing points with dataframe."""
         self.assertIs(
             True,
             self.cliDF.write_points(
-                dummy_pointDF['dataframe'],
-                dummy_pointDF['measurement'],
-                dummy_pointDF['tags']
+                dummy_point_df['dataframe'],
+                dummy_point_df['measurement'],
+                dummy_point_df['tags']
             )
         )
 
@@ -342,7 +342,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         rsp = self.cliDF.query('SELECT * FROM cpu_load_short')
         assert_frame_equal(
             rsp['cpu_load_short'],
-            dummy_pointDF['dataframe']
+            dummy_point_df['dataframe']
         )
 
         # Query with Tags
@@ -351,7 +351,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         assert_frame_equal(
             rsp[('cpu_load_short',
                  (('host', 'server01'), ('region', 'us-west')))],
-            dummy_pointDF['dataframe']
+            dummy_point_df['dataframe']
         )
 
     def test_write_multiple_points_different_series(self):
@@ -383,27 +383,45 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
             ]]
         )
 
+    def test_select_into_as_post(self):
+        """Test SELECT INTO is POSTed."""
+        self.assertIs(True, self.cli.write_points(dummy_points))
+        time.sleep(1)
+        rsp = self.cli.query('SELECT * INTO "newmeas" FROM "memory"')
+        rsp = self.cli.query('SELECT * FROM "newmeas"')
+        lrsp = list(rsp)
+
+        self.assertEqual(
+            lrsp,
+            [[
+                {'value': 33,
+                 'time': '2009-11-10T23:01:35Z',
+                 "host": "server01",
+                 "region": "us-west"}
+            ]]
+        )
+
     @unittest.skip("Broken as of 0.9.0")
     def test_write_multiple_points_different_series_DF(self):
         """Test write multiple points using dataframe to different series."""
         for i in range(2):
             self.assertIs(
                 True, self.cliDF.write_points(
-                    dummy_pointsDF[i]['dataframe'],
-                    dummy_pointsDF[i]['measurement'],
-                    dummy_pointsDF[i]['tags']))
+                    dummy_points_df[i]['dataframe'],
+                    dummy_points_df[i]['measurement'],
+                    dummy_points_df[i]['tags']))
         time.sleep(1)
         rsp = self.cliDF.query('SELECT * FROM cpu_load_short')
 
         assert_frame_equal(
             rsp['cpu_load_short'],
-            dummy_pointsDF[0]['dataframe']
+            dummy_points_df[0]['dataframe']
         )
 
         rsp = self.cliDF.query('SELECT * FROM memory')
         assert_frame_equal(
             rsp['memory'],
-            dummy_pointsDF[1]['dataframe']
+            dummy_points_df[1]['dataframe']
         )
 
     def test_write_points_batch(self):
@@ -422,7 +440,9 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
                               batch_size=2)
         time.sleep(5)
         net_in = self.cli.query("SELECT value FROM network "
-                                "WHERE direction='in'").raw
+                                "WHERE direction=$dir",
+                                bind_params={'dir': 'in'}
+                                ).raw
         net_out = self.cli.query("SELECT value FROM network "
                                  "WHERE direction='out'").raw
         cpu = self.cli.query("SELECT value FROM cpu_usage").raw
@@ -526,13 +546,57 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
             rsp
         )
 
+        self.cli.drop_retention_policy('somename', 'db')
+        # recreate the RP
+        self.cli.create_retention_policy('somename', '1w', 1,
+                                         shard_duration='1h')
+
+        rsp = self.cli.get_list_retention_policies()
+        self.assertEqual(
+            [
+                {'duration': '0s',
+                 'default': True,
+                 'replicaN': 1,
+                 'shardGroupDuration': u'168h0m0s',
+                 'name': 'autogen'},
+                {'duration': '168h0m0s',
+                 'default': False,
+                 'replicaN': 1,
+                 'shardGroupDuration': u'1h0m0s',
+                 'name': 'somename'}
+            ],
+            rsp
+        )
+
+        self.cli.drop_retention_policy('somename', 'db')
+        # recreate the RP
+        self.cli.create_retention_policy('somename', '1w', 1)
+
+        rsp = self.cli.get_list_retention_policies()
+        self.assertEqual(
+            [
+                {'duration': '0s',
+                 'default': True,
+                 'replicaN': 1,
+                 'shardGroupDuration': u'168h0m0s',
+                 'name': 'autogen'},
+                {'duration': '168h0m0s',
+                 'default': False,
+                 'replicaN': 1,
+                 'shardGroupDuration': u'24h0m0s',
+                 'name': 'somename'}
+            ],
+            rsp
+        )
+
     def test_alter_retention_policy(self):
         """Test alter a retention policy, not default."""
         self.cli.create_retention_policy('somename', '1d', 1)
 
         # Test alter duration
         self.cli.alter_retention_policy('somename', 'db',
-                                        duration='4d')
+                                        duration='4d',
+                                        shard_duration='2h')
         # NB: altering retention policy doesn't change shard group duration
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
@@ -545,7 +609,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
                 {'duration': '96h0m0s',
                  'default': False,
                  'replicaN': 1,
-                 'shardGroupDuration': u'1h0m0s',
+                 'shardGroupDuration': u'2h0m0s',
                  'name': 'somename'}
             ],
             rsp
@@ -554,6 +618,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         # Test alter replication
         self.cli.alter_retention_policy('somename', 'db',
                                         replication=4)
+
         # NB: altering retention policy doesn't change shard group duration
         rsp = self.cli.get_list_retention_policies()
         self.assertEqual(
@@ -566,7 +631,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
                 {'duration': '96h0m0s',
                  'default': False,
                  'replicaN': 4,
-                 'shardGroupDuration': u'1h0m0s',
+                 'shardGroupDuration': u'2h0m0s',
                  'name': 'somename'}
             ],
             rsp
@@ -587,7 +652,28 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
                 {'duration': '96h0m0s',
                  'default': True,
                  'replicaN': 4,
-                 'shardGroupDuration': u'1h0m0s',
+                 'shardGroupDuration': u'2h0m0s',
+                 'name': 'somename'}
+            ],
+            rsp
+        )
+
+        # Test alter shard_duration
+        self.cli.alter_retention_policy('somename', 'db',
+                                        shard_duration='4h')
+
+        rsp = self.cli.get_list_retention_policies()
+        self.assertEqual(
+            [
+                {'duration': '0s',
+                 'default': False,
+                 'replicaN': 1,
+                 'shardGroupDuration': u'168h0m0s',
+                 'name': 'autogen'},
+                {'duration': '96h0m0s',
+                 'default': True,
+                 'replicaN': 4,
+                 'shardGroupDuration': u'4h0m0s',
                  'name': 'somename'}
             ],
             rsp
@@ -637,7 +723,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         )
 
     def test_create_continuous_query(self):
-        """Test create a continuous query."""
+        """Test continuous query creation."""
         self.cli.create_retention_policy('some_rp', '1d', 1)
         query = 'select count("value") into "some_rp"."events" from ' \
                 '"events" group by time(10m)'
@@ -659,7 +745,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         self.assertEqual(cqs, expected_cqs)
 
     def test_drop_continuous_query(self):
-        """Test dropping a continuous query."""
+        """Test continuous query drop."""
         self.test_create_continuous_query()
         self.cli.drop_continuous_query('test_cq', 'db')
         cqs = self.cli.get_list_continuous_queries()
@@ -668,7 +754,7 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
 
     def test_issue_143(self):
         """Test for PR#143 from repo."""
-        pt = partial(point, 'a_serie_name', timestamp='2015-03-30T16:16:37Z')
+        pt = partial(point, 'a_series_name', timestamp='2015-03-30T16:16:37Z')
         pts = [
             pt(value=15),
             pt(tags={'tag_1': 'value1'}, value=5),
@@ -676,19 +762,20 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         ]
         self.cli.write_points(pts)
         time.sleep(1)
-        rsp = list(self.cli.query('SELECT * FROM a_serie_name GROUP BY tag_1'))
+        rsp = list(self.cli.query('SELECT * FROM a_series_name \
+GROUP BY tag_1').get_points())
 
         self.assertEqual(
             [
-                [{'value': 15, 'time': '2015-03-30T16:16:37Z'}],
-                [{'value': 5, 'time': '2015-03-30T16:16:37Z'}],
-                [{'value': 10, 'time': '2015-03-30T16:16:37Z'}]
+                {'time': '2015-03-30T16:16:37Z', 'value': 15},
+                {'time': '2015-03-30T16:16:37Z', 'value': 5},
+                {'time': '2015-03-30T16:16:37Z', 'value': 10}
             ],
             rsp
         )
 
         # a slightly more complex one with 2 tags values:
-        pt = partial(point, 'serie2', timestamp='2015-03-30T16:16:37Z')
+        pt = partial(point, 'series2', timestamp='2015-03-30T16:16:37Z')
         pts = [
             pt(tags={'tag1': 'value1', 'tag2': 'v1'}, value=0),
             pt(tags={'tag1': 'value1', 'tag2': 'v2'}, value=5),
@@ -696,18 +783,18 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         ]
         self.cli.write_points(pts)
         time.sleep(1)
-        rsp = self.cli.query('SELECT * FROM serie2 GROUP BY tag1,tag2')
+        rsp = self.cli.query('SELECT * FROM series2 GROUP BY tag1,tag2')
 
         self.assertEqual(
             [
-                [{'value': 0, 'time': '2015-03-30T16:16:37Z'}],
-                [{'value': 5, 'time': '2015-03-30T16:16:37Z'}],
-                [{'value': 10, 'time': '2015-03-30T16:16:37Z'}]
+                {'value': 0, 'time': '2015-03-30T16:16:37Z'},
+                {'value': 5, 'time': '2015-03-30T16:16:37Z'},
+                {'value': 10, 'time': '2015-03-30T16:16:37Z'}
             ],
-            list(rsp)
+            list(rsp['series2'])
         )
 
-        all_tag2_equal_v1 = list(rsp[None, {'tag2': 'v1'}])
+        all_tag2_equal_v1 = list(rsp.get_points(tags={'tag2': 'v1'}))
 
         self.assertEqual(
             [{'value': 0, 'time': '2015-03-30T16:16:37Z'},
@@ -717,21 +804,79 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
 
     def test_query_multiple_series(self):
         """Test query for multiple series."""
-        pt = partial(point, 'serie1', timestamp='2015-03-30T16:16:37Z')
+        pt = partial(point, 'series1', timestamp='2015-03-30T16:16:37Z')
         pts = [
             pt(tags={'tag1': 'value1', 'tag2': 'v1'}, value=0),
         ]
         self.cli.write_points(pts)
 
-        pt = partial(point, 'serie2', timestamp='1970-03-30T16:16:37Z')
+        pt = partial(point, 'series2', timestamp='1970-03-30T16:16:37Z')
         pts = [
             pt(tags={'tag1': 'value1', 'tag2': 'v1'},
                value=0, data1=33, data2="bla"),
         ]
         self.cli.write_points(pts)
 
+    def test_get_list_series(self):
+        """Test get a list of series from the database."""
+        dummy_points = [
+            {
+                "measurement": "cpu_load_short",
+                "tags": {
+                    "host": "server01",
+                    "region": "us-west"
+                },
+                "time": "2009-11-10T23:00:00.123456Z",
+                "fields": {
+                    "value": 0.64
+                }
+            }
+        ]
 
-@skipServerTests
+        dummy_points_2 = [
+            {
+                "measurement": "memory_usage",
+                "tags": {
+                    "host": "server02",
+                    "region": "us-east"
+                },
+                "time": "2009-11-10T23:00:00.123456Z",
+                "fields": {
+                    "value": 80
+                }
+            }
+        ]
+
+        self.cli.write_points(dummy_points)
+        self.cli.write_points(dummy_points_2)
+
+        self.assertEquals(
+            self.cli.get_list_series(),
+            ['cpu_load_short,host=server01,region=us-west',
+             'memory_usage,host=server02,region=us-east']
+        )
+
+        self.assertEquals(
+            self.cli.get_list_series(measurement='memory_usage'),
+            ['memory_usage,host=server02,region=us-east']
+        )
+
+        self.assertEquals(
+            self.cli.get_list_series(measurement='memory_usage'),
+            ['memory_usage,host=server02,region=us-east']
+        )
+
+        self.assertEquals(
+            self.cli.get_list_series(tags={'host': 'server02'}),
+            ['memory_usage,host=server02,region=us-east'])
+
+        self.assertEquals(
+            self.cli.get_list_series(
+                measurement='cpu_load_short', tags={'host': 'server02'}),
+            [])
+
+
+@skip_server_tests
 class UdpTests(ManyTestCasesWithServerMixin, unittest.TestCase):
     """Define a class to test UDP series."""
 
