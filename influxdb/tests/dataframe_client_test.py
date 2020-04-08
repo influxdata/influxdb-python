@@ -1084,3 +1084,67 @@ class TestDataFrameClient(unittest.TestCase):
 
             cli.write_points(dataframe, 'foo', tags=None, protocol='json')
             self.assertEqual(m.last_request.body, expected)
+
+    def test_write_points_from_dataframe_with_tags_and_nan_line(self):
+        """Test write points from dataframe with NaN lines and tags."""
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[['blue', 1, "1", 1, np.inf],
+                                       ['red', 0, "2", 2, np.nan]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["tag_one", "tag_two", "column_one",
+                                          "column_two", "column_three"])
+        expected = (
+            b"foo,tag_one=blue,tag_two=1 "
+            b"column_one=\"1\",column_two=1i "
+            b"0\n"
+            b"foo,tag_one=red,tag_two=0 "
+            b"column_one=\"2\",column_two=2i "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo', protocol='line',
+                             tag_columns=['tag_one', 'tag_two'])
+            self.assertEqual(m.last_request.body, expected)
+
+            cli.write_points(dataframe, 'foo', tags=None, protocol='line',
+                             tag_columns=['tag_one', 'tag_two'])
+            self.assertEqual(m.last_request.body, expected)
+
+    def test_write_points_from_dataframe_with_tags_and_nan_json(self):
+        """Test write points from json with NaN lines and tags."""
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[['blue', 1, "1", 1, np.inf],
+                                       ['red', 0, "2", 2, np.nan]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["tag_one", "tag_two", "column_one",
+                                          "column_two", "column_three"])
+        expected = (
+            b"foo,tag_one=blue,tag_two=1 "
+            b"column_one=\"1\",column_two=1i "
+            b"0\n"
+            b"foo,tag_one=red,tag_two=0 "
+            b"column_one=\"2\",column_two=2i "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo', protocol='json',
+                             tag_columns=['tag_one', 'tag_two'])
+            self.assertEqual(m.last_request.body, expected)
+
+            cli.write_points(dataframe, 'foo', tags=None, protocol='json',
+                             tag_columns=['tag_one', 'tag_two'])
+            self.assertEqual(m.last_request.body, expected)
