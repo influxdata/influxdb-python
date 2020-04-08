@@ -370,7 +370,7 @@ class DataFrameClient(InfluxDBClient):
             tag_df = self._stringify_dataframe(
                 tag_df, numeric_precision, datatype='tag')
 
-            # join preprendded tags, leaving None values out
+            # join prepended tags, leaving None values out
             tags = tag_df.apply(
                 lambda s: [',' + s.name + '=' + v if v else '' for v in s])
             tags = tags.sum(axis=1)
@@ -399,6 +399,8 @@ class DataFrameClient(InfluxDBClient):
             field_df.columns[1:]]
         field_df = field_df.where(~mask_null, '')  # drop Null entries
         fields = field_df.sum(axis=1)
+        # take out leading , where first column has a Null value
+        fields = fields.str.lstrip(",")
         del field_df
 
         # Generate line protocol string

@@ -51,8 +51,15 @@ class SingleTestCaseWithServerMixin(object):
     # 'influxdb_template_conf' attribute must be set
     # on the TestCase class or instance.
 
-    setUp = _setup_influxdb_server
-    tearDown = _teardown_influxdb_server
+    @classmethod
+    def setUp(cls):
+        """Set up an instance of the SingleTestCaseWithServerMixin."""
+        _setup_influxdb_server(cls)
+
+    @classmethod
+    def tearDown(cls):
+        """Tear down an instance of the SingleTestCaseWithServerMixin."""
+        _teardown_influxdb_server(cls)
 
 
 class ManyTestCasesWithServerMixin(object):
