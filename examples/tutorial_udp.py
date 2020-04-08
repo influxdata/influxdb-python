@@ -29,18 +29,19 @@ def main(uport):
             "host": "server01",
             "region": "us-west"
         },
-        "time": "2009-11-10T23:00:00Z",
         "points": [{
             "measurement": "cpu_load_short",
             "fields": {
                 "value": 0.64
-            }
+            },
+            "time": "2009-11-10T23:00:00Z",
         },
-            {
-                "measurement": "cpu_load_short",
-                "fields": {
-                    "value": 0.67
-                }
+        {
+            "measurement": "cpu_load_short",
+            "fields": {
+                "value": 0.67
+            },
+            "time": "2009-11-10T23:05:00Z"
         }]
     }
 
