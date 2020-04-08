@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add consistency paramter to `write_points` (#664 tx @RonRothman)
 - The query() function now accepts a bind_params argument for parameter binding (#678 thx @clslgrnc)
 - Add `get_list_continuous_queries`, `drop_continuous_query`, and `create_continuous_query` management methods for
-  continuous queries (#681 thx @lukaszdudek-silvair)
+  continuous queries (#681 thx @lukaszdudek-silvair && @smolse)
 - Mutual TLS authentication (#702 thx @LloydW93)
 
 ### Changed
