@@ -1161,7 +1161,7 @@ class TestInfluxDBClient(unittest.TestCase):
             self.cli.revoke_privilege('', 'testdb', 'test')
 
     def test_get_list_privileges(self):
-        """Tst get list of privs for TestInfluxDBClient object."""
+        """Test get list of privs for TestInfluxDBClient object."""
         data = {'results': [
             {'series': [
                 {'columns': ['database', 'privilege'],
