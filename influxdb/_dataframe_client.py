@@ -270,6 +270,20 @@ class DataFrameClient(InfluxDBClient):
             "h": 1e9 * 3600,
         }.get(time_precision, 1)
 
+        if not tag_columns:
+            points = [
+                {'measurement': measurement,
+                 'fields':
+                    rec.replace([np.inf, -np.inf], np.nan).dropna().to_dict(),
+                 'time': np.int64(ts.value / precision_factor)}
+                for ts, (_, rec) in zip(
+                    dataframe.index,
+                    dataframe[field_columns].iterrows()
+                )
+            ]
+
+            return points
+
         points = [
             {'measurement': measurement,
              'tags': dict(list(tag.items()) + list(tags.items())),
