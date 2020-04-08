@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Clean up stale CI config (#755)
 - Add legacy client test (#752 & #318 thx @oldmantaiter & @sebito91)
 - Update make_lines section in line_protocol.py to split out core function (#375 thx @aisbaa)
+- Fix nanosecond time resolution for points (#407 thx @AndreCAndersen && @clslgrnc)
 
 ### Removed
 
