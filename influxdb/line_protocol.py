@@ -8,7 +8,7 @@ from __future__ import unicode_literals
 
 from datetime import datetime
 from numbers import Integral
-from six import iteritems, binary_type, text_type, integer_types, PY2
+from six import binary_type, text_type, integer_types, PY2
 
 import pandas as pd  # Provide for ns timestamps
 import numpy as np  # Provided for accurate precision_factor conversion
