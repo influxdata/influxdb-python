@@ -13,8 +13,8 @@ import unittest
 import warnings
 import requests_mock
 
-from influxdb.tests import skip_if_pypy, using_pypy
 from nose.tools import raises
+from influxdb.tests import skip_if_pypy, using_pypy
 
 from .client_test import _mocked_session
 
@@ -22,7 +22,7 @@ if not using_pypy:
     import pandas as pd
     from pandas.util.testing import assert_frame_equal
     from influxdb import DataFrameClient
-    import numpy
+    import numpy as np
 
 
 @skip_if_pypy
@@ -462,7 +462,7 @@ class TestDataFrameClient(unittest.TestCase):
                                        ["2", 2, 2.2222222222222]],
                                  index=[now, now + timedelta(hours=1)])
 
-        if numpy.lib.NumpyVersion(numpy.__version__) <= '1.13.3':
+        if np.lib.NumpyVersion(np.__version__) <= '1.13.3':
             expected_default_precision = (
                 b'foo,hello=there 0=\"1\",1=1i,2=1.11111111111 0\n'
                 b'foo,hello=there 0=\"2\",1=2i,2=2.22222222222 3600000000000\n'
@@ -1032,3 +1032,55 @@ class TestDataFrameClient(unittest.TestCase):
         client = DataFrameClient.from_dsn('influxdb://localhost:8086')
         self.assertIsInstance(client, DataFrameClient)
         self.assertEqual('http://localhost:8086', client._baseurl)
+
+    def test_write_points_from_dataframe_with_nan_line(self):
+        """Test write points from dataframe with Nan lines."""
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[["1", 1, np.inf], ["2", 2, np.nan]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["column_one", "column_two",
+                                          "column_three"])
+        expected = (
+            b"foo column_one=\"1\",column_two=1i 0\n"
+            b"foo column_one=\"2\",column_two=2i "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo', protocol='line')
+            self.assertEqual(m.last_request.body, expected)
+
+            cli.write_points(dataframe, 'foo', tags=None, protocol='line')
+            self.assertEqual(m.last_request.body, expected)
+
+    def test_write_points_from_dataframe_with_nan_json(self):
+        """Test write points from json with NaN lines."""
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[["1", 1, np.inf], ["2", 2, np.nan]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["column_one", "column_two",
+                                          "column_three"])
+        expected = (
+            b"foo column_one=\"1\",column_two=1i 0\n"
+            b"foo column_one=\"2\",column_two=2i "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo', protocol='json')
+            self.assertEqual(m.last_request.body, expected)
+
+            cli.write_points(dataframe, 'foo', tags=None, protocol='json')
+            self.assertEqual(m.last_request.body, expected)
