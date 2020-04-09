@@ -176,12 +176,12 @@ class TestLineProtocol(unittest.TestCase):
                 {
                     "measurement": "test",
                     "fields": {
-                        "float_val": Decimal(1.0000000000000009),
+                        "float_val": Decimal(0.8289445733333332),
                     }
                 }
             ]
         }
         self.assertEqual(
             line_protocol.make_lines(data),
-            'test float_val=1.0000000000000009\n'
+            'test float_val=0.8289445733333332\n'
         )
