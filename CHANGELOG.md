@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 
-## [v5.2.4] - 2020-04-10
+## [v5.3.0] - 2020-04-10
 
 ### Added
 - Add mypy testing framework (#756)
@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add legacy client test (#752 & #318 thx @oldmantaiter & @sebito91)
 - Update make_lines section in line_protocol.py to split out core function (#375 thx @aisbaa)
 - Fix nanosecond time resolution for points (#407 thx @AndreCAndersen && @clslgrnc)
+- Fix import of distutils.spawn (#805 thx @Hawk777)
 
 ### Removed
 
