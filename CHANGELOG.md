@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Update make_lines section in line_protocol.py to split out core function (#375 thx @aisbaa)
 - Fix nanosecond time resolution for points (#407 thx @AndreCAndersen && @clslgrnc)
 - Fix import of distutils.spawn (#805 thx @Hawk777)
+- Update repr of float values including properly handling of boolean (#488 thx @ghost)
 
 ### Removed
 
