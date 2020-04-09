@@ -113,7 +113,7 @@ def _escape_value(value):
         return str(value) + 'i'
 
     if _is_float(value):
-        return repr(value)
+        return repr(float(value))
 
     return str(value)
 

@@ -6,10 +6,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from datetime import datetime
 import unittest
-from pytz import UTC, timezone
 
+from datetime import datetime
+from decimal import Decimal
+
+from pytz import UTC, timezone
 from influxdb import line_protocol
 
 
@@ -158,6 +160,23 @@ class TestLineProtocol(unittest.TestCase):
                     "measurement": "test",
                     "fields": {
                         "float_val": 1.0000000000000009,
+                    }
+                }
+            ]
+        }
+        self.assertEqual(
+            line_protocol.make_lines(data),
+            'test float_val=1.0000000000000009\n'
+        )
+
+    def test_float_with_long_decimal_fraction_as_type_decimal(self):
+        """Ensure precision is preserved when casting Decimal into strings."""
+        data = {
+            "points": [
+                {
+                    "measurement": "test",
+                    "fields": {
+                        "float_val": Decimal(1.0000000000000009),
                     }
                 }
             ]
