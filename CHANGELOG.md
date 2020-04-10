@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add support for custom request session in InfluxDBClient (#360 thx @dschien)
 - Add support for handling np.nan and np.inf values in DataFrameClient (#436 thx @nmerket)
 - Add support for optional `time_precision` in the SeriesHelper (#502 && #719 thx @appunni-dishq && @klDen)
+- Add ability to specify retention policy in SeriesHelper (#723 thx @csanz91)
 
 ### Changed
 - Clean up stale CI config (#755)
