@@ -968,6 +968,98 @@ class TestDataFrameClient(unittest.TestCase):
                 for k in e:
                     assert_frame_equal(e[k], r[k])
 
+    def test_multiquery_into_dataframe_dropna(self):
+        """Test multiquery into df for TestDataFrameClient object."""
+        data = {
+            "results": [
+                {
+                    "series": [
+                        {
+                            "name": "cpu_load_short",
+                            "columns": ["time", "value", "value2", "value3"],
+                            "values": [
+                                ["2015-01-29T21:55:43.702900257Z",
+                                 0.55, 0.254, numpy.NaN],
+                                ["2015-01-29T21:55:43.702900257Z",
+                                 23422, 122878, numpy.NaN],
+                                ["2015-06-11T20:46:02Z",
+                                 0.64, 0.5434, numpy.NaN]
+                            ]
+                        }
+                    ]
+                }, {
+                    "series": [
+                        {
+                            "name": "cpu_load_short",
+                            "columns": ["time", "count"],
+                            "values": [
+                                ["1970-01-01T00:00:00Z", 3]
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+
+        pd1 = pd.DataFrame(
+            [[0.55, 0.254, numpy.NaN],
+             [23422.0, 122878, numpy.NaN],
+             [0.64, 0.5434, numpy.NaN]],
+            columns=['value', 'value2', 'value3'],
+            index=pd.to_datetime([
+                "2015-01-29 21:55:43.702900257+0000",
+                "2015-01-29 21:55:43.702900257+0000",
+                "2015-06-11 20:46:02+0000"]))
+
+        if pd1.index.tzinfo is None:
+            pd1.index = pd1.index.tz_localize('UTC')
+
+        pd1_dropna = pd.DataFrame(
+            [[0.55, 0.254], [23422.0, 122878], [0.64, 0.5434]],
+            columns=['value', 'value2'],
+            index=pd.to_datetime([
+                "2015-01-29 21:55:43.702900257+0000",
+                "2015-01-29 21:55:43.702900257+0000",
+                "2015-06-11 20:46:02+0000"]))
+
+        if pd1_dropna.index.tzinfo is None:
+            pd1_dropna.index = pd1_dropna.index.tz_localize('UTC')
+
+        pd2 = pd.DataFrame(
+            [[3]], columns=['count'],
+            index=pd.to_datetime(["1970-01-01 00:00:00+00:00"]))
+
+        if pd2.index.tzinfo is None:
+            pd2.index = pd2.index.tz_localize('UTC')
+
+        expected_dropna_true = [
+            {'cpu_load_short': pd1_dropna},
+            {'cpu_load_short': pd2}]
+        expected_dropna_false = [
+            {'cpu_load_short': pd1},
+            {'cpu_load_short': pd2}]
+
+        cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
+        iql = "SELECT value FROM cpu_load_short WHERE region=$region;" \
+              "SELECT count(value) FROM cpu_load_short WHERE region=$region"
+        bind_params = {'region': 'us-west'}
+
+        for dropna in [True, False]:
+            with _mocked_session(cli, 'GET', 200, data):
+                result = cli.query(iql, bind_params=bind_params, dropna=dropna)
+                expected = \
+                    expected_dropna_true if dropna else expected_dropna_false
+                for r, e in zip(result, expected):
+                    for k in e:
+                        assert_frame_equal(e[k], r[k])
+
+        # test default value (dropna = True)
+        with _mocked_session(cli, 'GET', 200, data):
+            result = cli.query(iql, bind_params=bind_params)
+            for r, e in zip(result, expected_dropna_true):
+                for k in e:
+                    assert_frame_equal(e[k], r[k])
+
     def test_query_with_empty_result(self):
         """Test query with empty results in TestDataFrameClient object."""
         cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
