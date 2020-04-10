@@ -107,7 +107,7 @@ class InfluxDBClient(object):
         self._verify_ssl = verify_ssl
 
         self.__use_udp = use_udp
-        self.__udp_port = udp_port
+        self.__udp_port = int(udp_port)
 
         if not session:
             session = requests.Session()
