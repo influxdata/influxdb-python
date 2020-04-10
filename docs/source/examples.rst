@@ -25,3 +25,9 @@ Tutorials - SeriesHelper
 
 .. literalinclude:: ../../examples/tutorial_serieshelper.py
    :language: python
+
+Tutorials - UDP
+===============
+
+.. literalinclude:: ../../examples/tutorial_udp.py
+   :language: python

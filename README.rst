@@ -19,13 +19,13 @@ InfluxDB-Python is a client for interacting with InfluxDB_.
 
 Development of this library is maintained by:
 
-+-----------+-------------------------------+ 
++-----------+-------------------------------+
 | Github ID | URL                           |
-+===========+===============================+ 
++===========+===============================+
 | @aviau    | (https://github.com/aviau)    |
-+-----------+-------------------------------+ 
++-----------+-------------------------------+
 | @xginn8   | (https://github.com/xginn8)   |
-+-----------+-------------------------------+ 
++-----------+-------------------------------+
 | @sebito91 | (https://github.com/sebito91) |
 +-----------+-------------------------------+
 
@@ -39,8 +39,7 @@ InfluxDB is an open-source distributed time series database, find more about Inf
 InfluxDB pre v1.1.0 users
 -------------------------
 
-This module is tested with InfluxDB v1.2.4, our recommended version. Though there have been v1.3 (initial TSI branch) and v1.4 releases these are not 
-yet supported. 
+This module is tested with InfluxDB versions: v1.2.4, v1.3.9, v1.4.3, v1.5.4, v1.6.4, and 1.7.4.
 
 Those users still on InfluxDB v0.8.x users may still use the legacy client by importing ``from influxdb.influxdb08 import InfluxDBClient``.
 
@@ -60,9 +59,9 @@ On Debian/Ubuntu, you can install it with this command::
 Dependencies
 ------------
 
-The influxdb-python distribution is supported and tested on Python 2.7, 3.3, 3.4, 3.5, 3.6, PyPy and PyPy3.
+The influxdb-python distribution is supported and tested on Python 2.7, 3.5, 3.6, 3.7, PyPy and PyPy3.
 
-**Note:** Python 3.2 is currently untested. See ``.travis.yml``.
+**Note:** Python <3.5 are currently untested. See ``.travis.yml``.
 
 Main dependency is:
 

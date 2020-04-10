@@ -6,10 +6,12 @@ from __future__ import division
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from datetime import datetime
 import unittest
-from pytz import UTC, timezone
 
+from datetime import datetime
+from decimal import Decimal
+
+from pytz import UTC, timezone
 from influxdb import line_protocol
 
 
@@ -42,7 +44,7 @@ class TestLineProtocol(unittest.TestCase):
 
         self.assertEqual(
             line_protocol.make_lines(data),
-            'test,backslash_tag=C:\\\\ ,integer_tag=2,string_tag=hello '
+            'test,backslash_tag=C:\\\\,integer_tag=2,string_tag=hello '
             'bool_val=True,float_val=1.1,int_val=1i,string_val="hello!"\n'
         )
 
@@ -115,6 +117,27 @@ class TestLineProtocol(unittest.TestCase):
             'test,unicode_tag=\'Привет!\' unicode_val="Привет!"\n'
         )
 
+    def test_tag_value_newline(self):
+        """Test make lines with tag value contains newline."""
+        data = {
+            "tags": {
+                "t1": "line1\nline2"
+            },
+            "points": [
+                {
+                    "measurement": "test",
+                    "fields": {
+                        "val": "hello"
+                    }
+                }
+            ]
+        }
+
+        self.assertEqual(
+            line_protocol.make_lines(data),
+            'test,t1=line1\\nline2 val="hello"\n'
+        )
+
     def test_quote_ident(self):
         """Test quote indentation in TestLineProtocol object."""
         self.assertEqual(
@@ -144,4 +167,21 @@ class TestLineProtocol(unittest.TestCase):
         self.assertEqual(
             line_protocol.make_lines(data),
             'test float_val=1.0000000000000009\n'
+        )
+
+    def test_float_with_long_decimal_fraction_as_type_decimal(self):
+        """Ensure precision is preserved when casting Decimal into strings."""
+        data = {
+            "points": [
+                {
+                    "measurement": "test",
+                    "fields": {
+                        "float_val": Decimal(0.8289445733333332),
+                    }
+                }
+            ]
+        }
+        self.assertEqual(
+            line_protocol.make_lines(data),
+            'test float_val=0.8289445733333332\n'
         )

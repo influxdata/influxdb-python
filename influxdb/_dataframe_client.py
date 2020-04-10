@@ -142,18 +142,30 @@ class DataFrameClient(InfluxDBClient):
     def query(self,
               query,
               params=None,
+              bind_params=None,
               epoch=None,
               expected_response_code=200,
               database=None,
               raise_errors=True,
               chunked=False,
               chunk_size=0,
+              method="GET",
               dropna=True):
         """
-        Quering data into a DataFrame.
+        Query data into a DataFrame.
+
+        .. danger::
+            In order to avoid injection vulnerabilities (similar to `SQL
+            injection <https://www.owasp.org/index.php/SQL_Injection>`_
+            vulnerabilities), do not directly include untrusted data into the
+            ``query`` parameter, use ``bind_params`` instead.
 
         :param query: the actual query string
         :param params: additional parameters for the request, defaults to {}
+        :param bind_params: bind parameters for the query:
+            any variable in the query written as ``'$var_name'`` will be
+            replaced with ``bind_params['var_name']``. Only works in the
+            ``WHERE`` clause and takes precedence over ``params['params']``
         :param epoch: response timestamps to be in epoch format either 'h',
             'm', 's', 'ms', 'u', or 'ns',defaults to `None` which is
             RFC3339 UTC format with nanosecond precision
@@ -171,11 +183,13 @@ class DataFrameClient(InfluxDBClient):
         :rtype: :class:`~.ResultSet`
         """
         query_args = dict(params=params,
+                          bind_params=bind_params,
                           epoch=epoch,
                           expected_response_code=expected_response_code,
                           raise_errors=raise_errors,
                           chunked=chunked,
                           database=database,
+                          method=method,
                           chunk_size=chunk_size)
         results = super(DataFrameClient, self).query(query, **query_args)
         if query.strip().upper().startswith("SELECT"):
@@ -200,7 +214,8 @@ class DataFrameClient(InfluxDBClient):
             df = pd.DataFrame(data)
             df.time = pd.to_datetime(df.time)
             df.set_index('time', inplace=True)
-            df.index = df.index.tz_localize('UTC')
+            if df.index.tzinfo is None:
+                df.index = df.index.tz_localize('UTC')
             df.index.name = None
             result[key].append(df)
         for key, data in result.items():
@@ -255,14 +270,31 @@ class DataFrameClient(InfluxDBClient):
             "h": 1e9 * 3600,
         }.get(time_precision, 1)
 
+        if not tag_columns:
+            points = [
+                {'measurement': measurement,
+                 'fields':
+                    rec.replace([np.inf, -np.inf], np.nan).dropna().to_dict(),
+                 'time': np.int64(ts.value / precision_factor)}
+                for ts, (_, rec) in zip(
+                    dataframe.index,
+                    dataframe[field_columns].iterrows()
+                )
+            ]
+
+            return points
+
         points = [
             {'measurement': measurement,
              'tags': dict(list(tag.items()) + list(tags.items())),
-             'fields': rec,
+             'fields':
+                rec.replace([np.inf, -np.inf], np.nan).dropna().to_dict(),
              'time': np.int64(ts.value / precision_factor)}
-            for ts, tag, rec in zip(dataframe.index,
-                                    dataframe[tag_columns].to_dict('record'),
-                                    dataframe[field_columns].to_dict('record'))
+            for ts, tag, (_, rec) in zip(
+                dataframe.index,
+                dataframe[tag_columns].to_dict('record'),
+                dataframe[field_columns].iterrows()
+            )
         ]
 
         return points
@@ -348,7 +380,7 @@ class DataFrameClient(InfluxDBClient):
             tag_df = self._stringify_dataframe(
                 tag_df, numeric_precision, datatype='tag')
 
-            # join preprendded tags, leaving None values out
+            # join prepended tags, leaving None values out
             tags = tag_df.apply(
                 lambda s: [',' + s.name + '=' + v if v else '' for v in s])
             tags = tags.sum(axis=1)
@@ -364,19 +396,18 @@ class DataFrameClient(InfluxDBClient):
             tags = ''
 
         # Make an array of formatted field keys and values
-        field_df = dataframe[field_columns]
-        # Keep the positions where Null values are found
-        mask_null = field_df.isnull().values
+        field_df = dataframe[field_columns].replace([np.inf, -np.inf], np.nan)
+        nans = pd.isnull(field_df)
 
         field_df = self._stringify_dataframe(field_df,
                                              numeric_precision,
                                              datatype='field')
 
         field_df = (field_df.columns.values + '=').tolist() + field_df
-        field_df[field_df.columns[1:]] = ',' + field_df[
-            field_df.columns[1:]]
-        field_df = field_df.where(~mask_null, '')  # drop Null entries
-        fields = field_df.sum(axis=1)
+        field_df[field_df.columns[1:]] = ',' + field_df[field_df.columns[1:]]
+        field_df[nans] = ''
+
+        fields = field_df.sum(axis=1).map(lambda x: x.lstrip(','))
         del field_df
 
         # Generate line protocol string

@@ -7,7 +7,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
-import distutils
+import distutils.spawn
 import os
 import tempfile
 import shutil
@@ -80,7 +80,7 @@ class InfluxDbInstance(object):
         # find a couple free ports :
         free_ports = get_free_ports(4)
         ports = {}
-        for service in 'http', 'admin', 'meta', 'udp':
+        for service in 'http', 'global', 'meta', 'udp':
             ports[service + '_port'] = free_ports.pop()
         if not udp_enabled:
             ports['udp_port'] = -1
@@ -113,7 +113,7 @@ class InfluxDbInstance(object):
             "%s > Started influxdb bin in %r with ports %s and %s.." % (
                 datetime.datetime.now(),
                 self.temp_dir_base,
-                self.admin_port,
+                self.global_port,
                 self.http_port
             )
         )
@@ -126,7 +126,7 @@ class InfluxDbInstance(object):
         try:
             while time.time() < timeout:
                 if (is_port_open(self.http_port) and
-                        is_port_open(self.admin_port)):
+                        is_port_open(self.global_port)):
                     # it's hard to check if a UDP port is open..
                     if udp_enabled:
                         # so let's just sleep 0.5 sec in this case

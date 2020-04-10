@@ -13,8 +13,8 @@ import unittest
 import warnings
 import requests_mock
 
-from influxdb.tests import skipIfPYpy, using_pypy
 from nose.tools import raises
+from influxdb.tests import skip_if_pypy, using_pypy
 
 from .client_test import _mocked_session
 
@@ -22,9 +22,10 @@ if not using_pypy:
     import pandas as pd
     from pandas.util.testing import assert_frame_equal
     from influxdb import DataFrameClient
+    import numpy as np
 
 
-@skipIfPYpy
+@skip_if_pypy
 class TestDataFrameClient(unittest.TestCase):
     """Set up a test DataFrameClient object."""
 
@@ -388,6 +389,71 @@ class TestDataFrameClient(unittest.TestCase):
 
             self.assertEqual(m.last_request.body, expected)
 
+    def test_write_points_from_dataframe_with_leading_none_column(self):
+        """write_points detect erroneous leading comma for null first field."""
+        dataframe = pd.DataFrame(
+            dict(
+                first=[1, None, None, 8, 9],
+                second=[2, None, None, None, 10],
+                third=[3, 4.1, None, None, 11],
+                first_tag=["one", None, None, "eight", None],
+                second_tag=["two", None, None, None, None],
+                third_tag=["three", "four", None, None, None],
+                comment=[
+                    "All columns filled",
+                    "First two of three empty",
+                    "All empty",
+                    "Last two of three empty",
+                    "Empty tags with values",
+                ]
+            ),
+            index=pd.date_range(
+                start=pd.to_datetime('2018-01-01'),
+                freq='1D',
+                periods=5,
+            )
+        )
+        expected = (
+            b'foo,first_tag=one,second_tag=two,third_tag=three'
+            b' comment="All columns filled",first=1.0,second=2.0,third=3.0'
+            b' 1514764800000000000\n'
+            b'foo,third_tag=four'
+            b' comment="First two of three empty",third=4.1'
+            b' 1514851200000000000\n'
+            b'foo comment="All empty" 1514937600000000000\n'
+            b'foo,first_tag=eight'
+            b' comment="Last two of three empty",first=8.0'
+            b' 1515024000000000000\n'
+            b'foo'
+            b' comment="Empty tags with values",first=9.0,second=10.0'
+            b',third=11.0'
+            b' 1515110400000000000\n'
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            colnames = [
+                "first_tag",
+                "second_tag",
+                "third_tag",
+                "comment",
+                "first",
+                "second",
+                "third"
+            ]
+            cli.write_points(dataframe.loc[:, colnames], 'foo',
+                             tag_columns=[
+                                 "first_tag",
+                                 "second_tag",
+                                 "third_tag"])
+
+            self.assertEqual(m.last_request.body, expected)
+
     def test_write_points_from_dataframe_with_numeric_precision(self):
         """Test write points from df with numeric precision."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
@@ -396,10 +462,16 @@ class TestDataFrameClient(unittest.TestCase):
                                        ["2", 2, 2.2222222222222]],
                                  index=[now, now + timedelta(hours=1)])
 
-        expected_default_precision = (
-            b'foo,hello=there 0=\"1\",1=1i,2=1.11111111111 0\n'
-            b'foo,hello=there 0=\"2\",1=2i,2=2.22222222222 3600000000000\n'
-        )
+        if np.lib.NumpyVersion(np.__version__) <= '1.13.3':
+            expected_default_precision = (
+                b'foo,hello=there 0=\"1\",1=1i,2=1.11111111111 0\n'
+                b'foo,hello=there 0=\"2\",1=2i,2=2.22222222222 3600000000000\n'
+            )
+        else:
+            expected_default_precision = (
+                b'foo,hello=there 0=\"1\",1=1i,2=1.1111111111111 0\n'
+                b'foo,hello=there 0=\"2\",1=2i,2=2.2222222222222 3600000000000\n'  # noqa E501 line too long
+            )
 
         expected_specified_precision = (
             b'foo,hello=there 0=\"1\",1=1i,2=1.1111 0\n'
@@ -418,6 +490,9 @@ class TestDataFrameClient(unittest.TestCase):
 
             cli = DataFrameClient(database='db')
             cli.write_points(dataframe, "foo", {"hello": "there"})
+
+            print(expected_default_precision)
+            print(m.last_request.body)
 
             self.assertEqual(m.last_request.body, expected_default_precision)
 
@@ -552,6 +627,248 @@ class TestDataFrameClient(unittest.TestCase):
             cli = DataFrameClient(database='db')
             cli.write_points(dataframe, "foo")
 
+    def test_create_database(self):
+        """Test create database for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text='{"results":[{}]}'
+            )
+            cli.create_database('new_db')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create database "new_db"'
+            )
+
+    def test_create_numeric_named_database(self):
+        """Test create db w/numeric name for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text='{"results":[{}]}'
+            )
+            cli.create_database('123')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create database "123"'
+            )
+
+    @raises(Exception)
+    def test_create_database_fails(self):
+        """Test create database fail for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        with _mocked_session(cli, 'post', 401):
+            cli.create_database('new_db')
+
+    def test_drop_database(self):
+        """Test drop database for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text='{"results":[{}]}'
+            )
+            cli.drop_database('new_db')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'drop database "new_db"'
+            )
+
+    def test_drop_measurement(self):
+        """Test drop measurement for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text='{"results":[{}]}'
+            )
+            cli.drop_measurement('new_measurement')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'drop measurement "new_measurement"'
+            )
+
+    def test_drop_numeric_named_database(self):
+        """Test drop numeric db for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text='{"results":[{}]}'
+            )
+            cli.drop_database('123')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'drop database "123"'
+            )
+
+    @raises(Exception)
+    def test_get_list_database_fails(self):
+        """Test get list of dbs fail for TestInfluxDBClient object."""
+        cli = DataFrameClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'get', 401):
+            cli.get_list_database()
+
+    def test_get_list_measurements(self):
+        """Test get list of measurements for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        data = {
+            "results": [{
+                "series": [
+                    {"name": "measurements",
+                     "columns": ["name"],
+                     "values": [["cpu"], ["disk"]
+                                ]}]}
+            ]
+        }
+
+        with _mocked_session(cli, 'get', 200, json.dumps(data)):
+            self.assertListEqual(
+                cli.get_list_measurements(),
+                [{'name': 'cpu'}, {'name': 'disk'}]
+            )
+
+    def test_create_retention_policy_default(self):
+        """Test create default ret policy for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            cli.create_retention_policy(
+                'somename', '1d', 4, default=True, database='db'
+            )
+
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create retention policy "somename" on '
+                '"db" duration 1d replication 4 shard duration 0s default'
+            )
+
+    def test_create_retention_policy(self):
+        """Test create retention policy for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            cli.create_retention_policy(
+                'somename', '1d', 4, database='db'
+            )
+
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create retention policy "somename" on '
+                '"db" duration 1d replication 4 shard duration 0s'
+            )
+
+    def test_alter_retention_policy(self):
+        """Test alter retention policy for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            # Test alter duration
+            cli.alter_retention_policy('somename', 'db',
+                                       duration='4d')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'alter retention policy "somename" on "db" duration 4d'
+            )
+            # Test alter replication
+            cli.alter_retention_policy('somename', 'db',
+                                       replication=4)
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'alter retention policy "somename" on "db" replication 4'
+            )
+
+            # Test alter shard duration
+            cli.alter_retention_policy('somename', 'db',
+                                       shard_duration='1h')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'alter retention policy "somename" on "db" shard duration 1h'
+            )
+
+            # Test alter default
+            cli.alter_retention_policy('somename', 'db',
+                                       default=True)
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'alter retention policy "somename" on "db" default'
+            )
+
+    @raises(Exception)
+    def test_alter_retention_policy_invalid(self):
+        """Test invalid alter ret policy for TestInfluxDBClient object."""
+        cli = DataFrameClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'get', 400):
+            cli.alter_retention_policy('somename', 'db')
+
+    def test_drop_retention_policy(self):
+        """Test drop retention policy for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            cli.drop_retention_policy('somename', 'db')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'drop retention policy "somename" on "db"'
+            )
+
+    @raises(Exception)
+    def test_drop_retention_policy_fails(self):
+        """Test failed drop ret policy for TestInfluxDBClient object."""
+        cli = DataFrameClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'delete', 401):
+            cli.drop_retention_policy('default', 'db')
+
+    def test_get_list_retention_policies(self):
+        """Test get retention policies for TestInfluxDBClient object."""
+        cli = DataFrameClient(database='db')
+        example_response = \
+            '{"results": [{"series": [{"values": [["fsfdsdf", "24h0m0s", 2]],'\
+            ' "columns": ["name", "duration", "replicaN"]}]}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.assertListEqual(
+                cli.get_list_retention_policies("db"),
+                [{'duration': '24h0m0s',
+                  'name': 'fsfdsdf', 'replicaN': 2}]
+            )
+
     def test_query_into_dataframe(self):
         """Test query into df for TestDataFrameClient object."""
         data = {
@@ -576,13 +893,15 @@ class TestDataFrameClient(unittest.TestCase):
         pd1 = pd.DataFrame(
             [[23422]], columns=['value'],
             index=pd.to_datetime(["2009-11-10T23:00:00Z"]))
-        pd1.index = pd1.index.tz_localize('UTC')
+        if pd1.index.tzinfo is None:
+            pd1.index = pd1.index.tz_localize('UTC')
         pd2 = pd.DataFrame(
             [[23422], [23422], [23422]], columns=['value'],
             index=pd.to_datetime(["2009-11-10T23:00:00Z",
                                   "2009-11-10T23:00:00Z",
                                   "2009-11-10T23:00:00Z"]))
-        pd2.index = pd2.index.tz_localize('UTC')
+        if pd2.index.tzinfo is None:
+            pd2.index = pd2.index.tz_localize('UTC')
         expected = {
             ('network', (('direction', ''),)): pd1,
             ('network', (('direction', 'in'),)): pd2
@@ -595,7 +914,7 @@ class TestDataFrameClient(unittest.TestCase):
                 assert_frame_equal(expected[k], result[k])
 
     def test_multiquery_into_dataframe(self):
-        """Test multiquyer into df for TestDataFrameClient object."""
+        """Test multiquery into df for TestDataFrameClient object."""
         data = {
             "results": [
                 {
@@ -629,18 +948,22 @@ class TestDataFrameClient(unittest.TestCase):
             index=pd.to_datetime([
                 "2015-01-29 21:55:43.702900257+0000",
                 "2015-01-29 21:55:43.702900257+0000",
-                "2015-06-11 20:46:02+0000"])).tz_localize('UTC')
+                "2015-06-11 20:46:02+0000"]))
+        if pd1.index.tzinfo is None:
+            pd1.index = pd1.index.tz_localize('UTC')
         pd2 = pd.DataFrame(
             [[3]], columns=['count'],
-            index=pd.to_datetime(["1970-01-01 00:00:00+00:00"]))\
-            .tz_localize('UTC')
+            index=pd.to_datetime(["1970-01-01 00:00:00+00:00"]))
+        if pd2.index.tzinfo is None:
+            pd2.index = pd2.index.tz_localize('UTC')
         expected = [{'cpu_load_short': pd1}, {'cpu_load_short': pd2}]
 
         cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
-        iql = "SELECT value FROM cpu_load_short WHERE region='us-west';"\
-            "SELECT count(value) FROM cpu_load_short WHERE region='us-west'"
+        iql = "SELECT value FROM cpu_load_short WHERE region=$region;"\
+            "SELECT count(value) FROM cpu_load_short WHERE region=$region"
+        bind_params = {'region': 'us-west'}
         with _mocked_session(cli, 'GET', 200, data):
-            result = cli.query(iql)
+            result = cli.query(iql, bind_params=bind_params)
             for r, e in zip(result, expected):
                 for k in e:
                     assert_frame_equal(e[k], r[k])
@@ -709,3 +1032,119 @@ class TestDataFrameClient(unittest.TestCase):
         client = DataFrameClient.from_dsn('influxdb://localhost:8086')
         self.assertIsInstance(client, DataFrameClient)
         self.assertEqual('http://localhost:8086', client._baseurl)
+
+    def test_write_points_from_dataframe_with_nan_line(self):
+        """Test write points from dataframe with Nan lines."""
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[["1", 1, np.inf], ["2", 2, np.nan]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["column_one", "column_two",
+                                          "column_three"])
+        expected = (
+            b"foo column_one=\"1\",column_two=1i 0\n"
+            b"foo column_one=\"2\",column_two=2i "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo', protocol='line')
+            self.assertEqual(m.last_request.body, expected)
+
+            cli.write_points(dataframe, 'foo', tags=None, protocol='line')
+            self.assertEqual(m.last_request.body, expected)
+
+    def test_write_points_from_dataframe_with_nan_json(self):
+        """Test write points from json with NaN lines."""
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[["1", 1, np.inf], ["2", 2, np.nan]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["column_one", "column_two",
+                                          "column_three"])
+        expected = (
+            b"foo column_one=\"1\",column_two=1i 0\n"
+            b"foo column_one=\"2\",column_two=2i "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo', protocol='json')
+            self.assertEqual(m.last_request.body, expected)
+
+            cli.write_points(dataframe, 'foo', tags=None, protocol='json')
+            self.assertEqual(m.last_request.body, expected)
+
+    def test_write_points_from_dataframe_with_tags_and_nan_line(self):
+        """Test write points from dataframe with NaN lines and tags."""
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[['blue', 1, "1", 1, np.inf],
+                                       ['red', 0, "2", 2, np.nan]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["tag_one", "tag_two", "column_one",
+                                          "column_two", "column_three"])
+        expected = (
+            b"foo,tag_one=blue,tag_two=1 "
+            b"column_one=\"1\",column_two=1i "
+            b"0\n"
+            b"foo,tag_one=red,tag_two=0 "
+            b"column_one=\"2\",column_two=2i "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo', protocol='line',
+                             tag_columns=['tag_one', 'tag_two'])
+            self.assertEqual(m.last_request.body, expected)
+
+            cli.write_points(dataframe, 'foo', tags=None, protocol='line',
+                             tag_columns=['tag_one', 'tag_two'])
+            self.assertEqual(m.last_request.body, expected)
+
+    def test_write_points_from_dataframe_with_tags_and_nan_json(self):
+        """Test write points from json with NaN lines and tags."""
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[['blue', 1, "1", 1, np.inf],
+                                       ['red', 0, "2", 2, np.nan]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["tag_one", "tag_two", "column_one",
+                                          "column_two", "column_three"])
+        expected = (
+            b"foo,tag_one=blue,tag_two=1 "
+            b"column_one=\"1\",column_two=1i "
+            b"0\n"
+            b"foo,tag_one=red,tag_two=0 "
+            b"column_one=\"2\",column_two=2i "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo', protocol='json',
+                             tag_columns=['tag_one', 'tag_two'])
+            self.assertEqual(m.last_request.body, expected)
+
+            cli.write_points(dataframe, 'foo', tags=None, protocol='json',
+                             tag_columns=['tag_one', 'tag_two'])
+            self.assertEqual(m.last_request.body, expected)

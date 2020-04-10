@@ -149,6 +149,14 @@ class TestInfluxDBClient(unittest.TestCase):
                                       **{'ssl': False})
         self.assertEqual('http://my.host.fr:1886', cli._baseurl)
 
+    def test_cert(self):
+        """Test mutual TLS authentication for TestInfluxDBClient object."""
+        cli = InfluxDBClient(ssl=True, cert='/etc/pki/tls/private/dummy.crt')
+        self.assertEqual(cli._session.cert, '/etc/pki/tls/private/dummy.crt')
+
+        with self.assertRaises(ValueError):
+            cli = InfluxDBClient(cert='/etc/pki/tls/private/dummy.crt')
+
     def test_switch_database(self):
         """Test switch database in TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'database')
@@ -337,6 +345,23 @@ class TestInfluxDBClient(unittest.TestCase):
                 m.last_request.body,
             )
 
+    def test_write_points_with_consistency(self):
+        """Test write points with consistency for TestInfluxDBClient object."""
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                'http://localhost:8086/write',
+                status_code=204
+            )
+
+            cli = InfluxDBClient(database='db')
+
+            cli.write_points(self.dummy_points, consistency='any')
+            self.assertEqual(
+                m.last_request.qs,
+                {'db': ['db'], 'consistency': ['any']}
+            )
+
     def test_write_points_with_precision_udp(self):
         """Test write points with precision for TestInfluxDBClient object."""
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -409,6 +434,15 @@ class TestInfluxDBClient(unittest.TestCase):
                 time_precision='g'
             )
 
+    def test_write_points_bad_consistency(self):
+        """Test write points w/bad consistency value."""
+        cli = InfluxDBClient()
+        with self.assertRaises(ValueError):
+            cli.write_points(
+                self.dummy_points,
+                consistency='boo'
+            )
+
     @raises(Exception)
     def test_write_points_with_precision_fails(self):
         """Test write points w/precision fail for TestInfluxDBClient object."""
@@ -433,6 +467,52 @@ class TestInfluxDBClient(unittest.TestCase):
                 text=example_response
             )
             rs = self.cli.query('select * from foo')
+
+            self.assertListEqual(
+                list(rs[0].get_points()),
+                [{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]
+            )
+
+    def test_query_msgpack(self):
+        """Test query method with a messagepack response."""
+        example_response = bytes(bytearray.fromhex(
+            "81a7726573756c74739182ac73746174656d656e745f696400a673657269"
+            "65739183a46e616d65a161a7636f6c756d6e7392a474696d65a176a67661"
+            "6c7565739192c70c05000000005d26178a019096c8cb3ff0000000000000"
+        ))
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                request_headers={"Accept": "application/x-msgpack"},
+                headers={"Content-Type": "application/x-msgpack"},
+                content=example_response
+            )
+            rs = self.cli.query('select * from a')
+
+            self.assertListEqual(
+                list(rs.get_points()),
+                [{'v': 1.0, 'time': '2019-07-10T16:51:22.026253Z'}]
+            )
+
+    def test_select_into_post(self):
+        """Test SELECT.*INTO is POSTed."""
+        example_response = (
+            '{"results": [{"series": [{"measurement": "sdfsdfsdf", '
+            '"columns": ["time", "value"], "values": '
+            '[["2009-11-10T23:00:00Z", 0.64]]}]}, {"series": '
+            '[{"measurement": "cpu_load_short", "columns": ["time", "value"], '
+            '"values": [["2009-11-10T23:00:00Z", 0.64]]}]}]}'
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            rs = self.cli.query('select * INTO newmeas from foo')
 
             self.assertListEqual(
                 list(rs[0].get_points()),
@@ -495,7 +575,7 @@ class TestInfluxDBClient(unittest.TestCase):
         """Test create database for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text='{"results":[{}]}'
             )
@@ -509,7 +589,7 @@ class TestInfluxDBClient(unittest.TestCase):
         """Test create db w/numeric name for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text='{"results":[{}]}'
             )
@@ -529,7 +609,7 @@ class TestInfluxDBClient(unittest.TestCase):
         """Test drop database for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text='{"results":[{}]}'
             )
@@ -543,7 +623,7 @@ class TestInfluxDBClient(unittest.TestCase):
         """Test drop measurement for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text='{"results":[{}]}'
             )
@@ -557,7 +637,7 @@ class TestInfluxDBClient(unittest.TestCase):
         """Test drop numeric db for TestInfluxDBClient object."""
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text='{"results":[{}]}'
             )
@@ -609,13 +689,73 @@ class TestInfluxDBClient(unittest.TestCase):
                 [{'name': 'cpu'}, {'name': 'disk'}]
             )
 
+    def test_get_list_series(self):
+        """Test get a list of series from the database."""
+        data = {'results': [
+            {'series': [
+                {
+                    'values': [
+                        ['cpu_load_short,host=server01,region=us-west'],
+                        ['memory_usage,host=server02,region=us-east']],
+                    'columns': ['key']
+                }
+            ]}
+        ]}
+
+        with _mocked_session(self.cli, 'get', 200, json.dumps(data)):
+            self.assertListEqual(
+                self.cli.get_list_series(),
+                ['cpu_load_short,host=server01,region=us-west',
+                 'memory_usage,host=server02,region=us-east'])
+
+    def test_get_list_series_with_measurement(self):
+        """Test get a list of series from the database by filter."""
+        data = {'results': [
+            {'series': [
+                {
+                    'values': [
+                        ['cpu_load_short,host=server01,region=us-west']],
+                    'columns': ['key']
+                }
+            ]}
+        ]}
+
+        with _mocked_session(self.cli, 'get', 200, json.dumps(data)):
+            self.assertListEqual(
+                self.cli.get_list_series(measurement='cpu_load_short'),
+                ['cpu_load_short,host=server01,region=us-west'])
+
+    def test_get_list_series_with_tags(self):
+        """Test get a list of series from the database by tags."""
+        data = {'results': [
+            {'series': [
+                {
+                    'values': [
+                        ['cpu_load_short,host=server01,region=us-west']],
+                    'columns': ['key']
+                }
+            ]}
+        ]}
+
+        with _mocked_session(self.cli, 'get', 200, json.dumps(data)):
+            self.assertListEqual(
+                self.cli.get_list_series(tags={'region': 'us-west'}),
+                ['cpu_load_short,host=server01,region=us-west'])
+
+    @raises(Exception)
+    def test_get_list_series_fails(self):
+        """Test get a list of series from the database but fail."""
+        cli = InfluxDBClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'get', 401):
+            cli.get_list_series()
+
     def test_create_retention_policy_default(self):
         """Test create default ret policy for TestInfluxDBClient object."""
         example_response = '{"results":[{}]}'
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -626,7 +766,7 @@ class TestInfluxDBClient(unittest.TestCase):
             self.assertEqual(
                 m.last_request.qs['q'][0],
                 'create retention policy "somename" on '
-                '"db" duration 1d replication 4 default'
+                '"db" duration 1d replication 4 shard duration 0s default'
             )
 
     def test_create_retention_policy(self):
@@ -635,7 +775,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -646,7 +786,50 @@ class TestInfluxDBClient(unittest.TestCase):
             self.assertEqual(
                 m.last_request.qs['q'][0],
                 'create retention policy "somename" on '
-                '"db" duration 1d replication 4'
+                '"db" duration 1d replication 4 shard duration 0s'
+            )
+
+    def test_create_retention_policy_shard_duration(self):
+        """Test create retention policy with a custom shard duration."""
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.cli.create_retention_policy(
+                'somename2', '1d', 4, database='db',
+                shard_duration='1h'
+            )
+
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create retention policy "somename2" on '
+                '"db" duration 1d replication 4 shard duration 1h'
+            )
+
+    def test_create_retention_policy_shard_duration_default(self):
+        """Test create retention policy with a default shard duration."""
+        example_response = '{"results":[{}]}'
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/query",
+                text=example_response
+            )
+            self.cli.create_retention_policy(
+                'somename3', '1d', 4, database='db',
+                shard_duration='1h', default=True
+            )
+
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create retention policy "somename3" on '
+                '"db" duration 1d replication 4 shard duration 1h '
+                'default'
             )
 
     def test_alter_retention_policy(self):
@@ -655,7 +838,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -672,6 +855,14 @@ class TestInfluxDBClient(unittest.TestCase):
             self.assertEqual(
                 m.last_request.qs['q'][0],
                 'alter retention policy "somename" on "db" replication 4'
+            )
+
+            # Test alter shard duration
+            self.cli.alter_retention_policy('somename', 'db',
+                                            shard_duration='1h')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'alter retention policy "somename" on "db" shard duration 1h'
             )
 
             # Test alter default
@@ -695,7 +886,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -879,7 +1070,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -903,7 +1094,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -927,7 +1118,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -951,7 +1142,7 @@ class TestInfluxDBClient(unittest.TestCase):
 
         with requests_mock.Mocker() as m:
             m.register_uri(
-                requests_mock.GET,
+                requests_mock.POST,
                 "http://localhost:8086/query",
                 text=example_response
             )
@@ -970,7 +1161,7 @@ class TestInfluxDBClient(unittest.TestCase):
             self.cli.revoke_privilege('', 'testdb', 'test')
 
     def test_get_list_privileges(self):
-        """Tst get list of privs for TestInfluxDBClient object."""
+        """Test get list of privs for TestInfluxDBClient object."""
         data = {'results': [
             {'series': [
                 {'columns': ['database', 'privilege'],
@@ -995,6 +1186,114 @@ class TestInfluxDBClient(unittest.TestCase):
         cli = InfluxDBClient('host', 8086, 'username', 'password')
         with _mocked_session(cli, 'get', 401):
             cli.get_list_privileges('test')
+
+    def test_get_list_continuous_queries(self):
+        """Test getting a list of continuous queries."""
+        data = {
+            "results": [
+                {
+                    "statement_id": 0,
+                    "series": [
+                        {
+                            "name": "testdb01",
+                            "columns": ["name", "query"],
+                            "values": [["testname01", "testquery01"],
+                                       ["testname02", "testquery02"]]
+                        },
+                        {
+                            "name": "testdb02",
+                            "columns": ["name", "query"],
+                            "values": [["testname03", "testquery03"]]
+                        },
+                        {
+                            "name": "testdb03",
+                            "columns": ["name", "query"]
+                        }
+                    ]
+                }
+            ]
+        }
+
+        with _mocked_session(self.cli, 'get', 200, json.dumps(data)):
+            self.assertListEqual(
+                self.cli.get_list_continuous_queries(),
+                [
+                    {
+                        'testdb01': [
+                            {'name': 'testname01', 'query': 'testquery01'},
+                            {'name': 'testname02', 'query': 'testquery02'}
+                        ]
+                    },
+                    {
+                        'testdb02': [
+                            {'name': 'testname03', 'query': 'testquery03'}
+                        ]
+                    },
+                    {
+                        'testdb03': []
+                    }
+                ]
+            )
+
+    @raises(Exception)
+    def test_get_list_continuous_queries_fails(self):
+        """Test failing to get a list of continuous queries."""
+        with _mocked_session(self.cli, 'get', 400):
+            self.cli.get_list_continuous_queries()
+
+    def test_create_continuous_query(self):
+        """Test continuous query creation."""
+        data = {"results": [{}]}
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=json.dumps(data)
+            )
+            query = 'SELECT count("value") INTO "6_months"."events" FROM ' \
+                    '"events" GROUP BY time(10m)'
+            self.cli.create_continuous_query('cq_name', query, 'db_name')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create continuous query "cq_name" on "db_name" begin select '
+                'count("value") into "6_months"."events" from "events" group '
+                'by time(10m) end'
+            )
+            self.cli.create_continuous_query('cq_name', query, 'db_name',
+                                             'EVERY 10s FOR 2m')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'create continuous query "cq_name" on "db_name" resample '
+                'every 10s for 2m begin select count("value") into '
+                '"6_months"."events" from "events" group by time(10m) end'
+            )
+
+    @raises(Exception)
+    def test_create_continuous_query_fails(self):
+        """Test failing to create a continuous query."""
+        with _mocked_session(self.cli, 'get', 400):
+            self.cli.create_continuous_query('cq_name', 'select', 'db_name')
+
+    def test_drop_continuous_query(self):
+        """Test dropping a continuous query."""
+        data = {"results": [{}]}
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                text=json.dumps(data)
+            )
+            self.cli.drop_continuous_query('cq_name', 'db_name')
+            self.assertEqual(
+                m.last_request.qs['q'][0],
+                'drop continuous query "cq_name" on "db_name"'
+            )
+
+    @raises(Exception)
+    def test_drop_continuous_query_fails(self):
+        """Test failing to drop a continuous query."""
+        with _mocked_session(self.cli, 'get', 400):
+            self.cli.drop_continuous_query('cq_name', 'db_name')
 
     def test_invalid_port_fails(self):
         """Test invalid port fail for TestInfluxDBClient object."""
