@@ -371,7 +371,8 @@ class DataFrameClient(InfluxDBClient):
             del tag_df
         elif global_tags:
             tag_string = ''.join(
-                [",{}={}".format(k, _escape_tag(v)) if v not in [None, ''] else ""
+                [",{}={}".format(k, _escape_tag(v)) 
+                 if v not in [None, ''] else ""
                  for k, v in sorted(global_tags.items())]
             )
             tags = pd.Series(tag_string, index=dataframe.index)
