@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add gzip compression for post and response data (#732 thx @KEClaytor)
 - Add support for chunked responses in ResultSet (#753 and #538 thx @hrbonz && @psy0rz)
 - Add support for empty string fields (#766 thx @gregschrock)
+- Add support for context managers to InfluxDBClient (#721 thx @JustusAdam)
 
 ### Changed
 - Clean up stale CI config (#755)
@@ -37,6 +38,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Update client to type-set UDP port to int (#651 thx @yifeikong)
 - Update batched writing support for all iterables (#746 thx @JayH5)
 - Update SeriesHelper to enable class instantiation when not initialized (#772 thx @ocworld)
+- Update UDP test case to add proper timestamp to datapoints (#808 thx @shantanoo-desai)
 
 ### Removed
 
