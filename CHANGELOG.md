@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add gzip compression for post and response data (#732 thx @KEClaytor)
 - Add support for chunked responses in ResultSet (#753 and #538 thx @hrbonz && @psy0rz)
 - Add support for empty string fields (#766 thx @gregschrock)
+- Add support for context managers to InfluxDBClient (#721 thx @JustusAdam)
 
 ### Changed
 - Clean up stale CI config (#755)
