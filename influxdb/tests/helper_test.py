@@ -310,8 +310,19 @@ class TestSeriesHelper(unittest.TestCase):
 
                 series_name = 'events.stats.{server_name}'
 
+        class InvalidTimePrecision(SeriesHelper):
+            """Define instance of SeriesHelper for invalid time precision."""
+
+            class Meta:
+                """Define metadata for InvalidTimePrecision."""
+
+                series_name = 'events.stats.{server_name}'
+                time_precision = "ks"
+                fields = ['time', 'server_name']
+                autocommit = True
+
         for cls in [MissingMeta, MissingClient, MissingFields,
-                    MissingSeriesName]:
+                    MissingSeriesName, InvalidTimePrecision]:
             self.assertRaises(
                 AttributeError, cls, **{'time': 159,
                                         'server_name': 'us.east-1'})
