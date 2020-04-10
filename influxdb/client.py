@@ -7,7 +7,9 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
+import gzip
 import itertools
+import io
 import json
 import random
 import socket
@@ -70,10 +72,11 @@ class InfluxDBClient(object):
         as a single file containing the private key and the certificate, or as
         a tuple of both files’ paths, defaults to None
     :type cert: str
+    :param gzip: use gzip content encoding to compress requests
+    :type gzip: bool
     :param session: allow for the new client request to use an existing
         requests Session, defaults to None
     :type session: requests.Session
-
     :raises ValueError: if cert is provided but ssl is disabled (set to False)
     """
 
@@ -93,6 +96,7 @@ class InfluxDBClient(object):
                  pool_size=10,
                  path='',
                  cert=None,
+                 gzip=False,
                  session=None,
                  ):
         """Construct a new InfluxDBClient object."""
@@ -158,6 +162,8 @@ class InfluxDBClient(object):
             'Content-Type': 'application/json',
             'Accept': 'application/x-msgpack'
         }
+
+        self._gzip = gzip
 
     @property
     def _baseurl(self):
@@ -277,6 +283,23 @@ class InfluxDBClient(object):
 
         if isinstance(data, (dict, list)):
             data = json.dumps(data)
+
+        if self._gzip:
+            # Receive and send compressed data
+            headers.update({
+                'Accept-Encoding': 'gzip',
+                'Content-Encoding': 'gzip',
+            })
+            if data is not None:
+                # For Py 2.7 compatability use Gzipfile
+                compressed = io.BytesIO()
+                with gzip.GzipFile(
+                    compresslevel=9,
+                    fileobj=compressed,
+                    mode='w'
+                ) as f:
+                    f.write(data)
+                data = compressed.getvalue()
 
         # Try to send the request more than once by default (see #103)
         retry = True

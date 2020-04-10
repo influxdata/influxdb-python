@@ -24,6 +24,8 @@ import socket
 import unittest
 import warnings
 
+import io
+import gzip
 import json
 import mock
 import requests
@@ -212,6 +214,71 @@ class TestInfluxDBClient(unittest.TestCase):
                 'cpu_load_short,host=server01,region=us-west '
                 'value=0.64 1257894000123456000\n',
                 m.last_request.body.decode('utf-8'),
+            )
+
+    def test_write_gzip(self):
+        """Test write in TestInfluxDBClient object."""
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/write",
+                status_code=204
+            )
+
+            cli = InfluxDBClient(database='db', gzip=True)
+            cli.write(
+                {"database": "mydb",
+                 "retentionPolicy": "mypolicy",
+                 "points": [{"measurement": "cpu_load_short",
+                             "tags": {"host": "server01",
+                                      "region": "us-west"},
+                             "time": "2009-11-10T23:00:00Z",
+                             "fields": {"value": 0.64}}]}
+            )
+
+            compressed = io.BytesIO()
+            with gzip.GzipFile(
+                compresslevel=9,
+                fileobj=compressed,
+                mode='w'
+            ) as f:
+                f.write(
+                    b"cpu_load_short,host=server01,region=us-west "
+                    b"value=0.64 1257894000000000000\n"
+                )
+
+            self.assertEqual(
+                m.last_request.body,
+                compressed.getvalue(),
+            )
+
+    def test_write_points_gzip(self):
+        """Test write points for TestInfluxDBClient object."""
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/write",
+                status_code=204
+            )
+
+            cli = InfluxDBClient(database='db', gzip=True)
+            cli.write_points(
+                self.dummy_points,
+            )
+
+            compressed = io.BytesIO()
+            with gzip.GzipFile(
+                compresslevel=9,
+                fileobj=compressed,
+                mode='w'
+            ) as f:
+                f.write(
+                    b'cpu_load_short,host=server01,region=us-west '
+                    b'value=0.64 1257894000123456000\n'
+                )
+            self.assertEqual(
+                m.last_request.body,
+                compressed.getvalue(),
             )
 
     def test_write_points_toplevel_attributes(self):
