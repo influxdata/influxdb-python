@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Update DataFrameClient to test for pd.DataTimeIndex before blind conversion (#623 thx @testforvin)
 - Update client to type-set UDP port to int (#651 thx @yifeikong)
 - Update batched writing support for all iterables (#746 thx @JayH5)
+- Update SeriesHelper to enable class instantiation when not initialized (#772 thx @ocworld)
 
 ### Removed
 
