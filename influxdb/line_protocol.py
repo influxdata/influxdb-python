@@ -112,8 +112,11 @@ def _escape_value(value):
     if isinstance(value, integer_types) and not isinstance(value, bool):
         return str(value) + 'i'
 
+    if isinstance(value, bool):
+        return str(value)
+
     if _is_float(value):
-        return repr(value)
+        return repr(float(value))
 
     return str(value)
 
