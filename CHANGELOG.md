@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Fix nanosecond time resolution for points (#407 thx @AndreCAndersen && @clslgrnc)
 - Fix import of distutils.spawn (#805 thx @Hawk777)
 - Update repr of float values including properly handling of boolean (#488 thx @ghost)
+- Update dataframe_client to fix faulty empty tags (#770 thx @michelfripiat)
 
 ### Removed
 
