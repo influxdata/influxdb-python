@@ -7,7 +7,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import datetime
-import distutils
+import distutils.spawn
 import os
 import tempfile
 import shutil

@@ -819,6 +819,64 @@ GROUP BY tag_1').get_points())
         ]
         self.cli.write_points(pts)
 
+    def test_get_list_series(self):
+        """Test get a list of series from the database."""
+        dummy_points = [
+            {
+                "measurement": "cpu_load_short",
+                "tags": {
+                    "host": "server01",
+                    "region": "us-west"
+                },
+                "time": "2009-11-10T23:00:00.123456Z",
+                "fields": {
+                    "value": 0.64
+                }
+            }
+        ]
+
+        dummy_points_2 = [
+            {
+                "measurement": "memory_usage",
+                "tags": {
+                    "host": "server02",
+                    "region": "us-east"
+                },
+                "time": "2009-11-10T23:00:00.123456Z",
+                "fields": {
+                    "value": 80
+                }
+            }
+        ]
+
+        self.cli.write_points(dummy_points)
+        self.cli.write_points(dummy_points_2)
+
+        self.assertEquals(
+            self.cli.get_list_series(),
+            ['cpu_load_short,host=server01,region=us-west',
+             'memory_usage,host=server02,region=us-east']
+        )
+
+        self.assertEquals(
+            self.cli.get_list_series(measurement='memory_usage'),
+            ['memory_usage,host=server02,region=us-east']
+        )
+
+        self.assertEquals(
+            self.cli.get_list_series(measurement='memory_usage'),
+            ['memory_usage,host=server02,region=us-east']
+        )
+
+        self.assertEquals(
+            self.cli.get_list_series(tags={'host': 'server02'}),
+            ['memory_usage,host=server02,region=us-east'])
+
+        self.assertEquals(
+            self.cli.get_list_series(
+                measurement='cpu_load_short', tags={'host': 'server02'}),
+            [])
+
 
 @skip_server_tests
 class UdpTests(ManyTestCasesWithServerMixin, unittest.TestCase):

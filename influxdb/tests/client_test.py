@@ -540,6 +540,29 @@ class TestInfluxDBClient(unittest.TestCase):
                 [{'value': 0.64, 'time': '2009-11-10T23:00:00Z'}]
             )
 
+    def test_query_msgpack(self):
+        """Test query method with a messagepack response."""
+        example_response = bytes(bytearray.fromhex(
+            "81a7726573756c74739182ac73746174656d656e745f696400a673657269"
+            "65739183a46e616d65a161a7636f6c756d6e7392a474696d65a176a67661"
+            "6c7565739192c70c05000000005d26178a019096c8cb3ff0000000000000"
+        ))
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                request_headers={"Accept": "application/x-msgpack"},
+                headers={"Content-Type": "application/x-msgpack"},
+                content=example_response
+            )
+            rs = self.cli.query('select * from a')
+
+            self.assertListEqual(
+                list(rs.get_points()),
+                [{'v': 1.0, 'time': '2019-07-10T16:51:22.026253Z'}]
+            )
+
     def test_select_into_post(self):
         """Test SELECT.*INTO is POSTed."""
         example_response = (
@@ -732,6 +755,66 @@ class TestInfluxDBClient(unittest.TestCase):
                 self.cli.get_list_measurements(),
                 [{'name': 'cpu'}, {'name': 'disk'}]
             )
+
+    def test_get_list_series(self):
+        """Test get a list of series from the database."""
+        data = {'results': [
+            {'series': [
+                {
+                    'values': [
+                        ['cpu_load_short,host=server01,region=us-west'],
+                        ['memory_usage,host=server02,region=us-east']],
+                    'columns': ['key']
+                }
+            ]}
+        ]}
+
+        with _mocked_session(self.cli, 'get', 200, json.dumps(data)):
+            self.assertListEqual(
+                self.cli.get_list_series(),
+                ['cpu_load_short,host=server01,region=us-west',
+                 'memory_usage,host=server02,region=us-east'])
+
+    def test_get_list_series_with_measurement(self):
+        """Test get a list of series from the database by filter."""
+        data = {'results': [
+            {'series': [
+                {
+                    'values': [
+                        ['cpu_load_short,host=server01,region=us-west']],
+                    'columns': ['key']
+                }
+            ]}
+        ]}
+
+        with _mocked_session(self.cli, 'get', 200, json.dumps(data)):
+            self.assertListEqual(
+                self.cli.get_list_series(measurement='cpu_load_short'),
+                ['cpu_load_short,host=server01,region=us-west'])
+
+    def test_get_list_series_with_tags(self):
+        """Test get a list of series from the database by tags."""
+        data = {'results': [
+            {'series': [
+                {
+                    'values': [
+                        ['cpu_load_short,host=server01,region=us-west']],
+                    'columns': ['key']
+                }
+            ]}
+        ]}
+
+        with _mocked_session(self.cli, 'get', 200, json.dumps(data)):
+            self.assertListEqual(
+                self.cli.get_list_series(tags={'region': 'us-west'}),
+                ['cpu_load_short,host=server01,region=us-west'])
+
+    @raises(Exception)
+    def test_get_list_series_fails(self):
+        """Test get a list of series from the database but fail."""
+        cli = InfluxDBClient('host', 8086, 'username', 'password')
+        with _mocked_session(cli, 'get', 401):
+            cli.get_list_series()
 
     def test_create_retention_policy_default(self):
         """Test create default ret policy for TestInfluxDBClient object."""
@@ -1145,7 +1228,7 @@ class TestInfluxDBClient(unittest.TestCase):
             self.cli.revoke_privilege('', 'testdb', 'test')
 
     def test_get_list_privileges(self):
-        """Tst get list of privs for TestInfluxDBClient object."""
+        """Test get list of privs for TestInfluxDBClient object."""
         data = {'results': [
             {'series': [
                 {'columns': ['database', 'privilege'],

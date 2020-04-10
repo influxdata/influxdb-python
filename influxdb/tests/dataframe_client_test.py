@@ -13,8 +13,8 @@ import unittest
 import warnings
 import requests_mock
 
-from influxdb.tests import skip_if_pypy, using_pypy
 from nose.tools import raises
+from influxdb.tests import skip_if_pypy, using_pypy
 
 from .client_test import _mocked_session
 
@@ -22,7 +22,7 @@ if not using_pypy:
     import pandas as pd
     from pandas.util.testing import assert_frame_equal
     from influxdb import DataFrameClient
-    import numpy
+    import numpy as np
 
 
 @skip_if_pypy
@@ -462,7 +462,7 @@ class TestDataFrameClient(unittest.TestCase):
                                        ["2", 2, 2.2222222222222]],
                                  index=[now, now + timedelta(hours=1)])
 
-        if numpy.lib.NumpyVersion(numpy.__version__) <= '1.13.3':
+        if np.lib.NumpyVersion(np.__version__) <= '1.13.3':
             expected_default_precision = (
                 b'foo,hello=there 0=\"1\",1=1i,2=1.11111111111 0\n'
                 b'foo,hello=there 0=\"2\",1=2i,2=2.22222222222 3600000000000\n'
@@ -968,6 +968,98 @@ class TestDataFrameClient(unittest.TestCase):
                 for k in e:
                     assert_frame_equal(e[k], r[k])
 
+    def test_multiquery_into_dataframe_dropna(self):
+        """Test multiquery into df for TestDataFrameClient object."""
+        data = {
+            "results": [
+                {
+                    "series": [
+                        {
+                            "name": "cpu_load_short",
+                            "columns": ["time", "value", "value2", "value3"],
+                            "values": [
+                                ["2015-01-29T21:55:43.702900257Z",
+                                 0.55, 0.254, np.NaN],
+                                ["2015-01-29T21:55:43.702900257Z",
+                                 23422, 122878, np.NaN],
+                                ["2015-06-11T20:46:02Z",
+                                 0.64, 0.5434, np.NaN]
+                            ]
+                        }
+                    ]
+                }, {
+                    "series": [
+                        {
+                            "name": "cpu_load_short",
+                            "columns": ["time", "count"],
+                            "values": [
+                                ["1970-01-01T00:00:00Z", 3]
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+
+        pd1 = pd.DataFrame(
+            [[0.55, 0.254, np.NaN],
+             [23422.0, 122878, np.NaN],
+             [0.64, 0.5434, np.NaN]],
+            columns=['value', 'value2', 'value3'],
+            index=pd.to_datetime([
+                "2015-01-29 21:55:43.702900257+0000",
+                "2015-01-29 21:55:43.702900257+0000",
+                "2015-06-11 20:46:02+0000"]))
+
+        if pd1.index.tzinfo is None:
+            pd1.index = pd1.index.tz_localize('UTC')
+
+        pd1_dropna = pd.DataFrame(
+            [[0.55, 0.254], [23422.0, 122878], [0.64, 0.5434]],
+            columns=['value', 'value2'],
+            index=pd.to_datetime([
+                "2015-01-29 21:55:43.702900257+0000",
+                "2015-01-29 21:55:43.702900257+0000",
+                "2015-06-11 20:46:02+0000"]))
+
+        if pd1_dropna.index.tzinfo is None:
+            pd1_dropna.index = pd1_dropna.index.tz_localize('UTC')
+
+        pd2 = pd.DataFrame(
+            [[3]], columns=['count'],
+            index=pd.to_datetime(["1970-01-01 00:00:00+00:00"]))
+
+        if pd2.index.tzinfo is None:
+            pd2.index = pd2.index.tz_localize('UTC')
+
+        expected_dropna_true = [
+            {'cpu_load_short': pd1_dropna},
+            {'cpu_load_short': pd2}]
+        expected_dropna_false = [
+            {'cpu_load_short': pd1},
+            {'cpu_load_short': pd2}]
+
+        cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
+        iql = "SELECT value FROM cpu_load_short WHERE region=$region;" \
+              "SELECT count(value) FROM cpu_load_short WHERE region=$region"
+        bind_params = {'region': 'us-west'}
+
+        for dropna in [True, False]:
+            with _mocked_session(cli, 'GET', 200, data):
+                result = cli.query(iql, bind_params=bind_params, dropna=dropna)
+                expected = \
+                    expected_dropna_true if dropna else expected_dropna_false
+                for r, e in zip(result, expected):
+                    for k in e:
+                        assert_frame_equal(e[k], r[k])
+
+        # test default value (dropna = True)
+        with _mocked_session(cli, 'GET', 200, data):
+            result = cli.query(iql, bind_params=bind_params)
+            for r, e in zip(result, expected_dropna_true):
+                for k in e:
+                    assert_frame_equal(e[k], r[k])
+
     def test_query_with_empty_result(self):
         """Test query with empty results in TestDataFrameClient object."""
         cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
@@ -1032,3 +1124,119 @@ class TestDataFrameClient(unittest.TestCase):
         client = DataFrameClient.from_dsn('influxdb://localhost:8086')
         self.assertIsInstance(client, DataFrameClient)
         self.assertEqual('http://localhost:8086', client._baseurl)
+
+    def test_write_points_from_dataframe_with_nan_line(self):
+        """Test write points from dataframe with Nan lines."""
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[["1", 1, np.inf], ["2", 2, np.nan]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["column_one", "column_two",
+                                          "column_three"])
+        expected = (
+            b"foo column_one=\"1\",column_two=1i 0\n"
+            b"foo column_one=\"2\",column_two=2i "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo', protocol='line')
+            self.assertEqual(m.last_request.body, expected)
+
+            cli.write_points(dataframe, 'foo', tags=None, protocol='line')
+            self.assertEqual(m.last_request.body, expected)
+
+    def test_write_points_from_dataframe_with_nan_json(self):
+        """Test write points from json with NaN lines."""
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[["1", 1, np.inf], ["2", 2, np.nan]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["column_one", "column_two",
+                                          "column_three"])
+        expected = (
+            b"foo column_one=\"1\",column_two=1i 0\n"
+            b"foo column_one=\"2\",column_two=2i "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo', protocol='json')
+            self.assertEqual(m.last_request.body, expected)
+
+            cli.write_points(dataframe, 'foo', tags=None, protocol='json')
+            self.assertEqual(m.last_request.body, expected)
+
+    def test_write_points_from_dataframe_with_tags_and_nan_line(self):
+        """Test write points from dataframe with NaN lines and tags."""
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[['blue', 1, "1", 1, np.inf],
+                                       ['red', 0, "2", 2, np.nan]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["tag_one", "tag_two", "column_one",
+                                          "column_two", "column_three"])
+        expected = (
+            b"foo,tag_one=blue,tag_two=1 "
+            b"column_one=\"1\",column_two=1i "
+            b"0\n"
+            b"foo,tag_one=red,tag_two=0 "
+            b"column_one=\"2\",column_two=2i "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo', protocol='line',
+                             tag_columns=['tag_one', 'tag_two'])
+            self.assertEqual(m.last_request.body, expected)
+
+            cli.write_points(dataframe, 'foo', tags=None, protocol='line',
+                             tag_columns=['tag_one', 'tag_two'])
+            self.assertEqual(m.last_request.body, expected)
+
+    def test_write_points_from_dataframe_with_tags_and_nan_json(self):
+        """Test write points from json with NaN lines and tags."""
+        now = pd.Timestamp('1970-01-01 00:00+00:00')
+        dataframe = pd.DataFrame(data=[['blue', 1, "1", 1, np.inf],
+                                       ['red', 0, "2", 2, np.nan]],
+                                 index=[now, now + timedelta(hours=1)],
+                                 columns=["tag_one", "tag_two", "column_one",
+                                          "column_two", "column_three"])
+        expected = (
+            b"foo,tag_one=blue,tag_two=1 "
+            b"column_one=\"1\",column_two=1i "
+            b"0\n"
+            b"foo,tag_one=red,tag_two=0 "
+            b"column_one=\"2\",column_two=2i "
+            b"3600000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+
+            cli = DataFrameClient(database='db')
+
+            cli.write_points(dataframe, 'foo', protocol='json',
+                             tag_columns=['tag_one', 'tag_two'])
+            self.assertEqual(m.last_request.body, expected)
+
+            cli.write_points(dataframe, 'foo', tags=None, protocol='json',
+                             tag_columns=['tag_one', 'tag_two'])
+            self.assertEqual(m.last_request.body, expected)

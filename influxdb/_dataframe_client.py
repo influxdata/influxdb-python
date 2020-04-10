@@ -203,7 +203,8 @@ class DataFrameClient(InfluxDBClient):
     def _to_dataframe(self, rs, dropna=True):
         result = defaultdict(list)
         if isinstance(rs, list):
-            return map(self._to_dataframe, rs)
+            return map(self._to_dataframe, rs,
+                       [dropna for _ in range(len(rs))])
 
         for key, data in rs.items():
             name, tags = key
@@ -251,7 +252,8 @@ class DataFrameClient(InfluxDBClient):
             field_columns = list(
                 set(dataframe.columns).difference(set(tag_columns)))
 
-        dataframe.index = pd.to_datetime(dataframe.index)
+        if not isinstance(dataframe.index, pd.DatetimeIndex):
+            dataframe.index = pd.to_datetime(dataframe.index)
         if dataframe.index.tzinfo is None:
             dataframe.index = dataframe.index.tz_localize('UTC')
 
@@ -270,14 +272,31 @@ class DataFrameClient(InfluxDBClient):
             "h": 1e9 * 3600,
         }.get(time_precision, 1)
 
+        if not tag_columns:
+            points = [
+                {'measurement': measurement,
+                 'fields':
+                    rec.replace([np.inf, -np.inf], np.nan).dropna().to_dict(),
+                 'time': np.int64(ts.value / precision_factor)}
+                for ts, (_, rec) in zip(
+                    dataframe.index,
+                    dataframe[field_columns].iterrows()
+                )
+            ]
+
+            return points
+
         points = [
             {'measurement': measurement,
              'tags': dict(list(tag.items()) + list(tags.items())),
-             'fields': rec,
+             'fields':
+                rec.replace([np.inf, -np.inf], np.nan).dropna().to_dict(),
              'time': np.int64(ts.value / precision_factor)}
-            for ts, tag, rec in zip(dataframe.index,
-                                    dataframe[tag_columns].to_dict('record'),
-                                    dataframe[field_columns].to_dict('record'))
+            for ts, tag, (_, rec) in zip(
+                dataframe.index,
+                dataframe[tag_columns].to_dict('record'),
+                dataframe[field_columns].iterrows()
+            )
         ]
 
         return points
@@ -371,7 +390,8 @@ class DataFrameClient(InfluxDBClient):
             del tag_df
         elif global_tags:
             tag_string = ''.join(
-                [",{}={}".format(k, _escape_tag(v)) if v else ''
+                [",{}={}".format(k, _escape_tag(v))
+                 if v not in [None, ''] else ""
                  for k, v in sorted(global_tags.items())]
             )
             tags = pd.Series(tag_string, index=dataframe.index)
@@ -379,21 +399,18 @@ class DataFrameClient(InfluxDBClient):
             tags = ''
 
         # Make an array of formatted field keys and values
-        field_df = dataframe[field_columns]
-        # Keep the positions where Null values are found
-        mask_null = field_df.isnull().values
+        field_df = dataframe[field_columns].replace([np.inf, -np.inf], np.nan)
+        nans = pd.isnull(field_df)
 
         field_df = self._stringify_dataframe(field_df,
                                              numeric_precision,
                                              datatype='field')
 
         field_df = (field_df.columns.values + '=').tolist() + field_df
-        field_df[field_df.columns[1:]] = ',' + field_df[
-            field_df.columns[1:]]
-        field_df = field_df.where(~mask_null, '')  # drop Null entries
-        fields = field_df.sum(axis=1)
-        # take out leading , where first column has a Null value
-        fields = fields.str.lstrip(",")
+        field_df[field_df.columns[1:]] = ',' + field_df[field_df.columns[1:]]
+        field_df[nans] = ''
+
+        fields = field_df.sum(axis=1).map(lambda x: x.lstrip(','))
         del field_df
 
         # Generate line protocol string
