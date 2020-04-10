@@ -117,6 +117,24 @@ class TestLineProtocol(unittest.TestCase):
             'test,unicode_tag=\'Привет!\' unicode_val="Привет!"\n'
         )
 
+    def test_make_lines_empty_field_string(self):
+        """Test make lines with an empty string field."""
+        data = {
+            "points": [
+                {
+                    "measurement": "test",
+                    "fields": {
+                        "string": "",
+                    }
+                }
+            ]
+        }
+
+        self.assertEqual(
+            line_protocol.make_lines(data),
+            'test string=""\n'
+        )
+
     def test_tag_value_newline(self):
         """Test make lines with tag value contains newline."""
         data = {
