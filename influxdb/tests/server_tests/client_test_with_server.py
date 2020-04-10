@@ -452,6 +452,33 @@ class CommonTests(ManyTestCasesWithServerMixin, unittest.TestCase):
         self.assertIn(12, net_out['series'][0]['values'][0])
         self.assertIn(12.34, cpu['series'][0]['values'][0])
 
+    def test_write_points_batch_generator(self):
+        """Test writing points in a batch from a generator."""
+        dummy_points = [
+            {"measurement": "cpu_usage", "tags": {"unit": "percent"},
+                "time": "2009-11-10T23:00:00Z", "fields": {"value": 12.34}},
+            {"measurement": "network", "tags": {"direction": "in"},
+                "time": "2009-11-10T23:00:00Z", "fields": {"value": 123.00}},
+            {"measurement": "network", "tags": {"direction": "out"},
+                "time": "2009-11-10T23:00:00Z", "fields": {"value": 12.00}}
+        ]
+        dummy_points_generator = (point for point in dummy_points)
+        self.cli.write_points(points=dummy_points_generator,
+                              tags={"host": "server01",
+                                    "region": "us-west"},
+                              batch_size=2)
+        time.sleep(5)
+        net_in = self.cli.query("SELECT value FROM network "
+                                "WHERE direction=$dir",
+                                bind_params={'dir': 'in'}
+                                ).raw
+        net_out = self.cli.query("SELECT value FROM network "
+                                 "WHERE direction='out'").raw
+        cpu = self.cli.query("SELECT value FROM cpu_usage").raw
+        self.assertIn(123, net_in['series'][0]['values'][0])
+        self.assertIn(12, net_out['series'][0]['values'][0])
+        self.assertIn(12.34, cpu['series'][0]['values'][0])
+
     def test_query(self):
         """Test querying data back from server."""
         self.assertIs(True, self.cli.write_points(dummy_point))

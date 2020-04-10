@@ -332,6 +332,36 @@ class TestInfluxDBClient(unittest.TestCase):
         self.assertEqual(expected_last_body,
                          m.last_request.body.decode('utf-8'))
 
+    def test_write_points_batch_generator(self):
+        """Test write points batch from a generator for TestInfluxDBClient."""
+        dummy_points = [
+            {"measurement": "cpu_usage", "tags": {"unit": "percent"},
+             "time": "2009-11-10T23:00:00Z", "fields": {"value": 12.34}},
+            {"measurement": "network", "tags": {"direction": "in"},
+             "time": "2009-11-10T23:00:00Z", "fields": {"value": 123.00}},
+            {"measurement": "network", "tags": {"direction": "out"},
+             "time": "2009-11-10T23:00:00Z", "fields": {"value": 12.00}}
+        ]
+        dummy_points_generator = (point for point in dummy_points)
+        expected_last_body = (
+            "network,direction=out,host=server01,region=us-west "
+            "value=12.0 1257894000000000000\n"
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(requests_mock.POST,
+                           "http://localhost:8086/write",
+                           status_code=204)
+            cli = InfluxDBClient(database='db')
+            cli.write_points(points=dummy_points_generator,
+                             database='db',
+                             tags={"host": "server01",
+                                   "region": "us-west"},
+                             batch_size=2)
+        self.assertEqual(m.call_count, 2)
+        self.assertEqual(expected_last_body,
+                         m.last_request.body.decode('utf-8'))
+
     def test_write_points_udp(self):
         """Test write points UDP for TestInfluxDBClient object."""
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

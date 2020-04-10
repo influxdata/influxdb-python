@@ -15,11 +15,11 @@ import random
 import socket
 import struct
 import time
+from itertools import chain, islice
 
 import msgpack
 import requests
 import requests.exceptions
-from six.moves import xrange
 from six.moves.urllib.parse import urlparse
 
 from influxdb.line_protocol import make_lines, quote_ident, quote_literal
@@ -597,8 +597,17 @@ class InfluxDBClient(object):
 
     @staticmethod
     def _batches(iterable, size):
-        for i in xrange(0, len(iterable), size):
-            yield iterable[i:i + size]
+        # Iterate over an iterable producing iterables of batches. Based on:
+        # http://code.activestate.com/recipes/303279-getting-items-in-batches/
+        iterator = iter(iterable)
+        while True:
+            try:        # Try get the first element in the iterator...
+                head = (next(iterator),)
+            except StopIteration:
+                return  # ...so that we can stop if there isn't one
+            # Otherwise, lazily slice the rest of the batch
+            rest = islice(iterator, size - 1)
+            yield chain(head, rest)
 
     def _write_points(self,
                       points,
