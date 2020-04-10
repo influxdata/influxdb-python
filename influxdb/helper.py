@@ -41,6 +41,10 @@ class SeriesHelper(object):
                 # Only applicable if autocommit is True.
                 autocommit = True
                 # If True and no bulk_size, then will set bulk_size to 1.
+                time_precision = "h"|"m"|s"|"ms"|"u"|"ns"
+                # Default is ns (nanoseconds)
+                # Setting time precision while writing point
+                # You should also make sure time is set in the given precision
 
     """
 
@@ -71,6 +75,13 @@ class SeriesHelper(object):
                             cls.__name__))
 
             cls._autocommit = getattr(_meta, 'autocommit', False)
+            cls._time_precision = getattr(_meta, 'time_precision', None)
+
+            allowed_time_precisions = ['h', 'm', 's', 'ms', 'u', 'ns', None]
+            if cls._time_precision not in allowed_time_precisions:
+                raise AttributeError(
+                    'In {0}, time_precision is set, but invalid use any of {}.'
+                    .format(cls.__name__, ','.join(allowed_time_precisions)))
 
             cls._client = getattr(_meta, 'client', None)
             if cls._autocommit and not cls._client:
@@ -116,11 +127,11 @@ class SeriesHelper(object):
         keys = set(kw.keys())
 
         # all tags should be passed, and keys - tags should be a subset of keys
-        if not(tags <= keys):
+        if not (tags <= keys):
             raise NameError(
                 'Expected arguments to contain all tags {0}, instead got {1}.'
                 .format(cls._tags, kw.keys()))
-        if not(keys - tags <= fields):
+        if not (keys - tags <= fields):
             raise NameError('Got arguments not in tags or fields: {0}'
                             .format(keys - tags - fields))
 
@@ -143,7 +154,10 @@ class SeriesHelper(object):
         """
         if not client:
             client = cls._client
-        rtn = client.write_points(cls._json_body_())
+        rtn = client.write_points(
+            cls._json_body_(),
+            time_precision=cls._time_precision)
+        # will be None if not set and will default to ns
         cls._reset_()
         return rtn
 
