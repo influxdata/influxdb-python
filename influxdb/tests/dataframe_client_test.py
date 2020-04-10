@@ -979,11 +979,11 @@ class TestDataFrameClient(unittest.TestCase):
                             "columns": ["time", "value", "value2", "value3"],
                             "values": [
                                 ["2015-01-29T21:55:43.702900257Z",
-                                 0.55, 0.254, numpy.NaN],
+                                 0.55, 0.254, np.NaN],
                                 ["2015-01-29T21:55:43.702900257Z",
-                                 23422, 122878, numpy.NaN],
+                                 23422, 122878, np.NaN],
                                 ["2015-06-11T20:46:02Z",
-                                 0.64, 0.5434, numpy.NaN]
+                                 0.64, 0.5434, np.NaN]
                             ]
                         }
                     ]
@@ -1002,9 +1002,9 @@ class TestDataFrameClient(unittest.TestCase):
         }
 
         pd1 = pd.DataFrame(
-            [[0.55, 0.254, numpy.NaN],
-             [23422.0, 122878, numpy.NaN],
-             [0.64, 0.5434, numpy.NaN]],
+            [[0.55, 0.254, np.NaN],
+             [23422.0, 122878, np.NaN],
+             [0.64, 0.5434, np.NaN]],
             columns=['value', 'value2', 'value3'],
             index=pd.to_datetime([
                 "2015-01-29 21:55:43.702900257+0000",
