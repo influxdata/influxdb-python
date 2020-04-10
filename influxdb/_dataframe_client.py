@@ -252,7 +252,8 @@ class DataFrameClient(InfluxDBClient):
             field_columns = list(
                 set(dataframe.columns).difference(set(tag_columns)))
 
-        dataframe.index = pd.to_datetime(dataframe.index)
+        if not isinstance(dataframe.index, pd.DatetimeIndex):
+            dataframe.index = pd.to_datetime(dataframe.index)
         if dataframe.index.tzinfo is None:
             dataframe.index = dataframe.index.tz_localize('UTC')
 
