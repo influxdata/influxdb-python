@@ -41,6 +41,8 @@ class SeriesHelper(object):
                 # Only applicable if autocommit is True.
                 autocommit = True
                 # If True and no bulk_size, then will set bulk_size to 1.
+                retention_policy = 'your_retention_policy'
+                # Specify the retention policy for the data points
                 time_precision = "h"|"m"|s"|"ms"|"u"|"ns"
                 # Default is ns (nanoseconds)
                 # Setting time precision while writing point
@@ -82,6 +84,8 @@ class SeriesHelper(object):
                 raise AttributeError(
                     'In {0}, time_precision is set, but invalid use any of {}.'
                     .format(cls.__name__, ','.join(allowed_time_precisions)))
+
+            cls._retention_policy = getattr(_meta, 'retention_policy', None)
 
             cls._client = getattr(_meta, 'client', None)
             if cls._autocommit and not cls._client:
@@ -154,9 +158,11 @@ class SeriesHelper(object):
         """
         if not client:
             client = cls._client
+
         rtn = client.write_points(
             cls._json_body_(),
-            time_precision=cls._time_precision)
+            time_precision=cls._time_precision,
+            retention_policy=cls._retention_policy)
         # will be None if not set and will default to ns
         cls._reset_()
         return rtn
