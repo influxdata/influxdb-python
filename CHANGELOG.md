@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add support for optional `time_precision` in the SeriesHelper (#502 && #719 thx @appunni-dishq && @klDen)
 - Add ability to specify retention policy in SeriesHelper (#723 thx @csanz91)
 - Add gzip compression for post and response data (#732 thx @KEClaytor)
+- Add support for chunked responses in ResultSet (#753 and #538 thx @hrbonz && @psy0rz)
 
 ### Changed
 - Clean up stale CI config (#755)
