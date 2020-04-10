@@ -249,7 +249,7 @@ class InfluxDBClient(object):
         self._username = username
         self._password = password
 
-    def request(self, url, method='GET', params=None, data=None,
+    def request(self, url, method='GET', params=None, data=None, stream=False,
                 expected_response_code=200, headers=None):
         """Make a HTTP request to the InfluxDB API.
 
@@ -261,6 +261,8 @@ class InfluxDBClient(object):
         :type params: dict
         :param data: the data of the request, defaults to None
         :type data: str
+        :param stream: True if a query uses chunked responses
+        :type stream: bool
         :param expected_response_code: the expected response code of
             the request, defaults to 200
         :type expected_response_code: int
@@ -312,6 +314,7 @@ class InfluxDBClient(object):
                     auth=(self._username, self._password),
                     params=params,
                     data=data,
+                    stream=stream,
                     headers=headers,
                     proxies=self._proxies,
                     verify=self._verify_ssl,
@@ -398,17 +401,17 @@ class InfluxDBClient(object):
 
     @staticmethod
     def _read_chunked_response(response, raise_errors=True):
-        result_set = {}
         for line in response.iter_lines():
             if isinstance(line, bytes):
                 line = line.decode('utf-8')
             data = json.loads(line)
+            result_set = {}
             for result in data.get('results', []):
                 for _key in result:
                     if isinstance(result[_key], list):
                         result_set.setdefault(
                             _key, []).extend(result[_key])
-        return ResultSet(result_set, raise_errors=raise_errors)
+            yield ResultSet(result_set, raise_errors=raise_errors)
 
     def query(self,
               query,
@@ -499,6 +502,7 @@ class InfluxDBClient(object):
             method=method,
             params=params,
             data=None,
+            stream=chunked,
             expected_response_code=expected_response_code
         )
 
