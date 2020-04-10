@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Add ability to specify retention policy in SeriesHelper (#723 thx @csanz91)
 - Add gzip compression for post and response data (#732 thx @KEClaytor)
 - Add support for chunked responses in ResultSet (#753 and #538 thx @hrbonz && @psy0rz)
+- Add support for empty string fields (#766 thx @gregschrock)
 
 ### Changed
 - Clean up stale CI config (#755)
