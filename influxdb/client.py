@@ -295,10 +295,10 @@ class InfluxDBClient(object):
                 _try += 1
                 if self._retries != 0:
                     retry = _try < self._retries
-                if retry and method == "POST":
-                    time.sleep((2 ** _try) * random.random() / 100.0)
                 if not retry:
                     raise
+                if method == "POST":
+                    time.sleep((2 ** _try) * random.random() / 100.0)
 
         type_header = response.headers and response.headers.get("Content-Type")
         if type_header == "application/x-msgpack" and response.content:
