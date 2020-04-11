@@ -59,8 +59,12 @@ class InfluxDBClient(object):
     :param timeout: number of seconds Requests will wait for your client to
         establish a connection, defaults to None
     :type timeout: int
-    :param retries: number of retries your client will try before aborting,
-        defaults to 3. 0 indicates try until success
+    :param retries: number of attempts your client will make before aborting,
+        defaults to 3
+        0 - try until success
+        1 - attempt only once (without retry)
+        2 - maximum two attempts (including one retry)
+        3 - maximum three attempts (default option)
     :type retries: int
     :param use_udp: use UDP to connect to InfluxDB, defaults to False
     :type use_udp: bool
@@ -339,10 +343,10 @@ class InfluxDBClient(object):
                 _try += 1
                 if self._retries != 0:
                     retry = _try < self._retries
-                if method == "POST":
-                    time.sleep((2 ** _try) * random.random() / 100.0)
                 if not retry:
                     raise
+                if method == "POST":
+                    time.sleep((2 ** _try) * random.random() / 100.0)
 
         type_header = response.headers and response.headers.get("Content-Type")
         if type_header == "application/x-msgpack" and response.content:
