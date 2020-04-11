@@ -4,11 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [v5.3.1] - Unreleased
 
 ### Added
 
 ### Changed
+- Amend retry to avoid sleep after last retry before raising exception (#790 thx @krzysbaranski)
+
+### Removed
 
 ## [v5.3.0] - 2020-04-10
 
