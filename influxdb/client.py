@@ -53,7 +53,8 @@ class InfluxDBClient(object):
     :param timeout: number of seconds Requests will wait for your client to
         establish a connection, defaults to None
     :type timeout: int
-    :param retries: number of attempts your client will make before aborting, defaults to 3
+    :param retries: number of attempts your client will make before aborting,
+        defaults to 3
         0 - try until success
         1 - attempt only once (without retry)
         2 - maximum two attempts (including one retry)
