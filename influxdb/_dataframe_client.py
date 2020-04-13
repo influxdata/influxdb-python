@@ -59,6 +59,8 @@ class DataFrameClient(InfluxDBClient):
         :param dataframe: data points in a DataFrame
         :param measurement: name of measurement
         :param tags: dictionary of tags, with string key-values
+        :param tag_columns: [Optional, default None] List of data tag names
+        :param field_columns: [Options, default None] List of data field names
         :param time_precision: [Optional, default None] Either 's', 'ms', 'u'
             or 'n'.
         :param batch_size: [Optional] Value to write the points in batches
