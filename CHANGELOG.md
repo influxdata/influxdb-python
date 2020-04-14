@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [v5.3.1] - Unreleased
 
 ### Added
+- Add support for custom headers in the InfluxDBClient (#710 thx @nathanielatom)
 
 ### Changed
 - Amend retry to avoid sleep after last retry before raising exception (#790 thx @krzysbaranski)
