@@ -1240,3 +1240,36 @@ class TestDataFrameClient(unittest.TestCase):
             cli.write_points(dataframe, 'foo', tags=None, protocol='json',
                              tag_columns=['tag_one', 'tag_two'])
             self.assertEqual(m.last_request.body, expected)
+
+    def test_query_custom_index(self):
+        data = {
+            "results": [
+                {
+                    "series": [
+                        {
+                            "name": "cpu_load_short",
+                            "columns": ["time", "value", "host"],
+                            "values": [
+                                [1, 0.55, "local"],
+                                [2, 23422, "local"],
+                                [3, 0.64, "local"]
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+
+        cli = DataFrameClient('host', 8086, 'username', 'password', 'db')
+        iql = "SELECT value FROM cpu_load_short WHERE region=$region;" \
+              "SELECT count(value) FROM cpu_load_short WHERE region=$region"
+        bind_params = {'region': 'us-west'}
+        with _mocked_session(cli, 'GET', 200, data):
+            result = cli.query(iql, bind_params=bind_params, data_frame_index=["time", "host"])
+
+            _data_frame = result['cpu_load_short']
+            print(_data_frame)
+
+            self.assertListEqual(["time", "host"], list(_data_frame.index.names))
+
+
