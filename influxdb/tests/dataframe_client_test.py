@@ -1266,11 +1266,11 @@ class TestDataFrameClient(unittest.TestCase):
               "SELECT count(value) FROM cpu_load_short WHERE region=$region"
         bind_params = {'region': 'us-west'}
         with _mocked_session(cli, 'GET', 200, data):
-            result = cli.query(iql, bind_params=bind_params, data_frame_index=["time", "host"])
+            result = cli.query(iql, bind_params=bind_params,
+                               data_frame_index=["time", "host"])
 
             _data_frame = result['cpu_load_short']
             print(_data_frame)
 
-            self.assertListEqual(["time", "host"], list(_data_frame.index.names))
-
-
+            self.assertListEqual(["time", "host"],
+                                 list(_data_frame.index.names))
