@@ -1242,6 +1242,7 @@ class TestDataFrameClient(unittest.TestCase):
             self.assertEqual(m.last_request.body, expected)
 
     def test_query_custom_index(self):
+        """Test query with custom indexes."""
         data = {
             "results": [
                 {
