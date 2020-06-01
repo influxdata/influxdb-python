@@ -182,7 +182,8 @@ class DataFrameClient(InfluxDBClient):
             containing all results within that chunk
         :param chunk_size: Size of each chunk to tell InfluxDB to use.
         :param dropna: drop columns where all values are missing
-        :param data_frame_index: the list of columns that are used as DataFrame index
+        :param data_frame_index: the list of columns that
+            are used as DataFrame index
         :returns: the queried data
         :rtype: :class:`~.ResultSet`
         """
@@ -198,7 +199,8 @@ class DataFrameClient(InfluxDBClient):
         results = super(DataFrameClient, self).query(query, **query_args)
         if query.strip().upper().startswith("SELECT"):
             if len(results) > 0:
-                return self._to_dataframe(results, dropna, data_frame_index=data_frame_index)
+                return self._to_dataframe(results, dropna,
+                                          data_frame_index=data_frame_index)
             else:
                 return {}
         else:
