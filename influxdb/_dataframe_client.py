@@ -8,7 +8,6 @@ from __future__ import unicode_literals
 
 import math
 from collections import defaultdict
-from typing import List
 
 import pandas as pd
 import numpy as np
@@ -154,7 +153,7 @@ class DataFrameClient(InfluxDBClient):
               chunk_size=0,
               method="GET",
               dropna=True,
-              data_frame_index: List[str] = None):
+              data_frame_index=None):
         """
         Query data into a DataFrame.
 
@@ -205,7 +204,7 @@ class DataFrameClient(InfluxDBClient):
         else:
             return results
 
-    def _to_dataframe(self, rs, dropna=True, data_frame_index: List[str] = None):
+    def _to_dataframe(self, rs, dropna=True, data_frame_index=None):
         result = defaultdict(list)
         if isinstance(rs, list):
             return map(self._to_dataframe, rs,
