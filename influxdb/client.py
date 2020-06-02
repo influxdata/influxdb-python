@@ -860,7 +860,7 @@ class InfluxDBClient(object):
         query_string = (
             "ALTER RETENTION POLICY {0} ON {1}"
         ).format(quote_ident(name),
-                 quote_ident(database or self._database), shard_duration)
+                 quote_ident(database or self._database))
         if duration:
             query_string += " DURATION {0}".format(duration)
         if shard_duration:
@@ -958,7 +958,7 @@ class InfluxDBClient(object):
         :param username: the username to drop
         :type username: str
         """
-        text = "DROP USER {0}".format(quote_ident(username), method="POST")
+        text = "DROP USER {0}".format(quote_ident(username))
         self.query(text, method="POST")
 
     def set_user_password(self, username, password):

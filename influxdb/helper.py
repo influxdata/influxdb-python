@@ -82,7 +82,7 @@ class SeriesHelper(object):
             allowed_time_precisions = ['h', 'm', 's', 'ms', 'u', 'ns', None]
             if cls._time_precision not in allowed_time_precisions:
                 raise AttributeError(
-                    'In {0}, time_precision is set, but invalid use any of {}.'
+                    'In {0}, time_precision is set, but invalid use any of {1}.'
                     .format(cls.__name__, ','.join(allowed_time_precisions)))
 
             cls._retention_policy = getattr(_meta, 'retention_policy', None)
