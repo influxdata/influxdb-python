@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - Add support for custom headers in the InfluxDBClient (#710 thx @nathanielatom)
+- Add support for custom indexes for query in the DataFrameClient (#785)
 
 ### Changed
 - Amend retry to avoid sleep after last retry before raising exception (#790 thx @krzysbaranski)

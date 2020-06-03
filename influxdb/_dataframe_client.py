@@ -152,7 +152,8 @@ class DataFrameClient(InfluxDBClient):
               chunked=False,
               chunk_size=0,
               method="GET",
-              dropna=True):
+              dropna=True,
+              data_frame_index=None):
         """
         Query data into a DataFrame.
 
@@ -181,6 +182,8 @@ class DataFrameClient(InfluxDBClient):
             containing all results within that chunk
         :param chunk_size: Size of each chunk to tell InfluxDB to use.
         :param dropna: drop columns where all values are missing
+        :param data_frame_index: the list of columns that
+            are used as DataFrame index
         :returns: the queried data
         :rtype: :class:`~.ResultSet`
         """
@@ -196,13 +199,14 @@ class DataFrameClient(InfluxDBClient):
         results = super(DataFrameClient, self).query(query, **query_args)
         if query.strip().upper().startswith("SELECT"):
             if len(results) > 0:
-                return self._to_dataframe(results, dropna)
+                return self._to_dataframe(results, dropna,
+                                          data_frame_index=data_frame_index)
             else:
                 return {}
         else:
             return results
 
-    def _to_dataframe(self, rs, dropna=True):
+    def _to_dataframe(self, rs, dropna=True, data_frame_index=None):
         result = defaultdict(list)
         if isinstance(rs, list):
             return map(self._to_dataframe, rs,
@@ -216,10 +220,15 @@ class DataFrameClient(InfluxDBClient):
                 key = (name, tuple(sorted(tags.items())))
             df = pd.DataFrame(data)
             df.time = pd.to_datetime(df.time)
-            df.set_index('time', inplace=True)
-            if df.index.tzinfo is None:
-                df.index = df.index.tz_localize('UTC')
-            df.index.name = None
+
+            if data_frame_index:
+                df.set_index(data_frame_index, inplace=True)
+            else:
+                df.set_index('time', inplace=True)
+                if df.index.tzinfo is None:
+                    df.index = df.index.tz_localize('UTC')
+                df.index.name = None
+
             result[key].append(df)
         for key, data in result.items():
             df = pd.concat(data).sort_index()
