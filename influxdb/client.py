@@ -179,7 +179,7 @@ class InfluxDBClient(object):
 
     def __enter__(self):
         """Enter function as used by context manager."""
-        pass
+        return self
 
     def __exit__(self, _exc_type, _exc_value, _traceback):
         """Exit function as used by context manager."""
