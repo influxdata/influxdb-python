@@ -5,7 +5,6 @@ influxdb.egg-info/
 dist/
 build/
 mock*/
-nose*/
 .pybuild/
 .mypy_cache/
 debian/files

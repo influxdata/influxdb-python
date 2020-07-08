@@ -1,4 +1,4 @@
-nose
-nose-cov
+pytest
+pytest-cov
 mock
 requests-mock

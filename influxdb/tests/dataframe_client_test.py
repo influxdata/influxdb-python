@@ -13,7 +13,6 @@ import unittest
 import warnings
 import requests_mock
 
-from nose.tools import raises
 from influxdb.tests import skip_if_pypy, using_pypy
 
 from .client_test import _mocked_session
@@ -597,35 +596,35 @@ class TestDataFrameClient(unittest.TestCase):
                 m.last_request.body,
             )
 
-    @raises(TypeError)
     def test_write_points_from_dataframe_fails_without_time_index(self):
         """Test failed write points from df without time index."""
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
                                  columns=["column_one", "column_two",
                                           "column_three"])
 
-        with requests_mock.Mocker() as m:
-            m.register_uri(requests_mock.POST,
-                           "http://localhost:8086/db/db/series",
-                           status_code=204)
+        with self.assertRaises(TypeError):
+            with requests_mock.Mocker() as m:
+                m.register_uri(requests_mock.POST,
+                               "http://localhost:8086/db/db/series",
+                               status_code=204)
+    
+                cli = DataFrameClient(database='db')
+                cli.write_points(dataframe, "foo")
 
-            cli = DataFrameClient(database='db')
-            cli.write_points(dataframe, "foo")
-
-    @raises(TypeError)
     def test_write_points_from_dataframe_fails_with_series(self):
         """Test failed write points from df with series."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.Series(data=[1.0, 2.0],
                               index=[now, now + timedelta(hours=1)])
 
-        with requests_mock.Mocker() as m:
-            m.register_uri(requests_mock.POST,
-                           "http://localhost:8086/db/db/series",
-                           status_code=204)
-
-            cli = DataFrameClient(database='db')
-            cli.write_points(dataframe, "foo")
+        with self.assertRaises(TypeError):
+            with requests_mock.Mocker() as m:
+                m.register_uri(requests_mock.POST,
+                               "http://localhost:8086/db/db/series",
+                               status_code=204)
+    
+                cli = DataFrameClient(database='db')
+                cli.write_points(dataframe, "foo")
 
     def test_create_database(self):
         """Test create database for TestInfluxDBClient object."""
@@ -657,12 +656,12 @@ class TestDataFrameClient(unittest.TestCase):
                 'create database "123"'
             )
 
-    @raises(Exception)
     def test_create_database_fails(self):
         """Test create database fail for TestInfluxDBClient object."""
         cli = DataFrameClient(database='db')
-        with _mocked_session(cli, 'post', 401):
-            cli.create_database('new_db')
+        with self.assertRaises(Exception):
+            with _mocked_session(cli, 'post', 401):
+                cli.create_database('new_db')
 
     def test_drop_database(self):
         """Test drop database for TestInfluxDBClient object."""
@@ -709,12 +708,12 @@ class TestDataFrameClient(unittest.TestCase):
                 'drop database "123"'
             )
 
-    @raises(Exception)
     def test_get_list_database_fails(self):
         """Test get list of dbs fail for TestInfluxDBClient object."""
         cli = DataFrameClient('host', 8086, 'username', 'password')
-        with _mocked_session(cli, 'get', 401):
-            cli.get_list_database()
+        with self.assertRaises(Exception):
+            with _mocked_session(cli, 'get', 401):
+                cli.get_list_database()
 
     def test_get_list_measurements(self):
         """Test get list of measurements for TestInfluxDBClient object."""
@@ -819,12 +818,12 @@ class TestDataFrameClient(unittest.TestCase):
                 'alter retention policy "somename" on "db" default'
             )
 
-    @raises(Exception)
     def test_alter_retention_policy_invalid(self):
         """Test invalid alter ret policy for TestInfluxDBClient object."""
         cli = DataFrameClient('host', 8086, 'username', 'password')
-        with _mocked_session(cli, 'get', 400):
-            cli.alter_retention_policy('somename', 'db')
+        with self.assertRaises(Exception):
+            with _mocked_session(cli, 'get', 400):
+                cli.alter_retention_policy('somename', 'db')
 
     def test_drop_retention_policy(self):
         """Test drop retention policy for TestInfluxDBClient object."""
@@ -843,12 +842,12 @@ class TestDataFrameClient(unittest.TestCase):
                 'drop retention policy "somename" on "db"'
             )
 
-    @raises(Exception)
     def test_drop_retention_policy_fails(self):
         """Test failed drop ret policy for TestInfluxDBClient object."""
         cli = DataFrameClient('host', 8086, 'username', 'password')
-        with _mocked_session(cli, 'delete', 401):
-            cli.drop_retention_policy('default', 'db')
+        with self.assertRaises(Exception):
+            with _mocked_session(cli, 'delete', 401):
+                cli.drop_retention_policy('default', 'db')
 
     def test_get_list_retention_policies(self):
         """Test get retention policies for TestInfluxDBClient object."""
