@@ -1367,7 +1367,8 @@ class TestInfluxDBClient(unittest.TestCase):
         """Test failing to create a continuous query."""
         with self.assertRaises(Exception):
             with _mocked_session(self.cli, 'get', 400):
-                self.cli.create_continuous_query('cq_name', 'select', 'db_name')
+                self.cli.create_continuous_query('cq_name', 'select',
+                                                 'db_name')
 
     def test_drop_continuous_query(self):
         """Test dropping a continuous query."""

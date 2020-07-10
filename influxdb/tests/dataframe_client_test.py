@@ -607,7 +607,7 @@ class TestDataFrameClient(unittest.TestCase):
                 m.register_uri(requests_mock.POST,
                                "http://localhost:8086/db/db/series",
                                status_code=204)
-    
+
                 cli = DataFrameClient(database='db')
                 cli.write_points(dataframe, "foo")
 
@@ -622,7 +622,7 @@ class TestDataFrameClient(unittest.TestCase):
                 m.register_uri(requests_mock.POST,
                                "http://localhost:8086/db/db/series",
                                status_code=204)
-    
+
                 cli = DataFrameClient(database='db')
                 cli.write_points(dataframe, "foo")
 

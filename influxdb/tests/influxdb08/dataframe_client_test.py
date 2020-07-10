@@ -199,7 +199,7 @@ class TestDataFrameClient(unittest.TestCase):
             with requests_mock.Mocker() as m:
                 m.register_uri(requests_mock.POST,
                                "http://localhost:8086/db/db/series")
-    
+
                 cli = DataFrameClient(database='db')
                 cli.write_points({"foo": dataframe})
 
@@ -213,7 +213,7 @@ class TestDataFrameClient(unittest.TestCase):
             with requests_mock.Mocker() as m:
                 m.register_uri(requests_mock.POST,
                                "http://localhost:8086/db/db/series")
-    
+
                 cli = DataFrameClient(database='db')
                 cli.write_points({"foo": dataframe})
 

@@ -291,7 +291,8 @@ class TestInfluxDBClient(unittest.TestCase):
         """Test failed write points for TestInfluxDBClient object."""
         with self.assertRaises(Exception):
             with _mocked_session('post', 500):
-                cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
+                cli = InfluxDBClient('host', 8086, 'username',
+                                     'password', 'db')
                 cli.write_points([])
 
     def test_write_points_with_precision(self):
@@ -316,7 +317,8 @@ class TestInfluxDBClient(unittest.TestCase):
         """Test write points where precision fails."""
         with self.assertRaises(Exception):
             with _mocked_session('post', 500):
-                cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
+                cli = InfluxDBClient('host', 8086, 'username',
+                                     'password', 'db')
                 cli.write_points_with_precision([])
 
     def test_delete_points(self):
@@ -336,7 +338,8 @@ class TestInfluxDBClient(unittest.TestCase):
         """Test delete points with wrong name."""
         with self.assertRaises(Exception):
             with _mocked_session('delete', 400):
-                cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
+                cli = InfluxDBClient('host', 8086, 'username',
+                                     'password', 'db')
                 cli.delete_points("nonexist")
 
     def test_create_scheduled_delete(self):
@@ -441,7 +444,8 @@ class TestInfluxDBClient(unittest.TestCase):
         """Test failed query for TestInfluxDBClient."""
         with self.assertRaises(Exception):
             with _mocked_session('get', 401):
-                cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
+                cli = InfluxDBClient('host', 8086, 'username',
+                                     'password', 'db')
                 cli.query('select column_one from foo;')
 
     def test_query_bad_precision(self):
@@ -463,7 +467,8 @@ class TestInfluxDBClient(unittest.TestCase):
         """Test failed create database for TestInfluxDBClient."""
         with self.assertRaises(Exception):
             with _mocked_session('post', 401):
-                cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
+                cli = InfluxDBClient('host', 8086, 'username',
+                                     'password', 'db')
                 cli.create_database('new_db')
 
     def test_delete_database(self):
@@ -476,7 +481,8 @@ class TestInfluxDBClient(unittest.TestCase):
         """Test failed delete database for TestInfluxDBClient."""
         with self.assertRaises(Exception):
             with _mocked_session('delete', 401):
-                cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
+                cli = InfluxDBClient('host', 8086, 'username',
+                                     'password', 'db')
                 cli.delete_database('old_db')
 
     def test_get_list_database(self):
@@ -517,7 +523,8 @@ class TestInfluxDBClient(unittest.TestCase):
         """Test failed delete series for TestInfluxDBClient."""
         with self.assertRaises(Exception):
             with _mocked_session('delete', 401):
-                cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
+                cli = InfluxDBClient('host', 8086, 'username',
+                                     'password', 'db')
                 cli.delete_series('old_series')
 
     def test_get_series_list(self):
@@ -677,7 +684,8 @@ class TestInfluxDBClient(unittest.TestCase):
         """Test update database admin pass for TestInfluxDBClient."""
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
         with self.assertRaises(NotImplementedError):
-            cli.update_database_admin_password('admin', 'admin_secret_password')
+            cli.update_database_admin_password('admin',
+                                               'admin_secret_password')
 
     def test_delete_database_admin(self):
         """Test delete database admin for TestInfluxDBClient."""
