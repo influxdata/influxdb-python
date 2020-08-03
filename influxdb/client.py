@@ -561,7 +561,8 @@ class InfluxDBClient(object):
         :type points: (if protocol is 'json') list of dicts, where each dict
                                             represents a point.
                     (if protocol is 'line') sequence of line protocol strings.
-        :param time_precision: Either 's', 'm', 'ms' or 'u', defaults to None
+        :param time_precision: Either 'n', 'u', 'ms', 's', 'm' or 'h',
+            defaults to None
         :type time_precision: str
         :param database: the database to write the points to. Defaults to
             the client's current database
@@ -1177,7 +1178,8 @@ class InfluxDBClient(object):
                       (if protocol is 'line') list of line protocol strings
         :param protocol: protocol of input data, either 'json' or 'line'
         :type protocol: str
-        :param time_precision: Either 's', 'm', 'ms' or 'u', defaults to None
+        :param time_precision: Either 'n', 'u', 'ms', 's', 'm' or 'h',
+            defaults to None
         :type time_precision: str
         """
         if protocol == 'json':
