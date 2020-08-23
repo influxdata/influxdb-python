@@ -1244,7 +1244,7 @@ def _parse_netloc(netloc):
 
 def _msgpack_parse_hook(code, data):
     if code == 5:
-        (epoch_s, epoch_ns) = struct.unpack(">QI", data)
+        (epoch_s, epoch_ns) = struct.unpack(">qi", data)
         timestamp = datetime.datetime.utcfromtimestamp(epoch_s)
         timestamp += datetime.timedelta(microseconds=(epoch_ns / 1000))
         return timestamp.isoformat() + 'Z'
