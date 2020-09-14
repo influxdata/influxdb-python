@@ -17,7 +17,7 @@ __all__ = [
     'SeriesHelper',
 ]
 
-if os.environ.get("INFLUXDB_NO_DATAFRAME_CLIENT", "0").lower() not in ("0", "false"):
+if os.environ.get("INFLUXDB_NO_DATAFRAME_CLIENT", "0").lower() not in ("1", "true"):
    from .dataframe_client import DataFrameClient
    __all__.append( "DataFrameClient" )
 
