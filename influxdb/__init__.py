@@ -19,7 +19,7 @@ __all__ = [
 
 NO_DATAFRAME_CLIENT = os.environ.get("INFLUXDB_NO_DATAFRAME_CLIENT", "0")
 if NO_DATAFRAME_CLIENT.lower() not in ("1", "true"):
-    from .dataframe_client import DataFrameClient # noqa: F401 unused import
+    from .dataframe_client import DataFrameClient  # noqa: F401 unused import
     __all__.append("DataFrameClient")
 
 
