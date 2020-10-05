@@ -1443,6 +1443,23 @@ class TestInfluxDBClient(unittest.TestCase):
             self.assertEqual(m.last_request.headers["Authorization"],
                              "Basic cm9vdDpyb290")
 
+    def test_auth_username_password(self):
+        """Test auth with custom username and password."""
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/ping",
+                status_code=204,
+                headers={'X-Influxdb-Version': '1.2.3'}
+            )
+
+            cli = InfluxDBClient(username='my-username',
+                                 password='my-password')
+            cli.ping()
+
+            self.assertEqual(m.last_request.headers["Authorization"],
+                             "Basic bXktdXNlcm5hbWU6bXktcGFzc3dvcmQ=")
+
     def test_auth_username_password_none(self):
         """Test auth with not defined username or password."""
         with requests_mock.Mocker() as m:
