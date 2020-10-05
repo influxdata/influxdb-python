@@ -31,3 +31,9 @@ Tutorials - UDP
 
 .. literalinclude:: ../../examples/tutorial_udp.py
    :language: python
+
+Tutorials - Authorization by Token
+===============
+
+.. literalinclude:: ../../examples/tutorial_authorization.py
+   :language: python
