@@ -16,6 +16,17 @@ def main(token='my-token'):
     print("Successfully connected to InfluxDB: " + version)
     pass
 
+def auth_per_query(token="my-token"):
+    client = InfluxDBClient(username=None, password=None, headers=None)
+    
+    print(f"Use authorization token {token}")
+
+    print(f"""Response for query with token:
+        {client.query(
+            f'SHOW DATABASES',
+            headers={"Authorization": token})}""")
+    pass
+
 
 def parse_args():
     """Parse the args from main."""
@@ -30,3 +41,4 @@ def parse_args():
 if __name__ == '__main__':
     args = parse_args()
     main(token=args.token)
+    auth_per_query(token=args.token)
