@@ -328,10 +328,11 @@ class InfluxDBClient(object):
         _try = 0
         while retry:
             try:
+                auth = (self._username, self._password)
                 response = self._session.request(
                     method=method,
                     url=url,
-                    auth=(self._username, self._password),
+                    auth=auth if None not in auth else None,
                     params=params,
                     data=data,
                     stream=stream,

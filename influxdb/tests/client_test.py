@@ -1427,6 +1427,77 @@ class TestInfluxDBClient(unittest.TestCase):
                     'values': [['qps'], ['uptime'], ['df'], ['mount']]
                 }]}).__repr__())
 
+    def test_auth_default(self):
+        """Test auth with default settings."""
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/ping",
+                status_code=204,
+                headers={'X-Influxdb-Version': '1.2.3'}
+            )
+
+            cli = InfluxDBClient()
+            cli.ping()
+
+            self.assertEqual(m.last_request.headers["Authorization"],
+                             "Basic cm9vdDpyb290")
+
+    def test_auth_username_password(self):
+        """Test auth with custom username and password."""
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/ping",
+                status_code=204,
+                headers={'X-Influxdb-Version': '1.2.3'}
+            )
+
+            cli = InfluxDBClient(username='my-username',
+                                 password='my-password')
+            cli.ping()
+
+            self.assertEqual(m.last_request.headers["Authorization"],
+                             "Basic bXktdXNlcm5hbWU6bXktcGFzc3dvcmQ=")
+
+    def test_auth_username_password_none(self):
+        """Test auth with not defined username or password."""
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/ping",
+                status_code=204,
+                headers={'X-Influxdb-Version': '1.2.3'}
+            )
+
+            cli = InfluxDBClient(username=None, password=None)
+            cli.ping()
+            self.assertFalse('Authorization' in m.last_request.headers)
+
+            cli = InfluxDBClient(username=None)
+            cli.ping()
+            self.assertFalse('Authorization' in m.last_request.headers)
+
+            cli = InfluxDBClient(password=None)
+            cli.ping()
+            self.assertFalse('Authorization' in m.last_request.headers)
+
+    def test_auth_token(self):
+        """Test auth with custom authorization header."""
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/ping",
+                status_code=204,
+                headers={'X-Influxdb-Version': '1.2.3'}
+            )
+
+            cli = InfluxDBClient(username=None, password=None,
+                                 headers={"Authorization": "my-token"})
+            cli.ping()
+            self.assertEqual(m.last_request.headers["Authorization"],
+                             "my-token")
+
 
 class FakeClient(InfluxDBClient):
     """Set up a fake client instance of InfluxDBClient."""
