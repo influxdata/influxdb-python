@@ -248,8 +248,8 @@ class TestInfluxDBClient(unittest.TestCase):
                 )
 
             self.assertEqual(
-                m.last_request.body,
-                compressed.getvalue(),
+                gzip.decompress(m.last_request.body),
+                gzip.decompress(compressed.getvalue()),
             )
 
     def test_write_points_gzip(self):
@@ -276,9 +276,10 @@ class TestInfluxDBClient(unittest.TestCase):
                     b'cpu_load_short,host=server01,region=us-west '
                     b'value=0.64 1257894000123456000\n'
                 )
+
             self.assertEqual(
-                m.last_request.body,
-                compressed.getvalue(),
+                gzip.decompress(m.last_request.body),
+                gzip.decompress(compressed.getvalue()),
             )
 
     def test_write_points_toplevel_attributes(self):
