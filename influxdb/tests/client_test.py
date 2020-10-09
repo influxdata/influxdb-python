@@ -1497,9 +1497,9 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.ping()
             self.assertEqual(m.last_request.headers["Authorization"],
                              "my-token")
-    
+
     def test_query_with_auth_token(self):
-        """ Test query with custom authorization header """
+        """Test query with custom authorization header."""
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.GET,
@@ -1510,17 +1510,16 @@ class TestInfluxDBClient(unittest.TestCase):
             )
             cli = InfluxDBClient(username=None, password=None, headers=None)
             cli.query("SELECT * FROM foo")
-            self.assertEqual(m.last_request.headers.get("Authorization"), 
+            self.assertEqual(m.last_request.headers.get("Authorization"),
                              None)
-                             
-            cli.query("SELET * FROM foo", headers={"Authorization": "my-token"})
-            self.assertEqual(m.last_request.headers.get("Authorization"), 
+
+            cli.query("SELET * FROM foo",
+                      headers={"Authorization": "my-token"})
+            self.assertEqual(m.last_request.headers.get("Authorization"),
                              "my-token")
 
     def test_query_header_overwrites_client_header(self):
-        """ Test query with custom authorization header
-        to overwrite defaults specified on client init"""
-
+        """Custom query authorization header must overwrite init headers."""
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.GET,
@@ -1531,15 +1530,20 @@ class TestInfluxDBClient(unittest.TestCase):
             )
             cli = InfluxDBClient(username=None, password=None, headers={
                 "Authorization": "client-token",
-                "header-to-drop": "there-is-no-merge-for-headers-from-client-and-query"})
+                "header-to-drop": "not-only-is-Authorization-overwritten",
+                "header-to-drop2": "headers-of-client-are-all-overwritten"})
             cli.query("SELECT * FROM foo")
-            self.assertEqual(m.last_request.headers.get("Authorization"), 
+            self.assertEqual(m.last_request.headers.get("Authorization"),
                              "client-token")
 
-            cli.query("SELET * FROM foo", headers={"Authorization": "query-token"})
-            self.assertEqual(m.last_request.headers.get("Authorization"), 
+            cli.query("SELET * FROM foo",
+                      headers={"Authorization": "query-token"})
+
+            self.assertEqual(m.last_request.headers.get("Authorization"),
                              "query-token")
             self.assertFalse("header-to-drop" in m.last_request.headers)
+            self.assertFalse("header-to-drop2" in m.last_request.headers)
+
 
 class FakeClient(InfluxDBClient):
     """Set up a fake client instance of InfluxDBClient."""

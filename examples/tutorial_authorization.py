@@ -16,9 +16,11 @@ def main(token='my-token'):
     print("Successfully connected to InfluxDB: " + version)
     pass
 
+
 def auth_per_query(token="my-token"):
+    """Set headers per query, most prevelantly for authorization headers."""
     client = InfluxDBClient(username=None, password=None, headers=None)
-    
+
     print(f"Use authorization token {token}")
 
     print(f"""Response for query with token:
