@@ -253,7 +253,7 @@ class TestInfluxDBClient(unittest.TestCase):
             )
 
     def test_write_points_gzip(self):
-        """Test write points for TestInfluxDBClient object."""
+        """Test write points for TestInfluxDBClient object with gzip."""
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.POST,
