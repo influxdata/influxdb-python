@@ -332,7 +332,7 @@ class InfluxDBClient(object):
                 response = self._session.request(
                     method=method,
                     url=url,
-                    auth=auth if None not in auth else None,
+                    #auth=auth if None not in auth else None,
                     params=params,
                     data=data,
                     stream=stream,
