@@ -5,6 +5,7 @@ python:
   - "3.5"
   - "3.6"
   - "3.7"
+  - "3.8"
   - "pypy"
   - "pypy3"
 
@@ -15,6 +16,7 @@ env:
   - INFLUXDB_VER=1.5.4  # 2018-06-22
   - INFLUXDB_VER=1.6.4  # 2018-10-24
   - INFLUXDB_VER=1.7.4  # 2019-02-14
+  - INFLUXDB_VER=1.8.3  # 2020-10-16
 
 addons:
   apt:
