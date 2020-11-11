@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Changed
 - Amend retry to avoid sleep after last retry before raising exception (#790 thx @krzysbaranski)
 - Remove msgpack pinning for requirements (#818 thx @prometheanfire)
+- Update support for HTTP headers in the InfluxDBClient (#851 thx @bednar)
 
 ### Removed
 
