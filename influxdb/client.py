@@ -411,7 +411,7 @@ class InfluxDBClient(object):
             data = ('\n'.join(data) + '\n').encode('utf-8')
 
         self.request(
-            url="write",
+            url="write?db={}".format(self._database),
             method='POST',
             params=params,
             data=data,
