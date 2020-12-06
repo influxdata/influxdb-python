@@ -94,7 +94,9 @@ Generated documentation can be found in the *docs/build/html/* directory.
 Examples
 --------
 
-Here's a basic example (for more see the examples directory)::
+Here's a basic example (for more see the examples directory):
+
+.. code-block:: python
 
     $ python
 
