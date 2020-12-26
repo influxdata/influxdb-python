@@ -1,3 +1,5 @@
+*To interact with InfluxDB 2.0, see [`influxdb-client-python`](https://github.com/influxdata/influxdb-client-python).]*
+
 InfluxDB-Python
 ===============
 
