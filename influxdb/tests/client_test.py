@@ -1398,7 +1398,7 @@ class TestInfluxDBClient(unittest.TestCase):
             InfluxDBClient('host', '80/redir', 'username', 'password')
 
     def test_chunked_response(self):
-        """Test chunked reponse for TestInfluxDBClient object."""
+        """Test chunked response for TestInfluxDBClient object."""
         example_response = \
             u'{"results":[{"statement_id":0,"series":[{"columns":["key"],' \
             '"values":[["cpu"],["memory"],["iops"],["network"]],"partial":' \
