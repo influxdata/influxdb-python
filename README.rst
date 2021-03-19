@@ -17,6 +17,8 @@ InfluxDB-Python
 
 InfluxDB-Python is a client for interacting with InfluxDB_.
 
+**Note: This library is for use with InfluxDB 1.x. For connecting to InfluxDB 2.x instances, please use the the** `influxdb-client-python <https://github.com/influxdata/influxdb-client-python>`_ **client.**
+
 Development of this library is maintained by:
 
 +-----------+-------------------------------+
