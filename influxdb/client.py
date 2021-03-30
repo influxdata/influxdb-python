@@ -17,15 +17,10 @@ import struct
 import time
 from itertools import chain, islice
 
-try:
-    from urllib.parse import urlencode
-except ImportError:
-    from urllib import urlencode
-
 import msgpack
 import requests
 import requests.exceptions
-from six.moves.urllib.parse import urlparse
+from six.moves.urllib.parse import urlparse, urlencode
 
 from influxdb.line_protocol import make_lines, quote_ident, quote_literal
 from influxdb.resultset import ResultSet
