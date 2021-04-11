@@ -444,7 +444,8 @@ class InfluxDBClient(object):
               raise_errors=True,
               chunked=False,
               chunk_size=0,
-              method="GET"):
+              method="GET",
+              headers=None):
         """Send a query to InfluxDB.
 
         .. danger::
@@ -524,7 +525,8 @@ class InfluxDBClient(object):
             params=params,
             data=None,
             stream=chunked,
-            expected_response_code=expected_response_code
+            expected_response_code=expected_response_code,
+            headers=headers
         )
 
         data = response._msgpack

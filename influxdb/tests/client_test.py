@@ -246,14 +246,15 @@ class TestInfluxDBClient(unittest.TestCase):
                     b"cpu_load_short,host=server01,region=us-west "
                     b"value=0.64 1257894000000000000\n"
                 )
+            compressed.seek(0)
 
             self.assertEqual(
-                m.last_request.body,
-                compressed.getvalue(),
+                gzip.GzipFile(fileobj=io.BytesIO(m.last_request.body)).read(),
+                gzip.GzipFile(fileobj=compressed).read()
             )
 
     def test_write_points_gzip(self):
-        """Test write points for TestInfluxDBClient object."""
+        """Test write points for TestInfluxDBClient object with gzip."""
         with requests_mock.Mocker() as m:
             m.register_uri(
                 requests_mock.POST,
@@ -276,9 +277,11 @@ class TestInfluxDBClient(unittest.TestCase):
                     b'cpu_load_short,host=server01,region=us-west '
                     b'value=0.64 1257894000123456000\n'
                 )
+            compressed.seek(0)
+
             self.assertEqual(
-                m.last_request.body,
-                compressed.getvalue(),
+                gzip.GzipFile(fileobj=io.BytesIO(m.last_request.body)).read(),
+                gzip.GzipFile(fileobj=compressed).read()
             )
 
     def test_write_points_toplevel_attributes(self):
@@ -1497,6 +1500,52 @@ class TestInfluxDBClient(unittest.TestCase):
             cli.ping()
             self.assertEqual(m.last_request.headers["Authorization"],
                              "my-token")
+
+    def test_query_with_auth_token(self):
+        """Test query with custom authorization header."""
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                status_code=200,
+                text="{}",
+                headers={"X-Influxdb-Version": "1.2.3"}
+            )
+            cli = InfluxDBClient(username=None, password=None, headers=None)
+            cli.query("SELECT * FROM foo")
+            self.assertEqual(m.last_request.headers.get("Authorization"),
+                             None)
+
+            cli.query("SELET * FROM foo",
+                      headers={"Authorization": "my-token"})
+            self.assertEqual(m.last_request.headers.get("Authorization"),
+                             "my-token")
+
+    def test_query_header_overwrites_client_header(self):
+        """Custom query authorization header must overwrite init headers."""
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.GET,
+                "http://localhost:8086/query",
+                status_code=200,
+                text="{}",
+                headers={"X-Influxdb-Version": "1.2.3"}
+            )
+            cli = InfluxDBClient(username=None, password=None, headers={
+                "Authorization": "client-token",
+                "header-to-drop": "not-only-is-Authorization-overwritten",
+                "header-to-drop2": "headers-of-client-are-all-overwritten"})
+            cli.query("SELECT * FROM foo")
+            self.assertEqual(m.last_request.headers.get("Authorization"),
+                             "client-token")
+
+            cli.query("SELET * FROM foo",
+                      headers={"Authorization": "query-token"})
+
+            self.assertEqual(m.last_request.headers.get("Authorization"),
+                             "query-token")
+            self.assertFalse("header-to-drop" in m.last_request.headers)
+            self.assertFalse("header-to-drop2" in m.last_request.headers)
 
 
 class FakeClient(InfluxDBClient):
