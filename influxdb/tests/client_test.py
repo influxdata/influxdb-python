@@ -32,8 +32,6 @@ import requests
 import requests.exceptions
 import requests_mock
 
-from nose.tools import raises
-
 from influxdb import InfluxDBClient
 from influxdb.resultset import ResultSet
 
@@ -382,12 +380,12 @@ class TestInfluxDBClient(unittest.TestCase):
             received_data.decode()
         )
 
-    @raises(Exception)
     def test_write_points_fails(self):
         """Test write points fail for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-        with _mocked_session(cli, 'post', 500):
-            cli.write_points([])
+        with self.assertRaises(Exception):
+            with _mocked_session(cli, 'post', 500):
+                cli.write_points([])
 
     def test_write_points_with_precision(self):
         """Test write points with precision for TestInfluxDBClient object."""
@@ -540,12 +538,12 @@ class TestInfluxDBClient(unittest.TestCase):
                 consistency='boo'
             )
 
-    @raises(Exception)
     def test_write_points_with_precision_fails(self):
         """Test write points w/precision fail for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password', 'db')
-        with _mocked_session(cli, 'post', 500):
-            cli.write_points_with_precision([])
+        with self.assertRaises(Exception):
+            with _mocked_session(cli, 'post', 500):
+                cli.write_points_with_precision([])
 
     def test_query(self):
         """Test query method for TestInfluxDBClient object."""
@@ -650,11 +648,11 @@ class TestInfluxDBClient(unittest.TestCase):
                 [example_object, example_object]
             )
 
-    @raises(Exception)
     def test_query_fail(self):
         """Test query failed for TestInfluxDBClient object."""
-        with _mocked_session(self.cli, 'get', 401):
-            self.cli.query('select column_one from foo;')
+        with self.assertRaises(Exception):
+            with _mocked_session(self.cli, 'get', 401):
+                self.cli.query('select column_one from foo;')
 
     def test_ping(self):
         """Test ping querying InfluxDB version."""
@@ -696,11 +694,11 @@ class TestInfluxDBClient(unittest.TestCase):
                 'create database "123"'
             )
 
-    @raises(Exception)
     def test_create_database_fails(self):
         """Test create database fail for TestInfluxDBClient object."""
-        with _mocked_session(self.cli, 'post', 401):
-            self.cli.create_database('new_db')
+        with self.assertRaises(Exception):
+            with _mocked_session(self.cli, 'post', 401):
+                self.cli.create_database('new_db')
 
     def test_drop_database(self):
         """Test drop database for TestInfluxDBClient object."""
@@ -761,12 +759,12 @@ class TestInfluxDBClient(unittest.TestCase):
                 [{'name': 'new_db_1'}, {'name': 'new_db_2'}]
             )
 
-    @raises(Exception)
     def test_get_list_database_fails(self):
         """Test get list of dbs fail for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password')
-        with _mocked_session(cli, 'get', 401):
-            cli.get_list_database()
+        with self.assertRaises(Exception):
+            with _mocked_session(cli, 'get', 401):
+                cli.get_list_database()
 
     def test_get_list_measurements(self):
         """Test get list of measurements for TestInfluxDBClient object."""
@@ -839,12 +837,12 @@ class TestInfluxDBClient(unittest.TestCase):
                 self.cli.get_list_series(tags={'region': 'us-west'}),
                 ['cpu_load_short,host=server01,region=us-west'])
 
-    @raises(Exception)
     def test_get_list_series_fails(self):
         """Test get a list of series from the database but fail."""
         cli = InfluxDBClient('host', 8086, 'username', 'password')
-        with _mocked_session(cli, 'get', 401):
-            cli.get_list_series()
+        with self.assertRaises(Exception):
+            with _mocked_session(cli, 'get', 401):
+                cli.get_list_series()
 
     def test_create_retention_policy_default(self):
         """Test create default ret policy for TestInfluxDBClient object."""
@@ -970,12 +968,12 @@ class TestInfluxDBClient(unittest.TestCase):
                 'alter retention policy "somename" on "db" default'
             )
 
-    @raises(Exception)
     def test_alter_retention_policy_invalid(self):
         """Test invalid alter ret policy for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password')
-        with _mocked_session(cli, 'get', 400):
-            self.cli.alter_retention_policy('somename', 'db')
+        with self.assertRaises(Exception):
+            with _mocked_session(cli, 'get', 400):
+                self.cli.alter_retention_policy('somename', 'db')
 
     def test_drop_retention_policy(self):
         """Test drop retention policy for TestInfluxDBClient object."""
@@ -993,12 +991,12 @@ class TestInfluxDBClient(unittest.TestCase):
                 'drop retention policy "somename" on "db"'
             )
 
-    @raises(Exception)
     def test_drop_retention_policy_fails(self):
         """Test failed drop ret policy for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password')
-        with _mocked_session(cli, 'delete', 401):
-            cli.drop_retention_policy('default', 'db')
+        with self.assertRaises(Exception):
+            with _mocked_session(cli, 'delete', 401):
+                cli.drop_retention_policy('default', 'db')
 
     def test_get_list_retention_policies(self):
         """Test get retention policies for TestInfluxDBClient object."""
@@ -1178,12 +1176,12 @@ class TestInfluxDBClient(unittest.TestCase):
                 'grant all privileges to "test"'
             )
 
-    @raises(Exception)
     def test_grant_admin_privileges_invalid(self):
         """Test grant invalid admin privs for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password')
-        with _mocked_session(cli, 'get', 400):
-            self.cli.grant_admin_privileges('')
+        with self.assertRaises(Exception):
+            with _mocked_session(cli, 'get', 400):
+                self.cli.grant_admin_privileges('')
 
     def test_revoke_admin_privileges(self):
         """Test revoke admin privs for TestInfluxDBClient object."""
@@ -1202,12 +1200,12 @@ class TestInfluxDBClient(unittest.TestCase):
                 'revoke all privileges from "test"'
             )
 
-    @raises(Exception)
     def test_revoke_admin_privileges_invalid(self):
         """Test revoke invalid admin privs for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password')
-        with _mocked_session(cli, 'get', 400):
-            self.cli.revoke_admin_privileges('')
+        with self.assertRaises(Exception):
+            with _mocked_session(cli, 'get', 400):
+                self.cli.revoke_admin_privileges('')
 
     def test_grant_privilege(self):
         """Test grant privs for TestInfluxDBClient object."""
@@ -1226,12 +1224,12 @@ class TestInfluxDBClient(unittest.TestCase):
                 'grant read on "testdb" to "test"'
             )
 
-    @raises(Exception)
     def test_grant_privilege_invalid(self):
         """Test grant invalid privs for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password')
-        with _mocked_session(cli, 'get', 400):
-            self.cli.grant_privilege('', 'testdb', 'test')
+        with self.assertRaises(Exception):
+            with _mocked_session(cli, 'get', 400):
+                self.cli.grant_privilege('', 'testdb', 'test')
 
     def test_revoke_privilege(self):
         """Test revoke privs for TestInfluxDBClient object."""
@@ -1250,12 +1248,12 @@ class TestInfluxDBClient(unittest.TestCase):
                 'revoke read on "testdb" from "test"'
             )
 
-    @raises(Exception)
     def test_revoke_privilege_invalid(self):
         """Test revoke invalid privs for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password')
-        with _mocked_session(cli, 'get', 400):
-            self.cli.revoke_privilege('', 'testdb', 'test')
+        with self.assertRaises(Exception):
+            with _mocked_session(cli, 'get', 400):
+                self.cli.revoke_privilege('', 'testdb', 'test')
 
     def test_get_list_privileges(self):
         """Test get list of privs for TestInfluxDBClient object."""
@@ -1277,12 +1275,12 @@ class TestInfluxDBClient(unittest.TestCase):
                  {'database': 'db3', 'privilege': 'NO PRIVILEGES'}]
             )
 
-    @raises(Exception)
     def test_get_list_privileges_fails(self):
         """Test failed get list of privs for TestInfluxDBClient object."""
         cli = InfluxDBClient('host', 8086, 'username', 'password')
-        with _mocked_session(cli, 'get', 401):
-            cli.get_list_privileges('test')
+        with self.assertRaises(Exception):
+            with _mocked_session(cli, 'get', 401):
+                cli.get_list_privileges('test')
 
     def test_get_list_continuous_queries(self):
         """Test getting a list of continuous queries."""
@@ -1332,11 +1330,11 @@ class TestInfluxDBClient(unittest.TestCase):
                 ]
             )
 
-    @raises(Exception)
     def test_get_list_continuous_queries_fails(self):
         """Test failing to get a list of continuous queries."""
-        with _mocked_session(self.cli, 'get', 400):
-            self.cli.get_list_continuous_queries()
+        with self.assertRaises(Exception):
+            with _mocked_session(self.cli, 'get', 400):
+                self.cli.get_list_continuous_queries()
 
     def test_create_continuous_query(self):
         """Test continuous query creation."""
@@ -1365,11 +1363,12 @@ class TestInfluxDBClient(unittest.TestCase):
                 '"6_months"."events" from "events" group by time(10m) end'
             )
 
-    @raises(Exception)
     def test_create_continuous_query_fails(self):
         """Test failing to create a continuous query."""
-        with _mocked_session(self.cli, 'get', 400):
-            self.cli.create_continuous_query('cq_name', 'select', 'db_name')
+        with self.assertRaises(Exception):
+            with _mocked_session(self.cli, 'get', 400):
+                self.cli.create_continuous_query('cq_name', 'select',
+                                                 'db_name')
 
     def test_drop_continuous_query(self):
         """Test dropping a continuous query."""
@@ -1386,11 +1385,11 @@ class TestInfluxDBClient(unittest.TestCase):
                 'drop continuous query "cq_name" on "db_name"'
             )
 
-    @raises(Exception)
     def test_drop_continuous_query_fails(self):
         """Test failing to drop a continuous query."""
-        with _mocked_session(self.cli, 'get', 400):
-            self.cli.drop_continuous_query('cq_name', 'db_name')
+        with self.assertRaises(Exception):
+            with _mocked_session(self.cli, 'get', 400):
+                self.cli.drop_continuous_query('cq_name', 'db_name')
 
     def test_invalid_port_fails(self):
         """Test invalid port fail for TestInfluxDBClient object."""

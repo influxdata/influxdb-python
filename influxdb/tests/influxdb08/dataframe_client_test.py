@@ -10,8 +10,6 @@ import warnings
 
 import requests_mock
 
-from nose.tools import raises
-
 from influxdb.tests import skip_if_pypy, using_pypy
 
 from .client_test import _mocked_session
@@ -191,33 +189,33 @@ class TestDataFrameClient(unittest.TestCase):
             cli.write_points({"foo": dataframe}, time_precision='u')
             self.assertListEqual(json.loads(m.last_request.body), points_us)
 
-    @raises(TypeError)
     def test_write_points_from_dataframe_fails_without_time_index(self):
         """Test write points from dataframe that fails without time index."""
         dataframe = pd.DataFrame(data=[["1", 1, 1.0], ["2", 2, 2.0]],
                                  columns=["column_one", "column_two",
                                           "column_three"])
 
-        with requests_mock.Mocker() as m:
-            m.register_uri(requests_mock.POST,
-                           "http://localhost:8086/db/db/series")
+        with self.assertRaises(TypeError):
+            with requests_mock.Mocker() as m:
+                m.register_uri(requests_mock.POST,
+                               "http://localhost:8086/db/db/series")
 
-            cli = DataFrameClient(database='db')
-            cli.write_points({"foo": dataframe})
+                cli = DataFrameClient(database='db')
+                cli.write_points({"foo": dataframe})
 
-    @raises(TypeError)
     def test_write_points_from_dataframe_fails_with_series(self):
         """Test failed write points from dataframe with series."""
         now = pd.Timestamp('1970-01-01 00:00+00:00')
         dataframe = pd.Series(data=[1.0, 2.0],
                               index=[now, now + timedelta(hours=1)])
 
-        with requests_mock.Mocker() as m:
-            m.register_uri(requests_mock.POST,
-                           "http://localhost:8086/db/db/series")
+        with self.assertRaises(TypeError):
+            with requests_mock.Mocker() as m:
+                m.register_uri(requests_mock.POST,
+                               "http://localhost:8086/db/db/series")
 
-            cli = DataFrameClient(database='db')
-            cli.write_points({"foo": dataframe})
+                cli = DataFrameClient(database='db')
+                cli.write_points({"foo": dataframe})
 
     def test_query_into_dataframe(self):
         """Test query into a dataframe."""
