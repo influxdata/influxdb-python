@@ -20,6 +20,7 @@ from itertools import chain, islice
 import msgpack
 import requests
 import requests.exceptions
+from requests.adapters import HTTPAdapter
 from six.moves.urllib.parse import urlparse
 
 from influxdb.line_protocol import make_lines, quote_ident, quote_literal
@@ -87,6 +88,10 @@ class InfluxDBClient(object):
     :param headers: headers to add to Requests, will add 'Content-Type'
         and 'Accept' unless these are already present, defaults to {}
     :type headers: dict
+    :param socket_options: use custom tcp socket options, If not specified, then defaults are loaded from
+        ``HTTPConnection.default_socket_options``
+    :type socket_options: list
+
     :raises ValueError: if cert is provided but ssl is disabled (set to False)
     """
 
@@ -109,6 +114,7 @@ class InfluxDBClient(object):
                  gzip=False,
                  session=None,
                  headers=None,
+                 socket_options=None,
                  ):
         """Construct a new InfluxDBClient object."""
         self.__host = host
@@ -128,9 +134,10 @@ class InfluxDBClient(object):
             session = requests.Session()
 
         self._session = session
-        adapter = requests.adapters.HTTPAdapter(
+        adapter = SocketOptionsAdapter(
             pool_connections=int(pool_size),
-            pool_maxsize=int(pool_size)
+            pool_maxsize=int(pool_size),
+            socket_options=socket_options
         )
 
         if use_udp:
@@ -626,7 +633,7 @@ class InfluxDBClient(object):
         # http://code.activestate.com/recipes/303279-getting-items-in-batches/
         iterator = iter(iterable)
         while True:
-            try:        # Try get the first element in the iterator...
+            try:  # Try get the first element in the iterator...
                 head = (next(iterator),)
             except StopIteration:
                 return  # ...so that we can stop if there isn't one
@@ -1249,3 +1256,14 @@ def _msgpack_parse_hook(code, data):
         timestamp += datetime.timedelta(microseconds=(epoch_ns / 1000))
         return timestamp.isoformat() + 'Z'
     return msgpack.ExtType(code, data)
+
+
+class SocketOptionsAdapter(HTTPAdapter):
+    def __init__(self, *args, **kwargs):
+        self.socket_options = kwargs.pop("socket_options", None)
+        super(SocketOptionsAdapter, self).__init__(*args, **kwargs)
+
+    def init_poolmanager(self, *args, **kwargs):
+        if self.socket_options is not None:
+            kwargs["socket_options"] = self.socket_options
+        super(SocketOptionsAdapter, self).init_poolmanager(*args, **kwargs)
