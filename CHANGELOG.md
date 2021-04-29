@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Amend retry to avoid sleep after last retry before raising exception (#790 thx @krzysbaranski)
 - Remove msgpack pinning for requirements (#818 thx @prometheanfire)
 - Update support for HTTP headers in the InfluxDBClient (#851 thx @bednar)
-- Update test suite to add support for Python 3.8 and InfluxDB v1.8.3 (#856)
+- Update test suite to add support for Python 3.8 and InfluxDB v1.8.5 (#856)
 
 ### Removed
 

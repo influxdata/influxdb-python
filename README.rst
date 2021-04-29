@@ -39,7 +39,7 @@ InfluxDB is an open-source distributed time series database, find more about Inf
 InfluxDB pre v1.1.0 users
 -------------------------
 
-This module is tested with InfluxDB versions: v1.2.4, v1.3.9, v1.4.3, v1.5.4, v1.6.4, v1.7.4 and v1.8.3.
+This module is tested with InfluxDB versions: v1.2.4, v1.3.9, v1.4.3, v1.5.4, v1.6.4, v1.7.4 and v1.8.5.
 
 Those users still on InfluxDB v0.8.x users may still use the legacy client by importing ``from influxdb.influxdb08 import InfluxDBClient``.
 
