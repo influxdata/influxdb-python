@@ -1500,28 +1500,38 @@ class TestInfluxDBClient(unittest.TestCase):
                              "my-token")
 
     def test_custom_socket_options(self):
-        test_socket_options = HTTPConnection.default_socket_options + [(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
-                                                                       (socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 60),
-                                                                       (socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 15)]
+        """Test custom socket options."""
+        test_socket_options = HTTPConnection.default_socket_options + \
+            [(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1),
+             (socket.IPPROTO_TCP, socket.TCP_KEEPINTVL, 60),
+             (socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 15)]
 
-        cli = InfluxDBClient(username=None, password=None, socket_options=test_socket_options)
+        cli = InfluxDBClient(username=None, password=None,
+                             socket_options=test_socket_options)
 
-        self.assertEquals(cli._session.adapters.get("http://").socket_options, test_socket_options)
-        self.assertEquals(cli._session.adapters.get("http://").poolmanager.connection_pool_kw.get("socket_options"),
+        self.assertEquals(cli._session.adapters.get("http://").socket_options,
+                          test_socket_options)
+        self.assertEquals(cli._session.adapters.get("http://").poolmanager.
+                          connection_pool_kw.get("socket_options"),
                           test_socket_options)
 
-        connection_pool = cli._session.adapters.get("http://").poolmanager.connection_from_url(
+        connection_pool = cli._session.adapters.get("http://").poolmanager \
+            .connection_from_url(
             url="http://localhost:8086")
         new_connection = connection_pool._new_conn()
         self.assertEquals(new_connection.socket_options, test_socket_options)
 
     def test_none_socket_options(self):
+        """Test default socket options."""
         cli = InfluxDBClient(username=None, password=None)
-        self.assertEquals(cli._session.adapters.get("http://").socket_options, None)
-        connection_pool = cli._session.adapters.get("http://").poolmanager.connection_from_url(
+        self.assertEquals(cli._session.adapters.get("http://").socket_options,
+                          None)
+        connection_pool = cli._session.adapters.get("http://").poolmanager \
+            .connection_from_url(
             url="http://localhost:8086")
         new_connection = connection_pool._new_conn()
-        self.assertEquals(new_connection.socket_options, HTTPConnection.default_socket_options)
+        self.assertEquals(new_connection.socket_options,
+                          HTTPConnection.default_socket_options)
 
 
 class FakeClient(InfluxDBClient):

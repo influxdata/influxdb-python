@@ -88,7 +88,8 @@ class InfluxDBClient(object):
     :param headers: headers to add to Requests, will add 'Content-Type'
         and 'Accept' unless these are already present, defaults to {}
     :type headers: dict
-    :param socket_options: use custom tcp socket options, If not specified, then defaults are loaded from
+    :param socket_options: use custom tcp socket options,
+        If not specified, then defaults are loaded from
         ``HTTPConnection.default_socket_options``
     :type socket_options: list
 
@@ -134,7 +135,7 @@ class InfluxDBClient(object):
             session = requests.Session()
 
         self._session = session
-        adapter = SocketOptionsAdapter(
+        adapter = _SocketOptionsAdapter(
             pool_connections=int(pool_size),
             pool_maxsize=int(pool_size),
             socket_options=socket_options
@@ -1258,12 +1259,14 @@ def _msgpack_parse_hook(code, data):
     return msgpack.ExtType(code, data)
 
 
-class SocketOptionsAdapter(HTTPAdapter):
+class _SocketOptionsAdapter(HTTPAdapter):
+    """_SocketOptionsAdapter injects socket_options into HTTP Adapter."""
+
     def __init__(self, *args, **kwargs):
         self.socket_options = kwargs.pop("socket_options", None)
-        super(SocketOptionsAdapter, self).__init__(*args, **kwargs)
+        super(_SocketOptionsAdapter, self).__init__(*args, **kwargs)
 
     def init_poolmanager(self, *args, **kwargs):
         if self.socket_options is not None:
             kwargs["socket_options"] = self.socket_options
-        super(SocketOptionsAdapter, self).init_poolmanager(*args, **kwargs)
+        super(_SocketOptionsAdapter, self).init_poolmanager(*args, **kwargs)
