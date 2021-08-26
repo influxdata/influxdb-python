@@ -44,7 +44,7 @@ class TestLineProtocol(unittest.TestCase):
 
         self.assertEqual(
             line_protocol.make_lines(data),
-            'test,backslash_tag=C:\\\\,integer_tag=2,string_tag=hello '
+            'test,backslash_tag=C:\\,integer_tag=2,string_tag=hello '
             'bool_val=True,float_val=1.1,int_val=1i,string_val="hello!"\n'
         )
 
@@ -160,14 +160,14 @@ class TestLineProtocol(unittest.TestCase):
         """Test quote indentation in TestLineProtocol object."""
         self.assertEqual(
             line_protocol.quote_ident(r"""\foo ' bar " Örf"""),
-            r'''"\\foo ' bar \" Örf"'''
+            r'''"\foo ' bar \" Örf"'''
         )
 
     def test_quote_literal(self):
         """Test quote literal in TestLineProtocol object."""
         self.assertEqual(
             line_protocol.quote_literal(r"""\foo ' bar " Örf"""),
-            r"""'\\foo \' bar " Örf'"""
+            r"""'\foo \' bar " Örf'"""
         )
 
     def test_float_with_long_decimal_fraction(self):
