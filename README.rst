@@ -177,6 +177,6 @@ TODO
 The TODO/Roadmap can be found in Github bug tracker: https://github.com/influxdata/influxdb-python/issues
 
 
-.. _InfluxDB: https://influxdata.com/time-series-platform/influxdb/
-.. _Sphinx: http://sphinx.pocoo.org/
+.. _InfluxDB: https://influxdata.com/time-series-platform/
+.. _Sphinx: http://sphinx-doc.org/
 .. _Tox: https://tox.readthedocs.org
