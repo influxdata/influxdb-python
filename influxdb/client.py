@@ -21,7 +21,7 @@ import msgpack
 import requests
 import requests.exceptions
 from requests.adapters import HTTPAdapter
-from six.moves.urllib.parse import urlparse
+from six.moves.urllib.parse import urlparse, unquote
 
 from influxdb.line_protocol import make_lines, quote_ident, quote_literal
 from influxdb.resultset import ResultSet
@@ -1247,8 +1247,8 @@ def _parse_dsn(dsn):
 
 def _parse_netloc(netloc):
     info = urlparse("http://{0}".format(netloc))
-    return {'username': info.username or None,
-            'password': info.password or None,
+    return {'username': unquote(info.username) or None,
+            'password': unquote(info.password) or None,
             'host': info.hostname or 'localhost',
             'port': info.port or 8086}
 
