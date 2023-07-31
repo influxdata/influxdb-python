@@ -784,6 +784,42 @@ class InfluxDBClient(object):
         """
         return list(self.query("SHOW MEASUREMENTS").get_points())
 
+    def get_list_tags(self):
+        """Get the list of tags in InfluxDB.
+
+        :returns: all tags in InfluxDB
+        :rtype: list of dictionaries
+
+        :Example:
+
+        ::
+
+            >> dbs = client.get_list_tags()
+            >> dbs
+            [{u'tagKey': u'tag1'},
+             {u'tagKey': u'tag2'},
+             {u'tagKey': u'tag3'}]
+        """
+        return list(self.query("SHOW TAG KEYS").get_points())
+
+    def get_list_fields(self):
+        """Get the list of fields in InfluxDB.
+
+        :returns: all fields in InfluxDB
+        :rtype: list of dictionaries
+
+        :Example:
+
+        ::
+
+            >> dbs = client.get_list_fields()
+            >> dbs
+            [{u'fieldKey': u'field1', u'fieldType': u'type1'},
+             {u'fieldKey': u'field2', u'fieldType': u'type2'},
+             {u'fieldKey': u'field3', u'fieldType': u'type3'}]
+        """
+        return list(self.query("SHOW FIELD KEYS").get_points())
+
     def drop_measurement(self, measurement):
         """Drop a measurement from InfluxDB.
 
