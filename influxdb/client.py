@@ -143,6 +143,8 @@ class InfluxDBClient(object):
 
         if use_udp:
             self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        else:
+            self.udp_socket = None
 
         if not path:
             self.__path = ''
@@ -1199,9 +1201,11 @@ class InfluxDBClient(object):
         self.udp_socket.sendto(data, (self._host, self._udp_port))
 
     def close(self):
-        """Close http session."""
+        """Close any network connections for this client."""
         if isinstance(self._session, requests.Session):
             self._session.close()
+        if self.udp_socket is not None:
+           self.udp_socket.close()
 
 
 def _parse_dsn(dsn):
