@@ -13,7 +13,7 @@ import pandas as pd
 import numpy as np
 
 from .client import InfluxDBClient
-from .line_protocol import _escape_tag
+from .line_protocol import _escape_tag, _to_nanos
 
 
 def _pandas_time_unit(time_precision):
@@ -276,11 +276,11 @@ class DataFrameClient(InfluxDBClient):
 
         precision_factor = {
             "n": 1,
-            "u": 1e3,
-            "ms": 1e6,
-            "s": 1e9,
-            "m": 1e9 * 60,
-            "h": 1e9 * 3600,
+            "u": 10 ** 3,
+            "ms": 10 ** 6,
+            "s": 10 ** 9,
+            "m": 10 ** 9 * 60,
+            "h": 10 ** 9 * 3600,
         }.get(time_precision, 1)
 
         if not tag_columns:
@@ -288,7 +288,7 @@ class DataFrameClient(InfluxDBClient):
                 {'measurement': measurement,
                  'fields':
                     rec.replace([np.inf, -np.inf], np.nan).dropna().to_dict(),
-                 'time': np.int64(ts.value / precision_factor)}
+                 'time': np.int64(ts.value) // precision_factor}
                 for ts, (_, rec) in zip(
                     dataframe.index,
                     dataframe[field_columns].iterrows()
@@ -302,7 +302,7 @@ class DataFrameClient(InfluxDBClient):
              'tags': dict(list(tag.items()) + list(tags.items())),
              'fields':
                 rec.replace([np.inf, -np.inf], np.nan).dropna().to_dict(),
-             'time': np.int64(ts.value / precision_factor)}
+             'time': np.int64(ts.value) // precision_factor}
             for ts, tag, (_, rec) in zip(
                 dataframe.index,
                 dataframe[tag_columns].to_dict('record'),
@@ -363,20 +363,20 @@ class DataFrameClient(InfluxDBClient):
 
         precision_factor = {
             "n": 1,
-            "u": 1e3,
-            "ms": 1e6,
-            "s": 1e9,
-            "m": 1e9 * 60,
-            "h": 1e9 * 3600,
+            "u": 10 ** 3,
+            "ms": 10 ** 6,
+            "s": 10 ** 9,
+            "m": 10 ** 9 * 60,
+            "h": 10 ** 9 * 3600,
         }.get(time_precision, 1)
 
         # Make array of timestamp ints
         if isinstance(dataframe.index, pd.PeriodIndex):
-            time = ((dataframe.index.to_timestamp().values.astype(np.int64) /
-                     precision_factor).astype(np.int64).astype(str))
+            time = ((dataframe.index.to_timestamp().values.astype(np.int64) //
+                     precision_factor).astype(str))
         else:
-            time = ((pd.to_datetime(dataframe.index).values.astype(np.int64) /
-                     precision_factor).astype(np.int64).astype(str))
+            time = ((pd.to_datetime(dataframe.index).values.astype(np.int64) //
+                     precision_factor).astype(str))
 
         # If tag columns exist, make an array of formatted tag keys and values
         if tag_columns:
@@ -482,16 +482,13 @@ class DataFrameClient(InfluxDBClient):
         return dframe
 
     def _datetime_to_epoch(self, datetime, time_precision='s'):
-        seconds = (datetime - self.EPOCH).total_seconds()
-        if time_precision == 'h':
-            return seconds / 3600
-        elif time_precision == 'm':
-            return seconds / 60
-        elif time_precision == 's':
-            return seconds
-        elif time_precision == 'ms':
-            return seconds * 1e3
-        elif time_precision == 'u':
-            return seconds * 1e6
-        elif time_precision == 'n':
-            return seconds * 1e9
+        nanos = _to_nanos(datetime)
+        precision_factor = {
+            "n": 1,
+            "u": 10 ** 3,
+            "ms": 10 ** 6,
+            "s": 10 ** 9,
+            "m": 10 ** 9 * 60,
+            "h": 10 ** 9 * 3600,
+        }.get(time_precision, 1)
+        return nanos // precision_factor
