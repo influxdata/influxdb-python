@@ -37,7 +37,7 @@ setup(
     long_description=readme,
     url='https://github.com/influxdb/influxdb-python',
     license='MIT License',
-    packages=find_packages(exclude=['tests']),
+    packages=find_packages(exclude=['*.tests', '*.tests.*']),
     test_suite='tests',
     tests_require=test_requires,
     install_requires=requires,
