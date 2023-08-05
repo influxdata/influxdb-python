@@ -60,8 +60,6 @@ def _convert_timestamp(timestamp, precision=None):
 def _escape_tag(tag):
     tag = _get_unicode(tag, force=True)
     return tag.replace(
-        "\\", "\\\\"
-    ).replace(
         " ", "\\ "
     ).replace(
         ",", "\\,"
@@ -82,7 +80,6 @@ def _escape_tag_value(value):
 def quote_ident(value):
     """Indent the quotes."""
     return "\"{}\"".format(value
-                           .replace("\\", "\\\\")
                            .replace("\"", "\\\"")
                            .replace("\n", "\\n"))
 
@@ -90,7 +87,6 @@ def quote_ident(value):
 def quote_literal(value):
     """Quote provided literal."""
     return "'{}'".format(value
-                         .replace("\\", "\\\\")
                          .replace("'", "\\'"))
 
 
