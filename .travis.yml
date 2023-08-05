@@ -5,6 +5,8 @@ python:
   - "3.5"
   - "3.6"
   - "3.7"
+  - "3.8"
+  - "3.9-dev"
   - "pypy"
   - "pypy3"
 
@@ -23,15 +25,15 @@ addons:
 
 matrix:
   include:
-    - python: 3.7
+    - python: 3.8
       env: TOX_ENV=pep257
-    - python: 3.7
+    - python: 3.8
       env: TOX_ENV=docs
-    - python: 3.7
+    - python: 3.8
       env: TOX_ENV=flake8
-    - python: 3.7
+    - python: 3.8
       env: TOX_ENV=coverage
-    - python: 3.7
+    - python: 3.8
       env: TOX_ENV=mypy
 
 install:
