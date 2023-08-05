@@ -21,7 +21,7 @@ import msgpack
 import requests
 import requests.exceptions
 from requests.adapters import HTTPAdapter
-from six.moves.urllib.parse import urlparse
+from six.moves.urllib.parse import urlparse, urlencode
 
 from influxdb.line_protocol import make_lines, quote_ident, quote_literal
 from influxdb.resultset import ResultSet
@@ -529,14 +529,26 @@ class InfluxDBClient(object):
         if query.lower().startswith("select ") and " into " in query.lower():
             method = "POST"
 
-        response = self.request(
-            url="query",
-            method=method,
-            params=params,
-            data=None,
-            stream=chunked,
-            expected_response_code=expected_response_code
-        )
+        # set GET query max length = 1000
+        if len(query) > 1000:
+            response = self.request(
+                url="query",
+                method="POST",
+                params=None,
+                data=urlencode(params),
+                stream=chunked,
+                expected_response_code=expected_response_code,
+                headers={"Content-Type": "application/x-www-form-urlencoded"},
+            )
+        else:
+            response = self.request(
+                url="query",
+                method=method,
+                params=params,
+                data=None,
+                stream=chunked,
+                expected_response_code=expected_response_code
+            )
 
         data = response._msgpack
         if not data:
