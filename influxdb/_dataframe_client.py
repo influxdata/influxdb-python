@@ -305,7 +305,7 @@ class DataFrameClient(InfluxDBClient):
              'time': np.int64(ts.value / precision_factor)}
             for ts, tag, (_, rec) in zip(
                 dataframe.index,
-                dataframe[tag_columns].to_dict('record'),
+                dataframe[tag_columns].to_dict('records'),
                 dataframe[field_columns].iterrows()
             )
         ]
