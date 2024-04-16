@@ -1,6 +1,8 @@
 The v1 client libraries for InfluxDB were typically developed and maintained by
 community members. For InfluxDB 3.0 users, this library is succeeded by the
 lightweight `v3 client library <https://github.com/InfluxCommunity/influxdb3-python>`_.
+For InfluxDB 2.0 users, look at the `v2 client library
+<https://github.com/influxdata/influxdb-client-python>`_.
 
 If there are still users of this v1 client library, and they or somebody else
 are willing to keep them updated with security fixes at a minimum please reach
