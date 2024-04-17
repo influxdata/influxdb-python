@@ -877,7 +877,7 @@ class TestDataFrameClient(unittest.TestCase):
                     {"measurement": "network",
                      "tags": {"direction": ""},
                      "columns": ["time", "value"],
-                     "values":[["2009-11-10T23:00:00Z", 23422]]
+                     "values": [["2009-11-10T23:00:00Z", 23422]]
                      },
                     {"measurement": "network",
                      "tags": {"direction": "in"},
@@ -1274,3 +1274,75 @@ class TestDataFrameClient(unittest.TestCase):
 
             self.assertListEqual(["time", "host"],
                                  list(_data_frame.index.names))
+
+    def test_dataframe_nanosecond_precision(self):
+        """Test nanosecond precision."""
+        for_df_dict = {
+            "nanFloats": [1.1, float('nan'), 3.3, 4.4],
+            "onlyFloats": [1.1, 2.2, 3.3, 4.4],
+            "strings": ['one_one', 'two_two', 'three_three', 'four_four']
+        }
+        df = pd.DataFrame.from_dict(for_df_dict)
+        df['time'] = ['2019-10-04 06:27:19.850557111+00:00',
+                      '2019-10-04 06:27:19.850557184+00:00',
+                      '2019-10-04 06:27:42.251396864+00:00',
+                      '2019-10-04 06:27:42.251396974+00:00']
+        df['time'] = pd.to_datetime(df['time'], unit='ns')
+        df = df.set_index('time')
+
+        expected = (
+            b'foo nanFloats=1.1,onlyFloats=1.1,strings="one_one" 1570170439850557111\n'  # noqa E501 line too long
+            b'foo onlyFloats=2.2,strings="two_two" 1570170439850557184\n'  # noqa E501 line too long
+            b'foo nanFloats=3.3,onlyFloats=3.3,strings="three_three" 1570170462251396864\n'  # noqa E501 line too long
+            b'foo nanFloats=4.4,onlyFloats=4.4,strings="four_four" 1570170462251396974\n'  # noqa E501 line too long
+        )
+
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/write",
+                status_code=204
+            )
+
+            cli = DataFrameClient(database='db')
+            cli.write_points(df, 'foo', time_precision='n')
+
+            self.assertEqual(m.last_request.body, expected)
+
+    def test_dataframe_nanosecond_precision_one_microsecond(self):
+        """Test nanosecond precision within one microsecond."""
+        # 1 microsecond = 1000 nanoseconds
+        start = np.datetime64('2019-10-04T06:27:19.850557000')
+        end = np.datetime64('2019-10-04T06:27:19.850558000')
+
+        # generate timestamps with nanosecond precision
+        timestamps = np.arange(
+            start,
+            end + np.timedelta64(1, 'ns'),
+            np.timedelta64(1, 'ns')
+        )
+        # generate values
+        values = np.arange(0.0, len(timestamps))
+
+        df = pd.DataFrame({'value': values}, index=timestamps)
+        with requests_mock.Mocker() as m:
+            m.register_uri(
+                requests_mock.POST,
+                "http://localhost:8086/write",
+                status_code=204
+            )
+
+            cli = DataFrameClient(database='db')
+            cli.write_points(df, 'foo', time_precision='n')
+
+            lines = m.last_request.body.decode('utf-8').split('\n')
+            self.assertEqual(len(lines), 1002)
+
+            for index, line in enumerate(lines):
+                if index == 1001:
+                    self.assertEqual(line, '')
+                    continue
+                self.assertEqual(
+                    line,
+                    f"foo value={index}.0 157017043985055{7000 + index:04}"
+                )
