@@ -4,7 +4,10 @@
 import unittest
 import warnings
 
-import mock
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 from influxdb.influxdb08 import SeriesHelper, InfluxDBClient
 from requests.exceptions import ConnectionError
 

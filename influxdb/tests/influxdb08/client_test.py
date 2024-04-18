@@ -8,7 +8,10 @@ import unittest
 import random
 import warnings
 
-import mock
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 import requests
 import requests.exceptions
 import requests_mock

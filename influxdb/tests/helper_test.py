@@ -11,7 +11,10 @@ from datetime import datetime, timedelta
 import unittest
 import warnings
 
-import mock
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 from influxdb import SeriesHelper, InfluxDBClient
 from requests.exceptions import ConnectionError
 
