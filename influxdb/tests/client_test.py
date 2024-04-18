@@ -27,7 +27,10 @@ import warnings
 import io
 import gzip
 import json
-import mock
+try:
+    from unittest import mock
+except ImportError:
+    import mock
 import requests
 import requests.exceptions
 import requests_mock
