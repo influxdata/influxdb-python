@@ -352,6 +352,7 @@ class InfluxDBClient(object):
                     verify=self._verify_ssl,
                     timeout=self._timeout
                 )
+                response.raise_for_status()
                 break
             except (requests.exceptions.ConnectionError,
                     requests.exceptions.HTTPError,
