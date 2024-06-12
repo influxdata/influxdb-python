@@ -74,6 +74,11 @@ class DataFrameClient(InfluxDBClient):
             datatypes. Defaults to None, which preserves 14-15 significant
             figures for float and all significant figures for int datatypes.
         """
+        # Check measurement fields types in database and convert if it is possible
+        measurement_type = self._get_measurement_type(measurement)
+        # Convert data to measurement type in database
+        dataframe = dataframe.astype(measurement_type)
+
         if tag_columns is None:
             tag_columns = []
 
@@ -495,3 +500,31 @@ class DataFrameClient(InfluxDBClient):
             return seconds * 1e6
         elif time_precision == 'n':
             return seconds * 1e9
+
+    def _get_measurement_type(self, measurement, database=None):
+        """ Get measurement type from database measurements if exists. Else, None. """
+        query = 'SHOW FIELD KEYS ON "%s" FROM "%s"' % (database, measurement)
+
+        field_list = list(self.query(query))
+
+        if len(field_list) > 0:
+            types_dict = {}
+            for row in field_list[0]:
+                # Convert string data type into type
+                if row['fieldType'] == 'float':
+                    datatype = float
+                elif row['fieldType'] == 'integer':
+                    datatype = int
+                elif row['fieldType'] == 'boolean':
+                    datatype = bool
+                elif row['fieldType'] == 'string':
+                    datatype = str
+                elif row['fieldType'] == 'timestamp':
+                    datatype = pd.Timestamp
+                else:
+                    raise KeyError('InfluxDB type "%s" is unknown.' % row['fieldType'])
+
+                types_dict[row['fieldKey']] = datatype
+            return types_dict
+        else:
+            return None
