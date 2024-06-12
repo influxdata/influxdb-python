@@ -247,10 +247,11 @@ class TestInfluxDBClient(unittest.TestCase):
                     b"cpu_load_short,host=server01,region=us-west "
                     b"value=0.64 1257894000000000000\n"
                 )
+            compressed.seek(0)
 
             self.assertEqual(
-                m.last_request.body,
-                compressed.getvalue(),
+                gzip.GzipFile(fileobj=io.BytesIO(m.last_request.body)).read(),
+                gzip.GzipFile(fileobj=compressed).read()
             )
 
     def test_write_points_gzip(self):
@@ -277,9 +278,11 @@ class TestInfluxDBClient(unittest.TestCase):
                     b'cpu_load_short,host=server01,region=us-west '
                     b'value=0.64 1257894000123456000\n'
                 )
+            compressed.seek(0)
+
             self.assertEqual(
-                m.last_request.body,
-                compressed.getvalue(),
+                gzip.GzipFile(fileobj=io.BytesIO(m.last_request.body)).read(),
+                gzip.GzipFile(fileobj=compressed).read()
             )
 
     def test_write_points_toplevel_attributes(self):
