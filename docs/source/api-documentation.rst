@@ -10,6 +10,10 @@ To connect to a InfluxDB, you must create a
 connects to InfluxDB on ``localhost`` with the default
 ports. The below instantiation statements are all equivalent::
 
+    # Set INFLUXDB_NO_DATAFRAME_CLIENT to skip the expensive DataFrameClient
+    # import in cases where you only need the basic InfluxDBClient.
+    os.environ["INFLUXDB_NO_DATAFRAME_CLIENT"] = "1"
+
     from influxdb import InfluxDBClient
 
     # using Http

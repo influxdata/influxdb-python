@@ -3,6 +3,8 @@
 
 import argparse
 
+import os
+os.environ["INFLUXDB_NO_DATAFRAME_CLIENT"] = "1"
 from influxdb import InfluxDBClient
 
 
