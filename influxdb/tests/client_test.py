@@ -576,7 +576,8 @@ class TestInfluxDBClient(unittest.TestCase):
         example_response = bytes(bytearray.fromhex(
             "81a7726573756c74739182ac73746174656d656e745f696400a673657269"
             "65739183a46e616d65a161a7636f6c756d6e7392a474696d65a176a67661"
-            "6c7565739192c70c05000000005d26178a019096c8cb3ff0000000000000"
+            "6c7565739292c70c05000000005d26178a019096c8cb3ff0000000000000"
+            "92c70c05fffffffffffee6c0ff439eb2cb4000000000000000"
         ))
 
         with requests_mock.Mocker() as m:
@@ -591,7 +592,10 @@ class TestInfluxDBClient(unittest.TestCase):
 
             self.assertListEqual(
                 list(rs.get_points()),
-                [{'v': 1.0, 'time': '2019-07-10T16:51:22.026253Z'}]
+                [
+                    {"v": 1.0, "time": "2019-07-10T16:51:22.026253Z"},
+                    {"v": 2.0, "time": "1969-12-31T03:59:59.987654Z"},
+                ],
             )
 
     def test_select_into_post(self):
