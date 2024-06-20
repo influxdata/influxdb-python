@@ -52,7 +52,7 @@ InfluxDB is an open-source distributed time series database, find more about Inf
 InfluxDB pre v1.1.0 users
 -------------------------
 
-This module is tested with InfluxDB versions: v1.2.4, v1.3.9, v1.4.3, v1.5.4, v1.6.4, and 1.7.4.
+This module is tested with InfluxDB versions: v1.2.4, v1.3.9, v1.4.3, v1.5.4, v1.6.4, v1.7.4 and v1.8.5.
 
 Those users still on InfluxDB v0.8.x users may still use the legacy client by importing ``from influxdb.influxdb08 import InfluxDBClient``.
 
@@ -72,7 +72,7 @@ On Debian/Ubuntu, you can install it with this command::
 Dependencies
 ------------
 
-The influxdb-python distribution is supported and tested on Python 2.7, 3.5, 3.6, 3.7, PyPy and PyPy3.
+The influxdb-python distribution is supported and tested on Python 2.7, 3.5, 3.6, 3.7, 3.8, PyPy and PyPy3.
 
 **Note:** Python <3.5 are currently untested. See ``.travis.yml``.
 
