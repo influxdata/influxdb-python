@@ -20,10 +20,15 @@ InfluxDB-Python
 
    **This project is no longer in development**
    
-   This v1 client library is for interacting with `InfluxDB 1.x <https://docs.influxdata.com/influxdb/v1/>`_ instances. 
+   This v1 client library is for interacting with `InfluxDB 1.x <https://docs.influxdata.com/influxdb/v1/>`_ and 1.x-compatible endpoints in `InfluxDB 2.x <https://docs.influxdata.com/influxdb/v2/>`_.
+   Use it to:
+   
+   - Write data in line protocol.
+   - Query data with `InfluxQL <https://docs.influxdata.com/influxdb/v1/query_language/>`_.
 
-   - If you use `InfluxDB 2.x (TSM storage engine) <https://docs.influxdata.com/influxdb/v2/>`_, see the v2 client library: https://github.com/influxdata/influxdb-client-python
-   - If you use `InfluxDB 3.0 <https://www.influxdata.com/get-influxdb/>`_, see the v3 client library, https://github.com/influxdata/influxdb3-python
+   If you use `InfluxDB 2.x (TSM storage engine) <https://docs.influxdata.com/influxdb/v2/>`_ and `Flux <https://docs.influxdata.com/flux/v0/>`_, see the `v2 client library <https://github.com/influxdata/influxdb-client-python>`_.
+
+   If you use `InfluxDB 3.0 <https://www.influxdata.com/get-influxdb/>`_, see the `v3 client library <https://github.com/influxdata/influxdb3-python>`_.
 
    For new projects, consider using InfluxDB 3.0 and v3 client libraries.
 
