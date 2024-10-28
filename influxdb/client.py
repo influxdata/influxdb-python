@@ -395,7 +395,7 @@ class InfluxDBClient(object):
         :param data: the data to be written
         :type data: (if protocol is 'json') dict
                     (if protocol is 'line') sequence of line protocol strings
-                                            or single string
+                    or single string
         :param params: additional parameters for the request, defaults to None
         :type params: dict
         :param expected_response_code: the expected response code of the write
@@ -571,8 +571,9 @@ class InfluxDBClient(object):
         :param points: the list of points to be written in the database
         :type points: list of dictionaries, each dictionary represents a point
         :type points: (if protocol is 'json') list of dicts, where each dict
-                                            represents a point.
-                    (if protocol is 'line') sequence of line protocol strings.
+                      represents a point.
+                      (if protocol is 'line') sequence of line protocol strings.
+
         :param time_precision: Either 's', 'm', 'ms' or 'u', defaults to None
         :type time_precision: str
         :param database: the database to write the points to. Defaults to

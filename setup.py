@@ -23,6 +23,11 @@ with open(os.path.join(os.path.dirname(__file__), 'influxdb', '__init__.py')) as
 with open('requirements.txt', 'r') as f:
     requires = [x.strip() for x in f if x.strip()]
 
+# Debugging: Print the requires values
+print("install_requires values:")
+for req in requires:
+    print(f"- {req}")
+
 with open('test-requirements.txt', 'r') as f:
     test_requires = [x.strip() for x in f if x.strip()]
 

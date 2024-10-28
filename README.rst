@@ -1,14 +1,3 @@
-The v1 client libraries for InfluxDB were typically developed and maintained by
-community members. For InfluxDB 3.0 users, this library is succeeded by the
-lightweight `v3 client library <https://github.com/InfluxCommunity/influxdb3-python>`_.
-For InfluxDB 2.0 users, look at the `v2 client library
-<https://github.com/influxdata/influxdb-client-python>`_.
-
-If there are still users of this v1 client library, and they or somebody else
-are willing to keep them updated with security fixes at a minimum please reach
-out on the `Community Forums <https://community.influxdata.com/>`_ or
-`InfluxData Slack <https://influxdata.com/slack>`_.
-
 InfluxDB-Python
 ===============
 
@@ -26,38 +15,40 @@ InfluxDB-Python
    :target: https://pypi.python.org/pypi/influxdb
    :alt: PyPI Status
 
-InfluxDB-Python is a client for interacting with InfluxDB_.
 
-**Note: This library is for use with InfluxDB 1.x. For connecting to InfluxDB 2.x instances, please use the the** `influxdb-client-python <https://github.com/influxdata/influxdb-client-python>`_ **client.**
+.. important::
 
-Development of this library is maintained by:
+   **This project is no longer in development**
+   
+   This v1 client library is for interacting with `InfluxDB 1.x <https://docs.influxdata.com/influxdb/v1/>`_ instances. 
 
-+-----------+-------------------------------+
-| Github ID | URL                           |
-+===========+===============================+
-| @aviau    | (https://github.com/aviau)    |
-+-----------+-------------------------------+
-| @xginn8   | (https://github.com/xginn8)   |
-+-----------+-------------------------------+
-| @sebito91 | (https://github.com/sebito91) |
-+-----------+-------------------------------+
+   - If you use `InfluxDB 2.x (TSM storage engine) <https://docs.influxdata.com/influxdb/v2/>`_, see the v2 client library: https://github.com/influxdata/influxdb-client-python
+   - If you use `InfluxDB 3.0 <https://www.influxdata.com/get-influxdb/>`_, see the v3 client library, https://github.com/influxdata/influxdb3-python
+
+   For new projects, consider using InfluxDB 3.0 and v3 client libraries.
+
+Description
+===========
+
+InfluxDB-python, the InfluxDB Python Client (1.x), is a client library for interacting with `InfluxDB 1.x <https://docs.influxdata.com/influxdb/v1/>`_ instances.
 
 .. _readme-about:
 
-InfluxDB is an open-source distributed time series database, find more about InfluxDB_ at https://docs.influxdata.com/influxdb/latest
+`InfluxDB`_ is the time series platform designed to handle high write and query loads.
 
 
 .. _installation:
 
-InfluxDB pre v1.1.0 users
--------------------------
 
-This module is tested with InfluxDB versions: v1.2.4, v1.3.9, v1.4.3, v1.5.4, v1.6.4, and 1.7.4.
+For InfluxDB pre-v1.1.0 users
+-----------------------------
 
-Those users still on InfluxDB v0.8.x users may still use the legacy client by importing ``from influxdb.influxdb08 import InfluxDBClient``.
+This module is tested with InfluxDB versions v1.2.4, v1.3.9, v1.4.3, v1.5.4, v1.6.4, and 1.7.4.
 
-Installation
-------------
+Users on InfluxDB v0.8.x may still use the legacy client by importing ``from influxdb.influxdb08 import InfluxDBClient``.
+
+For InfluxDB v1.1+ users
+------------------------
 
 Install, upgrade and uninstall influxdb-python with these commands::
 
@@ -165,21 +156,33 @@ We are also lurking on the following:
 Development
 -----------
 
+The v1 client libraries for InfluxDB 1.x were typically developed and maintained by InfluxDB community members. If you are an InfluxDB v1 user interested in maintaining this client library (at a minimum, keeping it updated with security patches) please contact the InfluxDB team at on the `Community Forums <https://community.influxdata.com/>`_ or
+`InfluxData Slack <https://influxdata.com/slack>`_.
+
 All development is done on Github_. Use Issues_ to report
 problems or submit contributions.
 
 .. _Github: https://github.com/influxdb/influxdb-python/
 .. _Issues: https://github.com/influxdb/influxdb-python/issues
 
-Please note that we WILL get to your questions/issues/concerns as quickly as possible. We maintain many
-software repositories and sometimes things may get pushed to the backburner. Please don't take offense,
-we will do our best to reply as soon as possible!
+Please note that we will answer you question as quickly as possible.
 
+Maintainers:
+
++-----------+-------------------------------+
+| Github ID | URL                           |
++===========+===============================+
+| @aviau    | (https://github.com/aviau)    |
++-----------+-------------------------------+
+| @xginn8   | (https://github.com/xginn8)   |
++-----------+-------------------------------+
+| @sebito91 | (https://github.com/sebito91) |
++-----------+-------------------------------+
 
 Source code
 -----------
 
-The source code is currently available on Github: https://github.com/influxdata/influxdb-python
+The source code for the InfluxDB Python Client (1.x) is currently available on Github: https://github.com/influxdata/influxdb-python
 
 
 TODO
@@ -188,6 +191,6 @@ TODO
 The TODO/Roadmap can be found in Github bug tracker: https://github.com/influxdata/influxdb-python/issues
 
 
-.. _InfluxDB: https://influxdata.com/time-series-platform/influxdb/
+.. _InfluxDB: https://influxdata.com/
 .. _Sphinx: http://sphinx.pocoo.org/
 .. _Tox: https://tox.readthedocs.org
